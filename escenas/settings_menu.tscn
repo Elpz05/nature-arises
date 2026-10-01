@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://boton_menu.gd" id="6_u3hjb"]
 [ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="7_mkkkp"]
 [ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="8_24fwj"]
+[ext_resource type="Texture2D" uid="uid://61b7oq66v26f" path="res://backgrounds/menu_tile_192x192.png" id="10_jd0j2"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_0cmel"]
 particle_flag_disable_z = true
@@ -80,6 +81,7 @@ grow_vertical = 2
 script = ExtResource("1_0cmel")
 
 [node name="Fondo" type="TextureRect" parent="." unique_id=1858245955]
+visible = false
 layout_mode = 0
 offset_left = -1.0
 offset_right = 1919.0
@@ -315,6 +317,18 @@ flat = true
 script = ExtResource("6_u3hjb")
 sonido_hover = ExtResource("7_mkkkp")
 sonido_click = ExtResource("8_24fwj")
+
+[node name="FondoGrass" type="TextureRect" parent="." unique_id=1150124685]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("10_jd0j2")
+expand_mode = 1
+stretch_mode = 1
 
 [connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" method="_on_value_changed"]
 [connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" method="_on_value_changed"]
