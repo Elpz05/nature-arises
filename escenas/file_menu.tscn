@@ -108,6 +108,18 @@ offset_right = 1919.0
 offset_bottom = 1080.0
 texture = ExtResource("2_eelqg")
 
+[node name="FondoGrass" type="TextureRect" parent="." unique_id=938761993]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_n5f30")
+expand_mode = 1
+stretch_mode = 1
+
 [node name="Particulas" type="Control" parent="." unique_id=1020888486]
 layout_mode = 1
 anchors_preset = 5
@@ -342,17 +354,5 @@ text = "Eliminar Archivo"
 script = ExtResource("4_6d5tp")
 sonido_hover = ExtResource("5_uc810")
 sonido_click = ExtResource("6_n5f30")
-
-[node name="FondoGrass" type="TextureRect" parent="." unique_id=938761993]
-z_index = -1
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("7_n5f30")
-expand_mode = 1
-stretch_mode = 1
 
 [connection signal="pressed" from="Volver" to="." method="_on_volver_pressed"]
