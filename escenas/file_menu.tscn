@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://boton_menu.gd" id="4_6d5tp"]
 [ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="5_uc810"]
 [ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="6_n5f30"]
+[ext_resource type="Texture2D" uid="uid://61b7oq66v26f" path="res://backgrounds/menu_tile_192x192.png" id="7_n5f30"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_qfiju"]
 particle_flag_disable_z = true
@@ -100,6 +101,7 @@ grow_vertical = 2
 script = ExtResource("1_k00f7")
 
 [node name="Fondo" type="TextureRect" parent="." unique_id=158979943]
+visible = false
 layout_mode = 0
 offset_left = -1.0
 offset_right = 1919.0
@@ -340,5 +342,17 @@ text = "Eliminar Archivo"
 script = ExtResource("4_6d5tp")
 sonido_hover = ExtResource("5_uc810")
 sonido_click = ExtResource("6_n5f30")
+
+[node name="FondoGrass" type="TextureRect" parent="." unique_id=938761993]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_n5f30")
+expand_mode = 1
+stretch_mode = 1
 
 [connection signal="pressed" from="Volver" to="." method="_on_volver_pressed"]

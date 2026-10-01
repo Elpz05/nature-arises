@@ -88,6 +88,17 @@ offset_right = 1919.0
 offset_bottom = 1080.0
 texture = ExtResource("2_0yuyc")
 
+[node name="FondoGrass" type="TextureRect" parent="." unique_id=1150124685]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("10_jd0j2")
+expand_mode = 1
+stretch_mode = 1
+
 [node name="Particulas" type="Control" parent="." unique_id=189688022]
 layout_mode = 1
 anchors_preset = 5
@@ -317,18 +328,6 @@ flat = true
 script = ExtResource("6_u3hjb")
 sonido_hover = ExtResource("7_mkkkp")
 sonido_click = ExtResource("8_24fwj")
-
-[node name="FondoGrass" type="TextureRect" parent="." unique_id=1150124685]
-z_index = -1
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("10_jd0j2")
-expand_mode = 1
-stretch_mode = 1
 
 [connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" method="_on_value_changed"]
 [connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" method="_on_value_changed"]
