@@ -10,6 +10,7 @@ func _ready() -> void:
 func guardar_ajustes() -> void:
 	config.set_value("audio", "master", AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Master")))
 	config.set_value("audio", "music", AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Music")))
+	config.set_value("audio", "sfx", AudioServer.get_bus_volume_db(AudioServer.get_bus_index("SFX")))
 	config.save(RUTA_CONFIG)
 
 func cargar_ajustes() -> void:
@@ -19,6 +20,8 @@ func cargar_ajustes() -> void:
 
 	var master_db = config.get_value("audio", "master", 0.0)
 	var music_db = config.get_value("audio", "music", 0.0)
+	var sfx_db = config.get_value("audio", "sfx", 0.0)
 
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), master_db)
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Music"), music_db)
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("SFX"), sfx_db)

@@ -5,6 +5,7 @@
 [ext_resource type="FontFile" uid="uid://ci5pxwub8ardw" path="res://fuentes/PixelOperatorMono-Bold.ttf" id="3_582fb"]
 [ext_resource type="Script" uid="uid://dgeo43ywyej3q" path="res://slider_volumen_general.gd" id="3_mlw3h"]
 [ext_resource type="Script" uid="uid://bxbu0e4vu01fk" path="res://slider_musica.gd" id="4_d0eu6"]
+[ext_resource type="Script" uid="uid://ddtdo2plyiqyd" path="res://escenas/slider_sfx.gd" id="6_24fwj"]
 [ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://boton_menu.gd" id="6_u3hjb"]
 [ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="7_mkkkp"]
 [ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="8_24fwj"]
@@ -67,6 +68,8 @@ bg_color = Color(0.03529412, 0.25882354, 0.023529412, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2d6lb"]
 bg_color = Color(0.07058824, 0.5019608, 0.05490196, 1)
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_mkkkp"]
+
 [node name="Control" type="Control" unique_id=1718165493]
 layout_mode = 3
 anchors_preset = 15
@@ -126,6 +129,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
+follow_focus = true
 horizontal_scroll_mode = 0
 
 [node name="Opciones" type="VBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer" unique_id=617823029]
@@ -174,6 +178,7 @@ text = "Música"
 label_settings = SubResource("LabelSettings_fiqec")
 
 [node name="SliderMusica" type="HSlider" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica" unique_id=1676605712]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 4
@@ -203,6 +208,9 @@ custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/slider = SubResource("StyleBoxFlat_d0eu6")
+max_value = 1.0
+step = 0.01
+script = ExtResource("6_24fwj")
 
 [node name="SFXPorcentaje" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaSonidos" unique_id=906203165]
 layout_mode = 2
@@ -282,6 +290,7 @@ theme_override_fonts/font = ExtResource("3_582fb")
 text = "Restablecer valores por defecto"
 
 [node name="Volver" type="Button" parent="." unique_id=1246819110]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -300,6 +309,7 @@ theme_override_font_sizes/font_size = 60
 theme_override_styles/normal = SubResource("StyleBoxEmpty_4hy44")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_2tlyv")
 theme_override_styles/hover = SubResource("StyleBoxFlat_2d6lb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_mkkkp")
 text = "Volver"
 flat = true
 script = ExtResource("6_u3hjb")
@@ -308,5 +318,6 @@ sonido_click = ExtResource("8_24fwj")
 
 [connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" method="_on_value_changed"]
 [connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" method="_on_value_changed"]
+[connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaSonidos/SliderSFX" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaSonidos/SliderSFX" method="_on_value_changed"]
 [connection signal="pressed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/Restablecer" to="." method="_on_restablecer_pressed"]
 [connection signal="pressed" from="Volver" to="." method="_on_volver_pressed"]

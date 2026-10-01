@@ -1,6 +1,7 @@
 extends Control
 
 @onready var container: VBoxContainer = %KeybindsContainer
+@onready var boton_volver: Button = %Volver
 
 var accion_esperando: String = ""
 var tipo_esperando: ControlesManager.Tipo = ControlesManager.Tipo.TECLADO_MOUSE
@@ -11,6 +12,15 @@ func _ready() -> void:
 	crear_encabezado()
 	for accion in ControlesManager.acciones_configurables:
 		crear_fila(accion)
+	UIInputManager.inicializar(boton_volver)
+	
+	print("Mouse mode al entrar a Ajustes: ", Input.mouse_mode)
+	print("Mandos conectados: ", Input.get_connected_joypads())
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		print("Mouse motion en _unhandled_input")
+	UIInputManager.manejar_input(event, get_viewport(), boton_volver)
 
 func crear_encabezado() -> void:
 	var fila := HBoxContainer.new()
@@ -70,6 +80,10 @@ func _on_boton_reasignar(boton: Button, accion: String, tipo: ControlesManager.T
 	set_process_input(true)
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		print("Mouse motion detectado en settings")
+	UIInputManager.manejar_input(event, get_viewport(), boton_volver)
+	
 	if accion_esperando == "":
 		return
 
@@ -105,6 +119,7 @@ func _input(event: InputEvent) -> void:
 	boton_esperando.text = event.as_text()
 	ControlesManager.guardar_controles()
 	terminar_captura()
+	UIInputManager.manejar_input(event, get_viewport(), boton_volver)
 
 func actualizar_textos_botones() -> void:
 	for i in range(1, container.get_child_count()):

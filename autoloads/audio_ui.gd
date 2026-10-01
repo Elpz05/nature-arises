@@ -6,6 +6,8 @@ extends Node
 func _ready() -> void:
 	add_child(player_hover)
 	add_child(player_click)
+	player_hover.bus = "SFX"
+	player_click.bus = "SFX"
 
 func reproducir_hover(sonido: AudioStream) -> void:
 	if sonido:
