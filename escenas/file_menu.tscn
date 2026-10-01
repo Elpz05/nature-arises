@@ -1,0 +1,344 @@
+[gd_scene format=3 uid="uid://c8wmgn88bcsrt"]
+
+[ext_resource type="Script" uid="uid://crtvqrlru82w3" path="res://file_menu.gd" id="1_k00f7"]
+[ext_resource type="Texture2D" uid="uid://o2up5yl8bosy" path="res://backgrounds/menu_background_1.png" id="2_eelqg"]
+[ext_resource type="FontFile" uid="uid://ci5pxwub8ardw" path="res://fuentes/PixelOperatorMono-Bold.ttf" id="3_fhmfl"]
+[ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://boton_menu.gd" id="4_6d5tp"]
+[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="5_uc810"]
+[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="6_n5f30"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_qfiju"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(598, 1, 1)
+spread = 0.0
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+gravity = Vector3(0, 20, 0)
+
+[sub_resource type="LabelSettings" id="LabelSettings_lti8b"]
+font_size = 75
+outline_size = 13
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_elyp6"]
+content_margin_left = 20.0
+content_margin_right = 20.0
+bg_color = Color(0.24313726, 0.49803922, 0.3882353, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rb5ra"]
+bg_color = Color(0.18039216, 0.3647059, 0.28627452, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_us0kn"]
+bg_color = Color(0.30980393, 0.64705884, 0.5019608, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xgu7g"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_ouk20"]
+font_size = 48
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g71ys"]
+content_margin_left = 20.0
+content_margin_right = 20.0
+bg_color = Color(0.24313726, 0.49803922, 0.3882353, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ywcvh"]
+bg_color = Color(0.18039216, 0.3647059, 0.28627452, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wsmww"]
+bg_color = Color(0.30980393, 0.64705884, 0.5019608, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7qxtn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d8yv5"]
+content_margin_left = 20.0
+content_margin_right = 20.0
+bg_color = Color(0.24313726, 0.49803922, 0.3882353, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0lf7a"]
+bg_color = Color(0.18039216, 0.3647059, 0.28627452, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jwuwa"]
+bg_color = Color(0.30980393, 0.64705884, 0.5019608, 1)
+expand_margin_top = 10.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_l4yx2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qfiju"]
+bg_color = Color(0.24313726, 0.49803922, 0.3882353, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3xvyj"]
+bg_color = Color(0.18039216, 0.3647059, 0.28627452, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v3d21"]
+bg_color = Color(0.30980393, 0.64705884, 0.5019608, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6d5tp"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_ab6sv"]
+font_size = 18
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_n5f30"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_uc810"]
+
+[node name="MenuSlots" type="Control" unique_id=1383789455]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_k00f7")
+
+[node name="Fondo" type="TextureRect" parent="." unique_id=158979943]
+layout_mode = 0
+offset_left = -1.0
+offset_right = 1919.0
+offset_bottom = 1080.0
+texture = ExtResource("2_eelqg")
+
+[node name="Particulas" type="Control" parent="." unique_id=1020888486]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 40.0
+grow_horizontal = 2
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="Particulas" unique_id=700237916]
+amount = 500
+lifetime = 20.0
+process_material = SubResource("ParticleProcessMaterial_qfiju")
+
+[node name="SelectArchivo" type="Label" parent="." unique_id=2110279929]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 90.0
+offset_bottom = 193.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_fhmfl")
+theme_override_font_sizes/font_size = 64
+text = "Selecciona un archivo"
+label_settings = SubResource("LabelSettings_lti8b")
+horizontal_alignment = 1
+
+[node name="ContenedorSlots" type="HBoxContainer" parent="." unique_id=1704200599]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -656.0
+offset_top = -212.0
+offset_right = 598.0
+offset_bottom = 283.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 2
+theme_override_constants/separation = 79
+
+[node name="Slot1" type="Button" parent="ContenedorSlots" unique_id=852257061]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 398)
+layout_mode = 2
+focus_neighbor_right = NodePath("../Slot2")
+focus_neighbor_bottom = NodePath("../../Volver")
+theme_override_fonts/font = ExtResource("3_fhmfl")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_elyp6")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_rb5ra")
+theme_override_styles/hover = SubResource("StyleBoxFlat_us0kn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_xgu7g")
+text = "Ultimo Nivel
+Jugado: Nivel 2"
+script = ExtResource("4_6d5tp")
+sonido_hover = ExtResource("5_uc810")
+sonido_click = ExtResource("6_n5f30")
+
+[node name="Label" type="Label" parent="ContenedorSlots/Slot1" unique_id=951020849]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_right = 36.0
+offset_bottom = 23.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_fhmfl")
+text = "Archivo 1"
+label_settings = SubResource("LabelSettings_ouk20")
+
+[node name="Slot2" type="Button" parent="ContenedorSlots" unique_id=2120301865]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 398)
+layout_mode = 2
+focus_neighbor_left = NodePath("../Slot1")
+focus_neighbor_right = NodePath("../Slot3")
+focus_neighbor_bottom = NodePath("../../EliminarFile")
+theme_override_fonts/font = ExtResource("3_fhmfl")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_g71ys")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ywcvh")
+theme_override_styles/hover = SubResource("StyleBoxFlat_wsmww")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7qxtn")
+text = "Nueva
+Partida"
+script = ExtResource("4_6d5tp")
+sonido_hover = ExtResource("5_uc810")
+sonido_click = ExtResource("6_n5f30")
+
+[node name="Label" type="Label" parent="ContenedorSlots/Slot2" unique_id=872476370]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_right = 36.0
+offset_bottom = 23.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_fhmfl")
+text = "Archivo 2"
+label_settings = SubResource("LabelSettings_ouk20")
+
+[node name="Slot3" type="Button" parent="ContenedorSlots" unique_id=1976182066]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 398)
+layout_mode = 2
+focus_neighbor_left = NodePath("../Slot2")
+focus_neighbor_bottom = NodePath("../../Seleccionar")
+theme_override_fonts/font = ExtResource("3_fhmfl")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_d8yv5")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_0lf7a")
+theme_override_styles/hover = SubResource("StyleBoxFlat_jwuwa")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_l4yx2")
+text = "Nueva
+Partida"
+script = ExtResource("4_6d5tp")
+sonido_hover = ExtResource("5_uc810")
+sonido_click = ExtResource("6_n5f30")
+
+[node name="Label" type="Label" parent="ContenedorSlots/Slot3" unique_id=601247477]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_right = 36.0
+offset_bottom = 23.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_fhmfl")
+text = "Archivo 3"
+label_settings = SubResource("LabelSettings_ouk20")
+
+[node name="Volver" type="Button" parent="." unique_id=517067183]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 42.0
+offset_top = 856.0
+offset_right = 274.0
+offset_bottom = 1052.0
+size_flags_vertical = 3
+focus_neighbor_top = NodePath("../ContenedorSlots/Slot1")
+theme_override_constants/outline_size = 13
+theme_override_fonts/font = ExtResource("3_fhmfl")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_qfiju")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_3xvyj")
+theme_override_styles/hover = SubResource("StyleBoxFlat_v3d21")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_6d5tp")
+text = "Volver"
+script = ExtResource("4_6d5tp")
+sonido_hover = ExtResource("5_uc810")
+sonido_click = ExtResource("6_n5f30")
+
+[node name="Label" type="Label" parent="Volver" unique_id=120947254]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -12.5
+offset_top = -35.0
+offset_right = 27.5
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Esc"
+label_settings = SubResource("LabelSettings_ab6sv")
+
+[node name="Seleccionar" type="Button" parent="." unique_id=849651385]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1574.0
+offset_top = 856.0
+offset_right = 1870.0
+offset_bottom = 1052.0
+size_flags_vertical = 3
+focus_neighbor_top = NodePath("../ContenedorSlots/Slot3")
+theme_override_constants/outline_size = 13
+theme_override_fonts/font = ExtResource("3_fhmfl")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_qfiju")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_3xvyj")
+theme_override_styles/hover = SubResource("StyleBoxFlat_v3d21")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_n5f30")
+text = "Seleccionar"
+script = ExtResource("4_6d5tp")
+sonido_hover = ExtResource("5_uc810")
+sonido_click = ExtResource("6_n5f30")
+
+[node name="Label" type="Label" parent="Seleccionar" unique_id=941121838]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -21.5
+offset_top = -35.0
+offset_right = 25.5
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Enter"
+label_settings = SubResource("LabelSettings_ab6sv")
+
+[node name="EliminarFile" type="Button" parent="." unique_id=953563008]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 302.0
+offset_top = 856.0
+offset_right = 1545.0
+offset_bottom = 1052.0
+size_flags_vertical = 3
+focus_neighbor_top = NodePath("../ContenedorSlots/Slot2")
+theme_override_constants/outline_size = 13
+theme_override_fonts/font = ExtResource("3_fhmfl")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_qfiju")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_3xvyj")
+theme_override_styles/hover = SubResource("StyleBoxFlat_v3d21")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_uc810")
+text = "Eliminar Archivo"
+script = ExtResource("4_6d5tp")
+sonido_hover = ExtResource("5_uc810")
+sonido_click = ExtResource("6_n5f30")
+
+[connection signal="pressed" from="Volver" to="." method="_on_volver_pressed"]

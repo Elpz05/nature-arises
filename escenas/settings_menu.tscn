@@ -1,0 +1,312 @@
+[gd_scene format=3 uid="uid://hrjhce73p6cw"]
+
+[ext_resource type="Script" uid="uid://c8x3wgnu6oj7m" path="res://settings_menu.gd" id="1_0cmel"]
+[ext_resource type="Texture2D" uid="uid://o2up5yl8bosy" path="res://backgrounds/menu_background_1.png" id="2_0yuyc"]
+[ext_resource type="FontFile" uid="uid://ci5pxwub8ardw" path="res://fuentes/PixelOperatorMono-Bold.ttf" id="3_582fb"]
+[ext_resource type="Script" uid="uid://dgeo43ywyej3q" path="res://slider_volumen_general.gd" id="3_mlw3h"]
+[ext_resource type="Script" uid="uid://bxbu0e4vu01fk" path="res://slider_musica.gd" id="4_d0eu6"]
+[ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://boton_menu.gd" id="6_u3hjb"]
+[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="7_mkkkp"]
+[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="8_24fwj"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_0cmel"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(598, 1, 1)
+spread = 0.0
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+gravity = Vector3(0, 20, 0)
+
+[sub_resource type="LabelSettings" id="LabelSettings_ufg0w"]
+font_size = 75
+outline_size = 13
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fiqec"]
+bg_color = Color(0.24313726, 0.49803922, 0.3882353, 1)
+expand_margin_left = 24.0
+expand_margin_top = 24.0
+expand_margin_right = 24.0
+expand_margin_bottom = 24.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_ab6sv"]
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_d0eu6"]
+font_size = 24
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ufg0w"]
+content_margin_top = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0cmel"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_2d6lb"]
+font_size = 24
+
+[sub_resource type="LabelSettings" id="LabelSettings_fiqec"]
+font_size = 24
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mlw3h"]
+content_margin_top = 10.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_h437d"]
+font_size = 24
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d0eu6"]
+content_margin_top = 10.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_2tlyv"]
+font_size = 24
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4hy44"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2tlyv"]
+bg_color = Color(0.03529412, 0.25882354, 0.023529412, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2d6lb"]
+bg_color = Color(0.07058824, 0.5019608, 0.05490196, 1)
+
+[node name="Control" type="Control" unique_id=1718165493]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0cmel")
+
+[node name="Fondo" type="TextureRect" parent="." unique_id=1858245955]
+layout_mode = 0
+offset_left = -1.0
+offset_right = 1919.0
+offset_bottom = 1080.0
+texture = ExtResource("2_0yuyc")
+
+[node name="Particulas" type="Control" parent="." unique_id=189688022]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 40.0
+grow_horizontal = 2
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="Particulas" unique_id=1761565666]
+amount = 500
+lifetime = 20.0
+process_material = SubResource("ParticleProcessMaterial_0cmel")
+
+[node name="LabelAjustes" type="Label" parent="." unique_id=737987897]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 90.0
+offset_bottom = 193.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_font_sizes/font_size = 64
+text = "Ajustes"
+label_settings = SubResource("LabelSettings_ufg0w")
+horizontal_alignment = 1
+
+[node name="ContenedorAjustes" type="PanelContainer" parent="." unique_id=1783036956]
+layout_mode = 1
+offset_left = 520.0
+offset_top = 306.0
+offset_right = 1163.0
+offset_bottom = 764.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_fiqec")
+
+[node name="MarginContainer" type="MarginContainer" parent="ContenedorAjustes" unique_id=1850264432]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ContenedorAjustes/MarginContainer" unique_id=294985686]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Opciones" type="VBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer" unique_id=617823029]
+layout_mode = 2
+
+[node name="LabelVolumen" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1155503064]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Volumen"
+label_settings = SubResource("LabelSettings_ab6sv")
+
+[node name="FilaVolumenGeneral" type="HBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1778764206]
+layout_mode = 2
+
+[node name="VolumenGeneral" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral" unique_id=563870786]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Volumen General"
+label_settings = SubResource("LabelSettings_d0eu6")
+
+[node name="SliderVolumenGeneral" type="HSlider" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral" unique_id=1913792663]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/slider = SubResource("StyleBoxFlat_ufg0w")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_0cmel")
+max_value = 1.0
+step = 0.01
+script = ExtResource("3_mlw3h")
+
+[node name="GeneralPorcentaje" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral" unique_id=1911053455]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "0.0%"
+label_settings = SubResource("LabelSettings_2d6lb")
+
+[node name="FilaMusica" type="HBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=653802846]
+layout_mode = 2
+
+[node name="VolumenMusica" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica" unique_id=69846211]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Música"
+label_settings = SubResource("LabelSettings_fiqec")
+
+[node name="SliderMusica" type="HSlider" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica" unique_id=1676605712]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/slider = SubResource("StyleBoxFlat_mlw3h")
+max_value = 1.0
+step = 0.01
+script = ExtResource("4_d0eu6")
+
+[node name="MusicaPorcentaje" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica" unique_id=1172305253]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_font_sizes/font_size = 24
+text = "0.0%"
+
+[node name="FilaSonidos" type="HBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=210397890]
+layout_mode = 2
+
+[node name="VolumenSFX" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaSonidos" unique_id=1874117417]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Efectos de Sonido"
+label_settings = SubResource("LabelSettings_h437d")
+
+[node name="SliderSFX" type="HSlider" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaSonidos" unique_id=833754866]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/slider = SubResource("StyleBoxFlat_d0eu6")
+
+[node name="SFXPorcentaje" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaSonidos" unique_id=906203165]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_font_sizes/font_size = 24
+text = "0.0%"
+
+[node name="HSeparator" type="HSeparator" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1666049487]
+layout_mode = 2
+
+[node name="LabelPantalla" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1204585911]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Pantalla"
+label_settings = SubResource("LabelSettings_ab6sv")
+
+[node name="FilaResolucion" type="HBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1674190049]
+layout_mode = 2
+
+[node name="LabelResolucion" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaResolucion" unique_id=718793004]
+custom_minimum_size = Vector2(385, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Resolución"
+label_settings = SubResource("LabelSettings_2tlyv")
+
+[node name="SelectorResolucion" type="OptionButton" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaResolucion" unique_id=1248684103]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+item_count = 2
+popup/item_0/text = "1920x1280"
+popup/item_0/id = 0
+popup/item_1/text = "1280x720"
+popup/item_1/id = 0
+
+[node name="FilaPantallaFull" type="HBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1329996720]
+layout_mode = 2
+
+[node name="LabelPantallaFull" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaPantallaFull" unique_id=460974311]
+custom_minimum_size = Vector2(385, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Pantalla Completa"
+label_settings = SubResource("LabelSettings_2tlyv")
+
+[node name="SelectorPantallaFull" type="OptionButton" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaPantallaFull" unique_id=1843508783]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+item_count = 2
+popup/item_0/text = "Si"
+popup/item_0/id = 0
+popup/item_1/text = "No"
+popup/item_1/id = 0
+
+[node name="HSeparator2" type="HSeparator" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1707362956]
+layout_mode = 2
+
+[node name="LabelKeys" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1722945978]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Asiganción de Teclas"
+label_settings = SubResource("LabelSettings_ab6sv")
+
+[node name="LabelConflicto" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=264056322]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+
+[node name="KeybindsContainer" type="VBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=696450389]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Restablecer" type="Button" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1350861950]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_582fb")
+text = "Restablecer valores por defecto"
+
+[node name="Volver" type="Button" parent="." unique_id=1246819110]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -204.0
+offset_top = -280.0
+offset_right = 204.0
+offset_bottom = -140.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/outline_size = 10
+theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_font_sizes/font_size = 60
+theme_override_styles/normal = SubResource("StyleBoxEmpty_4hy44")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_2tlyv")
+theme_override_styles/hover = SubResource("StyleBoxFlat_2d6lb")
+text = "Volver"
+flat = true
+script = ExtResource("6_u3hjb")
+sonido_hover = ExtResource("7_mkkkp")
+sonido_click = ExtResource("8_24fwj")
+
+[connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" method="_on_value_changed"]
+[connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" method="_on_value_changed"]
+[connection signal="pressed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/Restablecer" to="." method="_on_restablecer_pressed"]
+[connection signal="pressed" from="Volver" to="." method="_on_volver_pressed"]

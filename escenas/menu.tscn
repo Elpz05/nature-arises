@@ -1,0 +1,190 @@
+[gd_scene format=3 uid="uid://bqsq2ae8fd0nt"]
+
+[ext_resource type="Texture2D" uid="uid://o2up5yl8bosy" path="res://backgrounds/menu_background_1.png" id="1_6cq3m"]
+[ext_resource type="Script" uid="uid://djmtgwd530aqw" path="res://fade_overlay.gd" id="1_yb3qj"]
+[ext_resource type="Script" uid="uid://bqqxnx1vf0vr0" path="res://menu.gd" id="2_ouk20"]
+[ext_resource type="AudioStream" uid="uid://cpgd68vuldw8" path="res://audios/Forest 01.ogg" id="3_5t3kx"]
+[ext_resource type="FontFile" uid="uid://ci5pxwub8ardw" path="res://fuentes/PixelOperatorMono-Bold.ttf" id="3_56ah5"]
+[ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://boton_menu.gd" id="4_xqndx"]
+[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="5_xqndx"]
+[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="7_4gv4q"]
+[ext_resource type="Texture2D" uid="uid://7g31a3im3dc4" path="res://logo/logo_test_320x180_2.png" id="9_4gv4q"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ab6sv"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(598, 1, 1)
+spread = 0.0
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+gravity = Vector3(0, 20, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jde2l"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4hy44"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ytr4m"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yb3qj"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ouk20"]
+bg_color = Color(0.043137256, 0.34901962, 0.03137255, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kk3ma"]
+bg_color = Color(0.03529412, 0.25882354, 0.023529412, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h1wq0"]
+bg_color = Color(0.07058824, 0.5019608, 0.05490196, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xqndx"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mae5d"]
+bg_color = Color(0.043137256, 0.34901962, 0.03137255, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4hy44"]
+bg_color = Color(0.03529412, 0.25882354, 0.023529412, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ytr4m"]
+bg_color = Color(0.07058824, 0.5019608, 0.05490196, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_56ah5"]
+
+[node name="Control" type="Control" unique_id=659497669]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_yb3qj")
+
+[node name="Fondo" type="TextureRect" parent="." unique_id=1958120069]
+layout_mode = 0
+offset_left = -1.0
+offset_right = 1919.0
+offset_bottom = 1080.0
+texture = ExtResource("1_6cq3m")
+
+[node name="Particulas" type="Control" parent="." unique_id=1612163275]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 40.0
+grow_horizontal = 2
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="Particulas" unique_id=1344849904]
+amount = 500
+lifetime = 20.0
+process_material = SubResource("ParticleProcessMaterial_ab6sv")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1871072415]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -204.0
+offset_top = -620.0
+offset_right = 204.0
+offset_bottom = -240.0
+grow_horizontal = 2
+grow_vertical = 0
+focus_mode = 2
+theme_override_constants/separation = -80
+script = ExtResource("2_ouk20")
+musica_menu = ExtResource("3_5t3kx")
+
+[node name="Play" type="Button" parent="VBoxContainer" unique_id=180218280]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+theme_override_constants/outline_size = 13
+theme_override_fonts/font = ExtResource("3_56ah5")
+theme_override_font_sizes/font_size = 70
+theme_override_styles/normal = SubResource("StyleBoxEmpty_jde2l")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_4hy44")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_ytr4m")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_yb3qj")
+text = "Jugar"
+flat = true
+script = ExtResource("4_xqndx")
+sonido_hover = ExtResource("5_xqndx")
+sonido_click = ExtResource("7_4gv4q")
+
+[node name="Options" type="Button" parent="VBoxContainer" unique_id=84392585]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+theme_override_constants/outline_size = 13
+theme_override_fonts/font = ExtResource("3_56ah5")
+theme_override_font_sizes/font_size = 70
+theme_override_styles/normal = SubResource("StyleBoxFlat_ouk20")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_kk3ma")
+theme_override_styles/hover = SubResource("StyleBoxFlat_h1wq0")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_xqndx")
+text = "Ajustes
+"
+flat = true
+script = ExtResource("4_xqndx")
+sonido_hover = ExtResource("5_xqndx")
+sonido_click = ExtResource("7_4gv4q")
+
+[node name="Quit" type="Button" parent="VBoxContainer" unique_id=2113345392]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+theme_override_constants/outline_size = 13
+theme_override_fonts/font = ExtResource("3_56ah5")
+theme_override_font_sizes/font_size = 70
+theme_override_styles/normal = SubResource("StyleBoxFlat_mae5d")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_4hy44")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ytr4m")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_56ah5")
+text = "Salir"
+flat = true
+script = ExtResource("4_xqndx")
+sonido_hover = ExtResource("5_xqndx")
+sonido_click = ExtResource("7_4gv4q")
+
+[node name="Version" type="Label" parent="." unique_id=730109494]
+layout_mode = 0
+offset_left = 1616.0
+offset_top = 1020.0
+offset_right = 2017.0
+offset_bottom = 1157.0
+theme_override_constants/outline_size = 10
+theme_override_fonts/font = ExtResource("3_56ah5")
+theme_override_font_sizes/font_size = 30
+text = "v0.1.0 - Pre-Alpha
+"
+
+[node name="Logo" type="TextureRect" parent="." unique_id=1126517545]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 190.0
+offset_right = 400.0
+offset_bottom = 468.0
+grow_horizontal = 2
+texture = ExtResource("9_4gv4q")
+
+[node name="FadeOverlay" type="ColorRect" parent="." unique_id=1365900301]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0.003921569, 1)
+
+[connection signal="pressed" from="VBoxContainer/Play" to="VBoxContainer" method="_on_new_game_pressed"]
+[connection signal="pressed" from="VBoxContainer/Options" to="VBoxContainer" method="_on_options_pressed"]
+[connection signal="pressed" from="VBoxContainer/Quit" to="VBoxContainer" method="_on_quit_pressed"]
