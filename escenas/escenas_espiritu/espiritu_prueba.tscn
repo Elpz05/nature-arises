@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://c27e4q5612yee"]
+
+[ext_resource type="Texture2D" uid="uid://b00rj2kitmhgc" path="res://icon.svg" id="1_1en1q"]
+[ext_resource type="Script" uid="uid://h1ejmqsiipwi" path="res://scripts/entidades/espiritu.gd" id="1_ex3n5"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ab6sv"]
+size = Vector2(129, 131)
+
+[node name="EspirituPrueba" type="CharacterBody2D" unique_id=2056543388]
+script = ExtResource("1_ex3n5")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1879515239]
+modulate = Color(0.42382813, 0.30051848, 0.02400589, 1)
+texture = ExtResource("1_1en1q")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1943436264]
+position = Vector2(-0.5, 0.5)
+shape = SubResource("RectangleShape2D_ab6sv")

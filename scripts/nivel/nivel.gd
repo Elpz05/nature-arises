@@ -1,7 +1,12 @@
 extends Node2D
 
+@export var arbol_escena: PackedScene
+@export var espiritu_escena: PackedScene
+
 @onready var suelo: TileMapLayer = $Suelo
 @onready var camino: TileMapLayer = $Camino
+@onready var ruta: Path2D = $RutaEspiritu
+@onready var arboles: Node2D = $Arboles
 
 var celdas_ocupadas := {}
 
@@ -22,11 +27,16 @@ const RUTA := [
 	Vector2i(25, 13),   # aquí va el árbol meta
 ]
 
+const SOURCE_PASTO := 5     # los IDs que imprime tu _ready()
+const SOURCE_CAMINO := 0    # pon aquí el ID real del camino
+
 func _ready():
 	_generar_tablero()
 	_generar_camino()
+	_generar_curva()
 	
 	for i in suelo.tile_set.get_source_count():
+		print("Source ID existente: ", suelo.tile_set.get_source_id(i))
 		var id := suelo.tile_set.get_source_id(i)
 		print("Source ID existente: ", id)
 
@@ -47,14 +57,9 @@ func _generar_camino():
 
 		var celda := desde
 		while celda != hasta:
-			camino.set_cell(celda, 0, Vector2i(0, 0))
-			celdas_ocupadas[celda] = true
+			_pintar_camino(celda)
 			celda += paso
-
-		# La última celda del tramo (la esquina)
-		var extra := Vector2i(0, 1) if paso.x != 0 else Vector2i(1, 0)
-		camino.set_cell(hasta, 1, Vector2i(0, 0))
-		celdas_ocupadas[hasta] = true
+		_pintar_camino(hasta)
 
 	print("Celdas de camino: ", celdas_ocupadas.size())
 	print("Celdas en la capa: ", camino.get_used_cells().size())
@@ -62,3 +67,47 @@ func _generar_camino():
 	if camino.tile_set:
 		print("Sources: ", camino.tile_set.get_source_count())
 		print("ID del source 0: ", camino.tile_set.get_source_id(0))
+
+func _pintar_camino(celda: Vector2i):
+	camino.set_cell(celda, SOURCE_CAMINO, Vector2i(0, 0))
+	celdas_ocupadas[celda] = true
+
+func _generar_curva():
+	var curva := Curve2D.new()
+	for celda in RUTA:
+		curva.add_point(suelo.map_to_local(celda))
+	ruta.curve = curva
+
+func _crear_espiritu():
+	var seguidor := PathFollow2D.new()
+	seguidor.loop = false
+	seguidor.rotates = false
+	ruta.add_child(seguidor)
+
+	var espiritu = espiritu_escena.instantiate()
+	seguidor.add_child(espiritu)
+	espiritu.llego_a_meta.connect(_on_espiritu_llego)
+
+func _on_espiritu_llego():
+	print("¡Un espíritu llegó al árbol meta!")
+
+func _unhandled_input(event):
+	if event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_LEFT:
+		var celda: Vector2i = suelo.local_to_map(suelo.get_local_mouse_position())
+		_intentar_plantar(celda)
+
+func _intentar_plantar(celda: Vector2i):
+	# Fuera del tablero
+	if celda.x < 0 or celda.x >= ANCHO or celda.y < 0 or celda.y >= ALTO:
+		return
+	# Camino u otro árbol encima
+	if celdas_ocupadas.has(celda):
+		print("No puedes plantar aquí")
+		return
+
+	var arbol = arbol_escena.instantiate()
+	arbol.position = suelo.map_to_local(celda)
+	arboles.add_child(arbol)
+	celdas_ocupadas[celda] = true
+	print("Árbol plantado en ", celda)

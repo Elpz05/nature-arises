@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://bgutfgltlujfi"]
+
+[ext_resource type="Texture2D" uid="uid://b00rj2kitmhgc" path="res://icon.svg" id="1_lw71p"]
+
+[node name="Bala" type="Node2D" unique_id=513268879]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1545274917]
+modulate = Color(0.125, 1, 0, 1)
+scale = Vector2(0.1328125, 0.1796875)
+texture = ExtResource("1_lw71p")
