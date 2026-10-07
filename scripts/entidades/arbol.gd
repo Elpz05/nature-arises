@@ -21,6 +21,7 @@ var enemigos_en_rango: Array = []
 @onready var rango: Area2D = $Arbol/Rango
 @onready var forma: CollisionShape2D = $Arbol/Rango/CollisionShape2D
 @onready var temporizador: Timer = $TemporizadorDisparo
+@onready var sprite: AnimatedSprite2D = $Arbol
 
 
 func _ready():
@@ -28,6 +29,8 @@ func _ready():
 	rango.body_exited.connect(_on_body_exited)
 	temporizador.timeout.connect(_disparar)
 	_aplicar_tamano("pequeno")
+	
+	sprite.play("idle") 
 
 
 func _aplicar_tamano(nuevo: String):

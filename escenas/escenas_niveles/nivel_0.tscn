@@ -57,8 +57,6 @@ tile_set = SubResource("TileSet_ofi78")
 [node name="RutaEspiritu" type="Path2D" parent="." unique_id=183939674]
 curve = SubResource("Curve2D_56kgh")
 
-[node name="PathFollow2D" type="PathFollow2D" parent="RutaEspiritu" unique_id=2086243355]
-
 [node name="ArbolMeta" type="Node2D" parent="." unique_id=1088226090]
 
 [node name="Arboles" type="Node2D" parent="." unique_id=976145673]

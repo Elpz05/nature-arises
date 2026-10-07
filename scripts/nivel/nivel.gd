@@ -34,6 +34,7 @@ func _ready():
 	_generar_tablero()
 	_generar_camino()
 	_generar_curva()
+	_crear_espiritu()
 	
 	for i in suelo.tile_set.get_source_count():
 		print("Source ID existente: ", suelo.tile_set.get_source_id(i))

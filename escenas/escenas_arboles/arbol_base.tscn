@@ -572,9 +572,6 @@ animations = [{
 "speed": 4.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_8xxyg"]
-radius = 19.0
-
 [node name="ArbolBase" type="Node2D" unique_id=665432453]
 script = ExtResource("1_afbi4")
 semilla_escena = ExtResource("2_i4obu")
@@ -583,12 +580,11 @@ semilla_escena = ExtResource("2_i4obu")
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_10q3f")
 animation = &"idle"
-frame_progress = 0.5508602
+frame_progress = 0.8790032
 
 [node name="Rango" type="Area2D" parent="Arbol" unique_id=917496329]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Arbol/Rango" unique_id=879401374]
 position = Vector2(1, 1)
-shape = SubResource("CircleShape2D_8xxyg")
 
 [node name="TemporizadorDisparo" type="Timer" parent="." unique_id=667283726]
