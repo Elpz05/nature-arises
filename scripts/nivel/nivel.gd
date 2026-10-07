@@ -9,20 +9,26 @@ const ANCHO := 30
 const ALTO := 17
 
 const RUTA := [
-	Vector2i(0, 4),
-	Vector2i(3, 4),
-	Vector2i(3, 6),
-	Vector2i(6, 6),
-	Vector2i(6, 1),
-	Vector2i(14, 1),
-	Vector2i(14, 10),
-	Vector2i(10, 10),
-	Vector2i(10, 6),   # aquí va el árbol meta
+	Vector2i(0, 3),
+	Vector2i(5, 3),
+	Vector2i(5, 12),
+	Vector2i(10, 12),
+	Vector2i(10, 3),
+	Vector2i(15, 3),
+	Vector2i(15, 12),
+	Vector2i(20, 12),
+	Vector2i(20, 3),
+	Vector2i(25, 3),
+	Vector2i(25, 13),   # aquí va el árbol meta
 ]
 
 func _ready():
 	_generar_tablero()
 	_generar_camino()
+	
+	for i in suelo.tile_set.get_source_count():
+		var id := suelo.tile_set.get_source_id(i)
+		print("Source ID existente: ", id)
 
 func _generar_tablero():
 	for x in ANCHO:
@@ -46,6 +52,7 @@ func _generar_camino():
 			celda += paso
 
 		# La última celda del tramo (la esquina)
+		var extra := Vector2i(0, 1) if paso.x != 0 else Vector2i(1, 0)
 		camino.set_cell(hasta, 1, Vector2i(0, 0))
 		celdas_ocupadas[hasta] = true
 

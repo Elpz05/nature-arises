@@ -570,8 +570,8 @@ animations = [{
 "speed": 4.0
 }]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ab6sv"]
-size = Vector2(18, 14)
+[sub_resource type="CircleShape2D" id="CircleShape2D_8xxyg"]
+radius = 19.0
 
 [node name="ArbolBase" type="Node2D" unique_id=665432453]
 
@@ -587,4 +587,4 @@ frame_progress = 0.5508602
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Arbol/ZonaRango" unique_id=879401374]
 position = Vector2(1, 1)
-shape = SubResource("RectangleShape2D_ab6sv")
+shape = SubResource("CircleShape2D_8xxyg")
