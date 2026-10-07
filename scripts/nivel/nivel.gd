@@ -79,18 +79,21 @@ func _generar_curva():
 		curva.add_point(suelo.map_to_local(celda))
 	ruta.curve = curva
 
-func _crear_espiritu():
+func _crear_espiritu(tamano := "pequeno", progreso := 0.0):
 	var seguidor := PathFollow2D.new()
 	seguidor.loop = false
 	seguidor.rotates = false
 	ruta.add_child(seguidor)
+	seguidor.progress = progreso
 
 	var espiritu = espiritu_escena.instantiate()
+	espiritu.tamano = tamano
 	seguidor.add_child(espiritu)
 	espiritu.llego_a_meta.connect(_on_espiritu_llego)
+	espiritu.invocar_copia.connect(_crear_espiritu)
 
-func _on_espiritu_llego():
-	print("¡Un espíritu llegó al árbol meta!")
+func _on_espiritu_llego(dano: int):
+	print("¡Un espíritu llegó al árbol meta! Daño: ", dano)
 
 func _unhandled_input(event):
 	if event is InputEventMouseButton and event.pressed \
