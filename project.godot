@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="menu_nature_arises"
+config/name="Nature Arises v0.1.0 - Pre-Alpha"
 run/main_scene="uid://bqsq2ae8fd0nt"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"

@@ -1,15 +1,16 @@
 [gd_scene format=3 uid="uid://hrjhce73p6cw"]
 
-[ext_resource type="Script" uid="uid://c8x3wgnu6oj7m" path="res://settings_menu.gd" id="1_0cmel"]
-[ext_resource type="Texture2D" uid="uid://o2up5yl8bosy" path="res://backgrounds/menu_background_1.png" id="2_0yuyc"]
-[ext_resource type="FontFile" uid="uid://ci5pxwub8ardw" path="res://fuentes/PixelOperatorMono-Bold.ttf" id="3_582fb"]
-[ext_resource type="Script" uid="uid://dgeo43ywyej3q" path="res://slider_volumen_general.gd" id="3_mlw3h"]
-[ext_resource type="Script" uid="uid://bxbu0e4vu01fk" path="res://slider_musica.gd" id="4_d0eu6"]
-[ext_resource type="Script" uid="uid://ddtdo2plyiqyd" path="res://escenas/slider_sfx.gd" id="6_24fwj"]
-[ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://boton_menu.gd" id="6_u3hjb"]
-[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="7_mkkkp"]
-[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="8_24fwj"]
-[ext_resource type="Texture2D" uid="uid://61b7oq66v26f" path="res://backgrounds/menu_tile_192x192.png" id="10_jd0j2"]
+[ext_resource type="Script" uid="uid://c8x3wgnu6oj7m" path="res://scripts/menu/settings_menu.gd" id="1_x07qx"]
+[ext_resource type="Texture2D" uid="uid://o2up5yl8bosy" path="res://backgrounds/menu_background_1.png" id="2_lk6i2"]
+[ext_resource type="Texture2D" uid="uid://durqsyyi2wu4g" path="res://backgrounds/menu_tile_1.png" id="3_mbu1c"]
+[ext_resource type="FontFile" uid="uid://ci5pxwub8ardw" path="res://fuentes/PixelOperatorMono-Bold.ttf" id="4_ue80m"]
+[ext_resource type="Texture2D" uid="uid://1frb8okq8qyn" path="res://backgrounds/ui_wood_1.png" id="5_5ll0s"]
+[ext_resource type="Script" uid="uid://dgeo43ywyej3q" path="res://scripts/menu/slider_volumen_general.gd" id="6_61c83"]
+[ext_resource type="Script" uid="uid://bxbu0e4vu01fk" path="res://scripts/menu/slider_musica.gd" id="7_s7ypx"]
+[ext_resource type="Script" uid="uid://ddtdo2plyiqyd" path="res://escenas_menu/slider_sfx.gd" id="8_12rm1"]
+[ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://scripts/menu/boton_menu.gd" id="9_l02py"]
+[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="10_e53ql"]
+[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="11_a847r"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_0cmel"]
 particle_flag_disable_z = true
@@ -25,8 +26,12 @@ font_size = 75
 outline_size = 13
 outline_color = Color(0, 0, 0, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fiqec"]
-bg_color = Color(0.24313726, 0.49803922, 0.3882353, 1)
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_xgu7g"]
+texture = ExtResource("5_5ll0s")
+texture_margin_left = 7.0
+texture_margin_top = 7.0
+texture_margin_right = 7.0
+texture_margin_bottom = 7.0
 expand_margin_left = 24.0
 expand_margin_top = 24.0
 expand_margin_right = 24.0
@@ -34,9 +39,11 @@ expand_margin_bottom = 24.0
 
 [sub_resource type="LabelSettings" id="LabelSettings_ab6sv"]
 font_size = 32
+font_color = Color(0, 0, 0, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_d0eu6"]
 font_size = 24
+font_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ufg0w"]
 content_margin_top = 10.0
@@ -45,21 +52,35 @@ content_margin_top = 10.0
 
 [sub_resource type="LabelSettings" id="LabelSettings_2d6lb"]
 font_size = 24
+font_color = Color(0, 0, 0, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_fiqec"]
 font_size = 24
+font_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mlw3h"]
 content_margin_top = 10.0
 
+[sub_resource type="LabelSettings" id="LabelSettings_v67cv"]
+font = ExtResource("4_ue80m")
+font_size = 24
+font_color = Color(0, 0, 0, 1)
+
 [sub_resource type="LabelSettings" id="LabelSettings_h437d"]
 font_size = 24
+font_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d0eu6"]
 content_margin_top = 10.0
 
+[sub_resource type="LabelSettings" id="LabelSettings_tyl1h"]
+font = ExtResource("4_ue80m")
+font_size = 24
+font_color = Color(0, 0, 0, 1)
+
 [sub_resource type="LabelSettings" id="LabelSettings_2tlyv"]
 font_size = 24
+font_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4hy44"]
 
@@ -78,7 +99,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_0cmel")
+script = ExtResource("1_x07qx")
 
 [node name="Fondo" type="TextureRect" parent="." unique_id=1858245955]
 visible = false
@@ -86,16 +107,17 @@ layout_mode = 0
 offset_left = -1.0
 offset_right = 1919.0
 offset_bottom = 1080.0
-texture = ExtResource("2_0yuyc")
+texture = ExtResource("2_lk6i2")
 
-[node name="FondoGrass" type="TextureRect" parent="." unique_id=1150124685]
+[node name="FondoSettings" type="TextureRect" parent="." unique_id=1150124685]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("10_jd0j2")
+texture = ExtResource("3_mbu1c")
 expand_mode = 1
 stretch_mode = 1
 
@@ -121,7 +143,7 @@ anchor_right = 1.0
 offset_top = 90.0
 offset_bottom = 193.0
 grow_horizontal = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 theme_override_font_sizes/font_size = 64
 text = "Ajustes"
 label_settings = SubResource("LabelSettings_ufg0w")
@@ -133,7 +155,7 @@ offset_left = 520.0
 offset_top = 306.0
 offset_right = 1163.0
 offset_bottom = 764.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_fiqec")
+theme_override_styles/panel = SubResource("StyleBoxTexture_xgu7g")
 
 [node name="MarginContainer" type="MarginContainer" parent="ContenedorAjustes" unique_id=1850264432]
 layout_mode = 2
@@ -150,7 +172,7 @@ layout_mode = 2
 
 [node name="LabelVolumen" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1155503064]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Volumen"
 label_settings = SubResource("LabelSettings_ab6sv")
 
@@ -160,7 +182,7 @@ layout_mode = 2
 [node name="VolumenGeneral" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral" unique_id=563870786]
 custom_minimum_size = Vector2(380, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Volumen General"
 label_settings = SubResource("LabelSettings_d0eu6")
 
@@ -172,11 +194,11 @@ theme_override_styles/slider = SubResource("StyleBoxFlat_ufg0w")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_0cmel")
 max_value = 1.0
 step = 0.01
-script = ExtResource("3_mlw3h")
+script = ExtResource("6_61c83")
 
 [node name="GeneralPorcentaje" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral" unique_id=1911053455]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "0.0%"
 label_settings = SubResource("LabelSettings_2d6lb")
 
@@ -186,7 +208,7 @@ layout_mode = 2
 [node name="VolumenMusica" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica" unique_id=69846211]
 custom_minimum_size = Vector2(380, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Música"
 label_settings = SubResource("LabelSettings_fiqec")
 
@@ -198,13 +220,14 @@ size_flags_vertical = 4
 theme_override_styles/slider = SubResource("StyleBoxFlat_mlw3h")
 max_value = 1.0
 step = 0.01
-script = ExtResource("4_d0eu6")
+script = ExtResource("7_s7ypx")
 
 [node name="MusicaPorcentaje" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica" unique_id=1172305253]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 theme_override_font_sizes/font_size = 24
 text = "0.0%"
+label_settings = SubResource("LabelSettings_v67cv")
 
 [node name="FilaSonidos" type="HBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=210397890]
 layout_mode = 2
@@ -212,7 +235,7 @@ layout_mode = 2
 [node name="VolumenSFX" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaSonidos" unique_id=1874117417]
 custom_minimum_size = Vector2(380, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Efectos de Sonido"
 label_settings = SubResource("LabelSettings_h437d")
 
@@ -223,20 +246,21 @@ size_flags_vertical = 4
 theme_override_styles/slider = SubResource("StyleBoxFlat_d0eu6")
 max_value = 1.0
 step = 0.01
-script = ExtResource("6_24fwj")
+script = ExtResource("8_12rm1")
 
 [node name="SFXPorcentaje" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaSonidos" unique_id=906203165]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 theme_override_font_sizes/font_size = 24
 text = "0.0%"
+label_settings = SubResource("LabelSettings_tyl1h")
 
 [node name="HSeparator" type="HSeparator" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1666049487]
 layout_mode = 2
 
 [node name="LabelPantalla" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1204585911]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Pantalla"
 label_settings = SubResource("LabelSettings_ab6sv")
 
@@ -246,14 +270,14 @@ layout_mode = 2
 [node name="LabelResolucion" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaResolucion" unique_id=718793004]
 custom_minimum_size = Vector2(385, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Resolución"
 label_settings = SubResource("LabelSettings_2tlyv")
 
 [node name="SelectorResolucion" type="OptionButton" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaResolucion" unique_id=1248684103]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 item_count = 2
 popup/item_0/text = "1920x1280"
 popup/item_0/id = 0
@@ -266,7 +290,7 @@ layout_mode = 2
 [node name="LabelPantallaFull" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaPantallaFull" unique_id=460974311]
 custom_minimum_size = Vector2(385, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Pantalla Completa"
 label_settings = SubResource("LabelSettings_2tlyv")
 
@@ -284,14 +308,14 @@ layout_mode = 2
 
 [node name="LabelKeys" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1722945978]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Asiganción de Teclas"
 label_settings = SubResource("LabelSettings_ab6sv")
 
 [node name="LabelConflicto" type="Label" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=264056322]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 
 [node name="KeybindsContainer" type="VBoxContainer" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=696450389]
 unique_name_in_owner = true
@@ -299,7 +323,7 @@ layout_mode = 2
 
 [node name="Restablecer" type="Button" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1350861950]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_582fb")
+theme_override_fonts/font = ExtResource("4_ue80m")
 text = "Restablecer valores por defecto"
 
 [node name="Volver" type="Button" parent="." unique_id=1246819110]
@@ -310,24 +334,26 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -204.0
-offset_top = -280.0
-offset_right = 204.0
-offset_bottom = -140.0
+offset_left = -105.0
+offset_top = -180.0
+offset_right = 105.0
+offset_bottom = -109.0
 grow_horizontal = 2
 grow_vertical = 0
+theme_override_colors/font_focus_color = Color(1, 0.9490196, 0, 1)
+theme_override_colors/font_hover_color = Color(1, 0.9490196, 0, 1)
 theme_override_constants/outline_size = 10
-theme_override_fonts/font = ExtResource("3_582fb")
-theme_override_font_sizes/font_size = 60
+theme_override_fonts/font = ExtResource("4_ue80m")
+theme_override_font_sizes/font_size = 70
 theme_override_styles/normal = SubResource("StyleBoxEmpty_4hy44")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_2tlyv")
 theme_override_styles/hover = SubResource("StyleBoxFlat_2d6lb")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_mkkkp")
 text = "Volver"
 flat = true
-script = ExtResource("6_u3hjb")
-sonido_hover = ExtResource("7_mkkkp")
-sonido_click = ExtResource("8_24fwj")
+script = ExtResource("9_l02py")
+sonido_hover = ExtResource("10_e53ql")
+sonido_click = ExtResource("11_a847r")
 
 [connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaVolumenGeneral/SliderVolumenGeneral" method="_on_value_changed"]
 [connection signal="value_changed" from="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" to="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones/FilaMusica/SliderMusica" method="_on_value_changed"]

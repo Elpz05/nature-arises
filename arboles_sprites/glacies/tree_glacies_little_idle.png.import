@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwnr1andym0pq"
-path="res://.godot/imported/logo_test_128x128.png-e9b52d3ed98eea4c4319221e48e62493.ctex"
+uid="uid://b1hn1p4tc15vu"
+path="res://.godot/imported/tree_glacies_little_idle.png-ccc192942b25c174b6230f9dd59a3f0b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://logo_test_128x128.png"
-dest_files=["res://.godot/imported/logo_test_128x128.png-e9b52d3ed98eea4c4319221e48e62493.ctex"]
+source_file="res://arboles_sprites/glacies/tree_glacies_little_idle.png"
+dest_files=["res://.godot/imported/tree_glacies_little_idle.png-ccc192942b25c174b6230f9dd59a3f0b.ctex"]
 
 [params]
 

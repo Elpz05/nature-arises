@@ -45,4 +45,4 @@ func _on_seleccionar_pressed() -> void:
 	slot_seleccionado = null
 
 func _on_volver_pressed() -> void:
-	get_tree().change_scene_to_file("res://escenas/menu.tscn")
+	get_tree().change_scene_to_file("res://escenas_menu/menu.tscn")

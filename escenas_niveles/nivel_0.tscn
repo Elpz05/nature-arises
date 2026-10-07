@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://bwifygw7em4t3"]
+
+[ext_resource type="Script" uid="uid://bs1awv3po1kbe" path="res://scripts/nivel/nivel.gd" id="1_ggjr8"]
+[ext_resource type="Texture2D" uid="uid://1eeywjuhrj0o" path="res://tiles.png" id="2_ofi78"]
+[ext_resource type="Texture2D" uid="uid://b2h7efnabng63" path="res://path.png" id="3_ofi78"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ggjr8"]
+texture = ExtResource("2_ofi78")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_3ahnv"]
+tile_size = Vector2i(64, 64)
+sources/5 = SubResource("TileSetAtlasSource_ggjr8")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6qfd4"]
+texture = ExtResource("3_ofi78")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_ofi78"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_6qfd4")
+
+[sub_resource type="Curve2D" id="Curve2D_56kgh"]
+
+[node name="Nivel0" type="Node2D" unique_id=701081404]
+script = ExtResource("1_ggjr8")
+
+[node name="Suelo" type="TileMapLayer" parent="." unique_id=1719594258]
+texture_filter = 1
+tile_set = SubResource("TileSet_3ahnv")
+
+[node name="Camino" type="TileMapLayer" parent="." unique_id=1268522513]
+tile_set = SubResource("TileSet_ofi78")
+
+[node name="RutaEspiritu" type="Path2D" parent="." unique_id=183939674]
+curve = SubResource("Curve2D_56kgh")
+
+[node name="PathFollow2D" type="PathFollow2D" parent="RutaEspiritu" unique_id=2086243355]
+
+[node name="Espiritu (Ejemplo)" type="Node" parent="RutaEspiritu/PathFollow2D" unique_id=144884291]
+
+[node name="ArbolMeta" type="Node2D" parent="." unique_id=1088226090]
+
+[node name="Arboles" type="Node2D" parent="." unique_id=304020591]
