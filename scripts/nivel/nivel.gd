@@ -2,16 +2,23 @@ extends Node2D
 
 @export var arbol_escena: PackedScene
 @export var espiritu_escena: PackedScene
+@export var arbol_madre_escena: PackedScene
+
+var arbol_meta
 
 @onready var suelo: TileMapLayer = $Suelo
 @onready var camino: TileMapLayer = $Camino
 @onready var ruta: Path2D = $RutaEspiritu
 @onready var arboles: Node2D = $Arboles
 
+@onready var label_vida: Label = $Interfaz/LabelVida
+@onready var label_derrota: Label = $Interfaz/LabelDerrota
+
 var celdas_ocupadas := {}
 
 const ANCHO := 30
 const ALTO := 17
+const CELDA_ARBOL_MADRE := Vector2i(25, 14)
 
 const RUTA := [
 	Vector2i(0, 3),
@@ -27,7 +34,7 @@ const RUTA := [
 	Vector2i(25, 13),   # aquí va el árbol meta
 ]
 
-const SOURCE_PASTO := 5     # los IDs que imprime tu _ready()
+const SOURCE_PASTO := 1     # los IDs que imprime tu _ready()
 const SOURCE_CAMINO := 0    # pon aquí el ID real del camino
 
 func _ready():
@@ -35,6 +42,7 @@ func _ready():
 	_generar_camino()
 	_generar_curva()
 	_crear_espiritu()
+	_crear_arbol_madre()
 	
 	for i in suelo.tile_set.get_source_count():
 		print("Source ID existente: ", suelo.tile_set.get_source_id(i))
@@ -48,7 +56,7 @@ func _generar_tablero():
 			var coords_atlas := Vector2i(0, 0)
 			if (x + y) % 2 == 1:
 				coords_atlas = Vector2i(1, 0)
-			suelo.set_cell(celda, 5, coords_atlas)   # cambia el 0 si tu source tiene otro ID
+			suelo.set_cell(celda, 1, coords_atlas)   # cambia el 0 si tu source tiene otro ID
 
 func _generar_camino():
 	for i in range(RUTA.size() - 1):
@@ -94,6 +102,7 @@ func _crear_espiritu(tamano := "pequeno", progreso := 0.0):
 
 func _on_espiritu_llego(dano: int):
 	print("¡Un espíritu llegó al árbol meta! Daño: ", dano)
+	arbol_meta.recibir_dano(dano)
 
 func _unhandled_input(event):
 	if event is InputEventMouseButton and event.pressed \
@@ -115,3 +124,20 @@ func _intentar_plantar(celda: Vector2i):
 	arboles.add_child(arbol)
 	celdas_ocupadas[celda] = true
 	print("Árbol plantado en ", celda)
+
+func _crear_arbol_madre():
+	arbol_meta = arbol_madre_escena.instantiate()
+	arbol_meta.position = suelo.map_to_local(CELDA_ARBOL_MADRE)
+	add_child(arbol_meta)
+	celdas_ocupadas[CELDA_ARBOL_MADRE] = true
+	arbol_meta.vida_cambiada.connect(_on_vida_arbol_cambiada)
+	arbol_meta.murio.connect(_perder_nivel)
+	_on_vida_arbol_cambiada(arbol_meta.vida, arbol_meta.vida_maxima)
+	print("Arbol madre en: ", arbol_meta.position, " visible: ", arbol_meta.visible)
+
+func _on_vida_arbol_cambiada(actual: int, maxima: int):
+	label_vida.text = "Árbol madre: %d / %d" % [actual, maxima]
+
+func _perder_nivel():
+	label_derrota.show()
+	get_tree().paused = true

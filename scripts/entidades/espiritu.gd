@@ -5,7 +5,7 @@ signal invocar_copia(tamano: String, progreso: float)
 
 const TAMANO_CELDA := 64
 const VELOCIDAD_CASILLAS := 0.4            # casillas por segundo
-const DANO_CONTACTO := 50
+const DANO_CONTACTO := 2
 const PROBABILIDAD_INVOCAR := 0.3          # 30%
 
 const VIDA := {"pequeno": 200, "mediano": 500, "grande": 1000}

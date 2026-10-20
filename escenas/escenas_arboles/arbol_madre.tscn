@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cw30n5qcn1ba6"]
+
+[ext_resource type="Script" uid="uid://bn5r1rdeimk54" path="res://scripts/entidades/arbol_madre.gd" id="1_p3m80"]
+[ext_resource type="Texture2D" uid="uid://b00rj2kitmhgc" path="res://icon.svg" id="2_12fde"]
+
+[node name="ArbolMadre" type="Node2D" unique_id=1100795989]
+script = ExtResource("1_p3m80")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1201438503]
+modulate = Color(0.81607634, 0.9921875, 0.032943726, 1)
+scale = Vector2(0.615, 0.64)
+texture = ExtResource("2_12fde")
