@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://1eeywjuhrj0o" path="res://tiles.png" id="2_hlm2r"]
 [ext_resource type="PackedScene" uid="uid://c27e4q5612yee" path="res://escenas/escenas_espiritu/espiritu_prueba.tscn" id="2_vqj75"]
 [ext_resource type="Texture2D" uid="uid://b2h7efnabng63" path="res://path.png" id="3_vqj75"]
-[ext_resource type="PackedScene" uid="uid://6l2g6rvhgb5g" path="res://escenas/escenas_arboles/arbol_base.tscn" id="4_86ku8"]
+[ext_resource type="PackedScene" uid="uid://b5h57urphn8pc" path="res://escenas/escenas_hud/hud.tscn" id="4_86ku8"]
 [ext_resource type="PackedScene" uid="uid://cw30n5qcn1ba6" path="res://escenas/escenas_arboles/arbol_madre.tscn" id="4_vqj75"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hlm2r"]
@@ -30,9 +30,10 @@ sources/0 = SubResource("TileSetAtlasSource_6qfd4")
 
 [node name="Nivel0" type="Node2D" unique_id=701081404]
 script = ExtResource("1_ejscs")
-arbol_escena = ExtResource("4_86ku8")
 espiritu_escena = ExtResource("2_vqj75")
 arbol_madre_escena = ExtResource("4_vqj75")
+semillas_escenas = Array[PackedScene]([null, null, null, null, null, null, null])
+hud_escena = ExtResource("4_86ku8")
 
 [node name="Suelo" type="TileMapLayer" parent="." unique_id=1719594258]
 texture_filter = 1
@@ -45,13 +46,3 @@ tile_set = SubResource("TileSet_ofi78")
 curve = SubResource("Curve2D_56kgh")
 
 [node name="Arboles" type="Node2D" parent="." unique_id=976145673]
-
-[node name="Interfaz" type="CanvasLayer" parent="." unique_id=571158596]
-
-[node name="LabelVida" type="Label" parent="Interfaz" unique_id=61545799]
-offset_right = 40.0
-offset_bottom = 23.0
-
-[node name="LabelDerrota" type="Label" parent="Interfaz" unique_id=1024052879]
-offset_right = 40.0
-offset_bottom = 23.0

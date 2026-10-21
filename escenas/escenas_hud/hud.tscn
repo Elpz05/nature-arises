@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://b5h57urphn8pc"]
+
+[ext_resource type="Script" uid="uid://dux44ws0xmbme" path="res://scripts/HUD/hud.gd" id="1_1kbos"]
+
+[node name="HUD" type="CanvasLayer" unique_id=1832469491]
+script = ExtResource("1_1kbos")
+
+[node name="Barra" type="PanelContainer" parent="." unique_id=1056705167]
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+
+[node name="Margen" type="MarginContainer" parent="Barra" unique_id=21738782]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Fila" type="HBoxContainer" parent="Barra/Margen" unique_id=82852815]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Semillas" type="HBoxContainer" parent="Barra/Margen/Fila" unique_id=1122830101]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VSeparator" type="VSeparator" parent="Barra/Margen/Fila" unique_id=1629167320]
+layout_mode = 2
+
+[node name="Ataques" type="HBoxContainer" parent="Barra/Margen/Fila" unique_id=921251129]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Espaciador" type="Control" parent="Barra/Margen/Fila" unique_id=960833781]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Info" type="VBoxContainer" parent="Barra/Margen/Fila" unique_id=2010627313]
+layout_mode = 2
+
+[node name="LabelGotas" type="Label" parent="Barra/Margen/Fila/Info" unique_id=2028477403]
+layout_mode = 2
+
+[node name="LabelRonda" type="Label" parent="Barra/Margen/Fila/Info" unique_id=1977207242]
+layout_mode = 2
+
+[node name="LabelVida" type="Label" parent="Barra/Margen/Fila/Info" unique_id=1981097648]
+layout_mode = 2
