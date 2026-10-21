@@ -2,8 +2,10 @@ extends Node2D
 
 @export var espiritu_escena: PackedScene
 @export var arbol_madre_escena: PackedScene
-@export var semillas_escenas: Array[PackedScene]
 @export var hud_escena: PackedScene
+@export var semillas_escenas: Array[PackedScene]
+@export var pausa_escena: PackedScene
+@export var numero_nivel := 0          # 0 en nivel_0, 1 en el siguiente, etc.
 
 @onready var suelo: TileMapLayer = $Suelo
 @onready var camino: TileMapLayer = $Camino
@@ -11,17 +13,24 @@ extends Node2D
 @onready var arboles: Node2D = $Arboles
 #@onready var label_derrota: Label = $Interfaz/LabelDerrota
 
-var hud
-
 const ANCHO := 30
 const ALTO := 17
 const TAM_CELDA := 64
 const CELDA_ARBOL_MADRE := Vector2i(25, 14)
 
 const TOTAL_RONDAS := 5
-const DURACION_NIVEL := 240.0            # 4 min x 5 niveles = 20 min
-const ESPIRITUS_POR_RONDA := [4, 6, 8, 10, 12]
-const INTERVALO_GOTAS := 2.0             # 0.5 gotas por segundo
+const TAMANOS := ["pequeno", "mediano", "grande"]
+const NOMBRES_TAMANO := ["pequeño", "mediano", "grande"]
+const RONDAS := [
+	{"pequeno": 4},                       # ronda 1
+	{"pequeno": 4, "mediano": 2},         # ronda 2
+	{"pequeno": 3, "mediano": 4},         # ronda 3
+	{"mediano": 5, "grande": 3},          # ronda 4
+	{"grande": 5},                        # ronda 5
+]
+const INTERVALO_SPAWN := 3.0        # segundos entre bestias de una ronda
+const GOTAS_INICIALES := 3
+const INTERVALO_GOTAS := 4.0        # 1 gota cada 4 s
 const RECARGA_ATAQUE := 3.0
 
 const RUTA := [
@@ -30,18 +39,23 @@ const RUTA := [
 	Vector2i(20, 3), Vector2i(25, 3), Vector2i(25, 13),
 ]
 
+var hud
 var source_pasto: int
 var source_camino: int
 var celdas_ocupadas := {}
 var arbol_meta
 
-var gotas := 5
+var gotas := GOTAS_INICIALES
 var _acum_gotas := 0.0
-var tiempo := 0.0
-var ronda := 0
-var horario: Array[float] = []
-var indice_horario := 0
 var terminado := false
+
+var ronda := 1
+var ronda_activa := false
+var cola_bestias: Array = []
+var tipos_plantados := {}        # celda -> índice de semilla
+var tamanos_plantados := {}      # celda -> 0 pequeño, 1 mediano, 2 grande
+var tooltip: Label
+var _acum_spawn := 0.0
 
 var seleccion_tipo := ""          # "", "semilla" o "ataque"
 var seleccion_indice := -1
@@ -50,6 +64,11 @@ var arrastrando := false
 var cargas: Array[int] = []
 var recarga: Array[float] = []
 var vista: Node2D
+
+var arboles_plantados := {}
+var costos_plantados := {} 
+
+var pausa
 
 func _ready():
 	source_pasto = suelo.tile_set.get_source_id(0)
@@ -61,15 +80,25 @@ func _ready():
 	_generar_curva()
 	_crear_arbol_madre()
 	_crear_vista()
+	_crear_tooltip()
 	#label_derrota.hide()
 
 	for i in hud.ATAQUES.size():
 		cargas.append(hud.ATAQUES[i].capacidad)
 		recarga.append(0.0)
 
-	_generar_horario()
 	hud.actualizar_gotas(gotas)
-	hud.actualizar_ronda(1, TOTAL_RONDAS)
+	hud.actualizar_ronda(ronda, TOTAL_RONDAS)
+	hud.mostrar_boton_ronda("Iniciar ronda %d" % ronda, true)
+
+# ---------------- HUD ----------------
+func _crear_hud():
+	hud = hud_escena.instantiate()
+	add_child(hud)
+	hud.semilla_pulsada.connect(_on_semilla_pulsada)
+	hud.ataque_pulsado.connect(_on_ataque_pulsado)
+	hud.ronda_solicitada.connect(_iniciar_ronda)
+	hud.pala_pulsada.connect(_on_pala_pulsada)
 
 # ---------------- Tablero y camino ----------------
 func _generar_tablero():
@@ -132,28 +161,34 @@ func _on_espiritu_llego(dano: int):
 func _on_vida_arbol_cambiada(actual: int, maxima: int):
 	hud.actualizar_vida(actual, maxima)
 
-# ---------------- Tiempo, rondas, gotas ----------------
+# ---------------- Rondas ----------------
+func _iniciar_ronda():
+	if ronda_activa or terminado:
+		return
+	ronda_activa = true
+	cola_bestias.clear()
+	var receta: Dictionary = RONDAS[ronda - 1]
+	for tam in receta:
+		for k in receta[tam]:
+			cola_bestias.append(tam)
+	cola_bestias.shuffle()
+	_acum_spawn = INTERVALO_SPAWN       # la primera sale de inmediato
+	hud.mostrar_boton_ronda("Ronda %d en curso" % ronda, false)
+
+func _terminar_ronda():
+	ronda_activa = false
+	if ronda >= TOTAL_RONDAS:
+		#_ganar_nivel()
+		return
+	ronda += 1
+	hud.actualizar_ronda(ronda, TOTAL_RONDAS)
+	hud.mostrar_boton_ronda("Iniciar ronda %d" % ronda, true)
+
 func _process(delta):
 	if terminado:
 		return
-	tiempo += delta
 
-	var dur_ronda := DURACION_NIVEL / TOTAL_RONDAS
-	var nueva := mini(int(tiempo / dur_ronda) + 1, TOTAL_RONDAS)
-	if nueva != ronda:
-		ronda = nueva
-		hud.actualizar_ronda(ronda, TOTAL_RONDAS)
-
-	while indice_horario < horario.size() and tiempo >= horario[indice_horario]:
-		_crear_espiritu()
-		indice_horario += 1
-
-	_acum_gotas += delta
-	if _acum_gotas >= INTERVALO_GOTAS:
-		_acum_gotas -= INTERVALO_GOTAS
-		gotas += 1
-		hud.actualizar_gotas(gotas)
-
+	# Recarga de ataques elementales
 	for i in cargas.size():
 		if recarga[i] > 0.0:
 			recarga[i] -= delta
@@ -162,19 +197,26 @@ func _process(delta):
 				cargas[i] = hud.ATAQUES[i].capacidad
 				hud.actualizar_ataque(i, cargas[i], cargas[i])
 
+	if ronda_activa:
+		# Gotas: solo mientras hay ronda en curso
+		_acum_gotas += delta
+		if _acum_gotas >= INTERVALO_GOTAS:
+			_acum_gotas -= INTERVALO_GOTAS
+			gotas += 1
+			hud.actualizar_gotas(gotas)
+
+		# Salida de bestias
+		if cola_bestias.size() > 0:
+			_acum_spawn += delta
+			if _acum_spawn >= INTERVALO_SPAWN:
+				_acum_spawn = 0.0
+				_crear_espiritu(cola_bestias.pop_front())
+		elif ruta.get_child_count() == 0:
+			_terminar_ronda()
+
+	_actualizar_tooltip()
 	if seleccion_tipo != "":
 		vista.queue_redraw()
-
-	if tiempo >= DURACION_NIVEL and indice_horario >= horario.size() \
-			and ruta.get_child_count() == 0:
-		_ganar_nivel()
-
-func _generar_horario():
-	var dur_ronda := DURACION_NIVEL / TOTAL_RONDAS
-	for r in TOTAL_RONDAS:
-		var n: int = ESPIRITUS_POR_RONDA[r]
-		for k in n:
-			horario.append(r * dur_ronda + dur_ronda * k / n)
 
 func _perder_nivel():
 	terminado = true
@@ -182,21 +224,23 @@ func _perder_nivel():
 	#label_derrota.show()
 	get_tree().paused = true
 
-func _ganar_nivel():
-	terminado = true
+#func _ganar_nivel():
+	#terminado = true
 	#label_derrota.text = "¡Nivel superado!"
 	#label_derrota.show()
-	get_tree().paused = true
+	#get_tree().paused = true
 
 # ---------------- Selección (arrastrar o clic + clic) ----------------
 func _on_semilla_pulsada(i: int, arrastre: bool):
+	if not hud.SEMILLAS_ACTIVAS.has(i):
+		return
 	seleccion_tipo = "semilla"
 	seleccion_indice = i
 	arrastrando = arrastre
 	hud.resaltar("semilla", i)
 
 func _on_ataque_pulsado(i: int, arrastre: bool):
-	if cargas[i] <= 0:
+	if not hud.ATAQUES_ACTIVOS.has(i) or cargas[i] <= 0:
 		return
 	seleccion_tipo = "ataque"
 	seleccion_indice = i
@@ -211,28 +255,36 @@ func _deseleccionar():
 	vista.queue_redraw()
 
 func _input(event):
+	if event.is_action_pressed("ui_cancel"):
+		if seleccion_tipo != "":
+			_deseleccionar()
+		else:
+			_abrir_pausa()
+		get_viewport().set_input_as_handled()   # evita que la pausa se cierre con el mismo Esc
+		return
+
 	if seleccion_tipo == "":
 		return
-	# Soltar después de arrastrar
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT \
 			and not event.pressed and arrastrando:
 		if not hud.punto_sobre_hud(get_viewport().get_mouse_position()):
 			_confirmar(vista.get_local_mouse_position())
 			_deseleccionar()
 		else:
-			arrastrando = false   # fue un clic en el botón: queda seleccionado
-	# Cancelar
-	elif event.is_action_pressed("ui_cancel") or (event is InputEventMouseButton \
-			and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT):
+			arrastrando = false
+	elif event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_RIGHT:
 		_deseleccionar()
 
 func _unhandled_input(event):
-	# Modo clic: ya hay algo seleccionado y haces clic en el tablero
-	if seleccion_tipo == "" or arrastrando:
+	if not (event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_LEFT):
 		return
-	if event is InputEventMouseButton and event.pressed \
-			and event.button_index == MOUSE_BUTTON_LEFT:
-		_confirmar(vista.get_local_mouse_position())
+	var pos := vista.get_local_mouse_position()
+	if seleccion_tipo == "":
+		_mejorar_arbol(suelo.local_to_map(pos))
+	elif not arrastrando:
+		_confirmar(pos)
 
 func _confirmar(pos: Vector2):
 	if seleccion_tipo == "semilla":
@@ -244,6 +296,9 @@ func _confirmar(pos: Vector2):
 			_deseleccionar()
 	elif seleccion_tipo == "ataque":
 		_lanzar_ataque(pos, seleccion_indice)
+		_deseleccionar()
+	elif seleccion_tipo == "pala":
+		_quitar_arbol(suelo.local_to_map(pos))
 		_deseleccionar()
 
 func _se_puede_plantar(celda: Vector2i) -> bool:
@@ -259,6 +314,11 @@ func _plantar(celda: Vector2i, tipo: int) -> bool:
 	arbol.position = suelo.map_to_local(celda)
 	arboles.add_child(arbol)
 	celdas_ocupadas[celda] = true
+	arboles_plantados[celda] = arbol
+	tipos_plantados[celda] = tipo
+	tamanos_plantados[celda] = 0
+	costos_plantados[celda] = hud.SEMILLAS[tipo].costos[0]
+	arbol.murio.connect(liberar_celda.bind(celda))
 	return true
 
 func _lanzar_ataque(pos: Vector2, i: int):
@@ -270,13 +330,18 @@ func _lanzar_ataque(pos: Vector2, i: int):
 
 	var centro := to_global(pos)
 	var radio: float = datos.radio * TAM_CELDA
+	var golpeadas := 0
 	for bestia in get_tree().get_nodes_in_group("bestias"):
 		if bestia.global_position.distance_to(centro) > radio:
 			continue
+		golpeadas += 1
 		if bestia.has_method("aplicar_ataque_elemental"):
 			bestia.aplicar_ataque_elemental(datos.nombre, datos.dano)
 		elif bestia.has_method("recibir_dano"):
 			bestia.recibir_dano(datos.dano)
+		else:
+			push_warning("La bestia no tiene recibir_dano() ni aplicar_ataque_elemental()")
+	print("Ataque %s: %d bestias golpeadas" % [datos.nombre, golpeadas])
 
 # ---------------- Vista previa ----------------
 func _crear_vista():
@@ -296,12 +361,103 @@ func _dibujar_vista():
 		var color := Color(0, 1, 0, 0.4) if ok else Color(1, 0, 0, 0.4)
 		var origen := suelo.map_to_local(celda) - Vector2(TAM_CELDA, TAM_CELDA) / 2.0
 		vista.draw_rect(Rect2(origen, Vector2(TAM_CELDA, TAM_CELDA)), color)
-	else:
+	elif seleccion_tipo == "pala":
+		var celda := suelo.local_to_map(pos)
+		var color := Color(1, 0.6, 0, 0.5) if arboles_plantados.has(celda) else Color(1, 0, 0, 0.25)
+		var origen := suelo.map_to_local(celda) - Vector2(TAM_CELDA, TAM_CELDA) / 2.0
+		vista.draw_rect(Rect2(origen, Vector2(TAM_CELDA, TAM_CELDA)), color)
+	elif seleccion_tipo == "ataque":
 		var radio: float = hud.ATAQUES[seleccion_indice].radio * TAM_CELDA
 		vista.draw_circle(pos, radio, Color(1, 1, 1, 0.25))
 
-func _crear_hud():
-	hud = hud_escena.instantiate()
-	add_child(hud)
-	hud.semilla_pulsada.connect(_on_semilla_pulsada)
-	hud.ataque_pulsado.connect(_on_ataque_pulsado)
+func _on_pala_pulsada(arrastre: bool):
+	seleccion_tipo = "pala"
+	seleccion_indice = 0
+	arrastrando = arrastre
+	hud.resaltar("pala", 0)
+
+func _quitar_arbol(celda: Vector2i):
+	if not arboles_plantados.has(celda):
+		return
+	var arbol = arboles_plantados[celda]
+	if is_instance_valid(arbol):
+		arbol.queue_free()
+
+	gotas += costos_plantados.get(celda, 0)
+	hud.actualizar_gotas(gotas)
+
+	liberar_celda(celda)
+
+func liberar_celda(celda: Vector2i):
+	arboles_plantados.erase(celda)
+	costos_plantados.erase(celda)
+	tipos_plantados.erase(celda)
+	tamanos_plantados.erase(celda)
+	celdas_ocupadas.erase(celda)
+
+func _costo_mejora(celda: Vector2i) -> int:
+	var tipo: int = tipos_plantados[celda]
+	var t: int = tamanos_plantados[celda]
+	return hud.SEMILLAS[tipo].costos[t + 1]
+
+func _mejorar_arbol(celda: Vector2i):
+	if not arboles_plantados.has(celda):
+		return
+	var t: int = tamanos_plantados[celda]
+	if t >= TAMANOS.size() - 1:
+		return
+	var costo := _costo_mejora(celda)
+	if gotas < costo:
+		print("No te alcanzan las gotas para mejorar (%d)" % costo)
+		return
+
+	var arbol = arboles_plantados[celda]
+	if not arbol.mejorar():       # solo cobra si el árbol sí subió de tamaño
+		return
+
+	gotas -= costo
+	costos_plantados[celda] += costo        # la pala devuelve todo lo invertido
+	tamanos_plantados[celda] = t + 1
+	hud.actualizar_gotas(gotas)
+
+func _crear_tooltip():
+	var capa := CanvasLayer.new()
+	capa.layer = 5
+	add_child(capa)
+	tooltip = Label.new()
+	tooltip.add_theme_font_size_override("font_size", 22)
+	tooltip.add_theme_constant_override("outline_size", 8)
+	tooltip.add_theme_color_override("font_outline_color", Color.BLACK)
+	tooltip.hide()
+	capa.add_child(tooltip)
+
+func _actualizar_tooltip():
+	var pos_pantalla := get_viewport().get_mouse_position()
+	var celda := suelo.local_to_map(suelo.get_local_mouse_position())
+	if seleccion_tipo != "" or hud.punto_sobre_hud(pos_pantalla) \
+			or not arboles_plantados.has(celda):
+		tooltip.hide()
+		return
+
+	var tipo: int = tipos_plantados[celda]
+	var t: int = tamanos_plantados[celda]
+	var texto := "%s (%s)" % [hud.SEMILLAS[tipo].nombre, NOMBRES_TAMANO[t]]
+	if t >= TAMANOS.size() - 1:
+		texto += "\nTamaño máximo"
+		tooltip.modulate = Color.WHITE
+	else:
+		var costo := _costo_mejora(celda)
+		texto += "\nMejorar a %s: %d gotas (clic)" % [NOMBRES_TAMANO[t + 1], costo]
+		tooltip.modulate = Color.WHITE if gotas >= costo else Color(1, 0.5, 0.5)
+	tooltip.text = texto
+	tooltip.position = pos_pantalla + Vector2(18, 18)
+	tooltip.show()
+
+func _abrir_pausa():
+	if pausa != null or terminado:
+		return
+	pausa = pausa_escena.instantiate()
+	pausa.numero_nivel = numero_nivel
+	add_child(pausa)
+	pausa.tree_exited.connect(func(): pausa = null)
+	get_tree().paused = true

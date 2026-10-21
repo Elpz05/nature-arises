@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://61hc1k43e0c5"]
+
+[ext_resource type="Script" uid="uid://ueathxfalfip" path="res://scripts/nivel/pausa.gd" id="1_8b2kj"]
+
+[node name="PausaNivel" type="CanvasLayer" unique_id=180869974]
+script = ExtResource("1_8b2kj")
+
+[node name="Fondo" type="ColorRect" parent="." unique_id=1700143933]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Centro" type="CenterContainer" parent="." unique_id=709366476]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelPrincipal" type="PanelContainer" parent="Centro" unique_id=285997085]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Centro/PanelPrincipal" unique_id=776541494]
+layout_mode = 2
+
+[node name="Continuar" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=652412708]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Continuar"
+
+[node name="Sonido" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=1992518810]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Sonido"
+
+[node name="Salir" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=1419013101]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Salir"
+
+[node name="PanelSonido" type="PanelContainer" parent="Centro" unique_id=313959847]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Centro/PanelSonido" unique_id=531053305]
+layout_mode = 2
+
+[node name="CheckMusica" type="CheckBox" parent="Centro/PanelSonido/VBoxContainer" unique_id=1838499862]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Musica"
+
+[node name="CheckEfectos" type="CheckBox" parent="Centro/PanelSonido/VBoxContainer" unique_id=1486034827]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Efectos"
+
+[node name="Atras" type="Button" parent="Centro/PanelSonido/VBoxContainer" unique_id=791035342]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Atras"

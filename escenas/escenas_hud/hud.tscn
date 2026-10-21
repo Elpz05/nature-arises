@@ -2,6 +2,9 @@
 
 [ext_resource type="Script" uid="uid://dux44ws0xmbme" path="res://scripts/HUD/hud.gd" id="1_1kbos"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_86ku8"]
+bg_color = Color(0.11253835, 0.39453125, 0.03236389, 1)
+
 [node name="HUD" type="CanvasLayer" unique_id=1832469491]
 script = ExtResource("1_1kbos")
 
@@ -9,6 +12,7 @@ script = ExtResource("1_1kbos")
 anchors_preset = 10
 anchor_right = 1.0
 grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_86ku8")
 
 [node name="Margen" type="MarginContainer" parent="Barra" unique_id=21738782]
 layout_mode = 2
@@ -46,4 +50,5 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="LabelVida" type="Label" parent="Barra/Margen/Fila/Info" unique_id=1981097648]
+texture_filter = 1
 layout_mode = 2

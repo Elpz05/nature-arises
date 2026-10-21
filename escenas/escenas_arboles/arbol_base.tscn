@@ -326,6 +326,16 @@ region = Rect2(5056, 0, 64, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_10q3f"]
 animations = [{
+"frames": [],
+"loop": 1,
+"name": &"idle_grande",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"idle_mediano",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_abvo8")
@@ -568,7 +578,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_d3k1t")
 }],
 "loop": 1,
-"name": &"idle",
+"name": &"idle_pequeno",
 "speed": 4.0
 }]
 
@@ -579,8 +589,7 @@ semilla_escena = ExtResource("2_i4obu")
 [node name="Arbol" type="AnimatedSprite2D" parent="." unique_id=1098753133]
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_10q3f")
-animation = &"idle"
-frame_progress = 0.8790032
+animation = &"idle_pequeno"
 
 [node name="Rango" type="Area2D" parent="Arbol" unique_id=917496329]
 

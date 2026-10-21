@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://1frb8okq8qyn" path="res://backgrounds/ui_wood_1.png" id="5_8srxs"]
 [ext_resource type="Script" uid="uid://dgeo43ywyej3q" path="res://scripts/sonidos/slider_volumen_general.gd" id="6_ndgfr"]
 [ext_resource type="Script" uid="uid://bxbu0e4vu01fk" path="res://scripts/sonidos/slider_musica.gd" id="7_j1g41"]
-[ext_resource type="Script" uid="uid://ddtdo2plyiqyd" path="res://escenas/escenas_menu/slider_sfx.gd" id="8_wtbfw"]
+[ext_resource type="Script" uid="uid://ddtdo2plyiqyd" path="res://scripts/menu/slider_sfx.gd" id="8_wtbfw"]
 [ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://scripts/menu/boton_menu.gd" id="9_7636t"]
 [ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="10_y1e2s"]
 [ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="11_3kqom"]

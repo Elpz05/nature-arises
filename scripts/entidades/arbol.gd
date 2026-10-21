@@ -1,9 +1,12 @@
 class_name Arbol
 extends Node2D
 
+signal murio
+
 const TAMANO_CELDA := 64
 const DANO_BALA := 20
 const BALAS_POR_SEGUNDO_BASE := 2.0
+const ESCALA := {"pequeno": 1.0, "mediano": 1.25, "grande": 1.5}
 
 # Todas las estadísticas en un solo lugar
 const STATS := {
@@ -17,6 +20,7 @@ const STATS := {
 var tamano := "pequeno"
 var vida := 100
 var enemigos_en_rango: Array = []
+var escala_base := Vector2.ONE
 
 @onready var rango: Area2D = $Arbol/Rango
 @onready var forma: CollisionShape2D = $Arbol/Rango/CollisionShape2D
@@ -25,22 +29,20 @@ var enemigos_en_rango: Array = []
 
 
 func _ready():
+	escala_base = sprite.scale
 	rango.body_entered.connect(_on_body_entered)
 	rango.body_exited.connect(_on_body_exited)
 	temporizador.timeout.connect(_disparar)
 	_aplicar_tamano("pequeno")
-	
-	sprite.play("idle") 
-
 
 func _aplicar_tamano(nuevo: String):
 	tamano = nuevo
 	var datos: Dictionary = STATS[tamano]
 	vida = datos["vida"]
+	_actualizar_sprite()
 
-	# Forma nueva para que no se comparta entre árboles
 	var circulo := CircleShape2D.new()
-	circulo.radius = datos["radio"] * TAMANO_CELDA
+	circulo.radius = datos["radio"] * TAMANO_CELDA / sprite.scale.x
 	forma.shape = circulo
 
 	temporizador.wait_time = 1.0 / (BALAS_POR_SEGUNDO_BASE * datos["vel_ataque"])
@@ -65,6 +67,7 @@ func obtener_costo() -> int:
 func recibir_dano(cantidad: int):
 	vida -= cantidad
 	if vida <= 0:
+		murio.emit()
 		queue_free()
 
 
@@ -85,7 +88,7 @@ func _disparar():
 		return
 
 	# El primero que entró suele ser el más adelantado en el camino
-	var objetivo = enemigos_en_rango[0]
+	var objetivo = _mas_adelantada()
 	var semilla = semilla_escena.instantiate()
 	semilla.global_position = global_position
 	semilla.objetivo = objetivo
@@ -97,3 +100,24 @@ func _limpiar_enemigos_muertos():
 	enemigos_en_rango = enemigos_en_rango.filter(
 		func(enemigo): return is_instance_valid(enemigo)
 	)
+
+func _mas_adelantada():
+	var mejor = null
+	var mejor_progreso := -1.0
+	for e in enemigos_en_rango:
+		var progreso: float = (e.get_parent() as PathFollow2D).progress
+		if progreso > mejor_progreso:
+			mejor_progreso = progreso
+			mejor = e
+	return mejor
+
+func _actualizar_sprite():
+	var anim := "idle_" + tamano
+	if sprite.sprite_frames.has_animation(anim):
+		# Dibujo propio para este tamaño: no hace falta escalarlo
+		sprite.scale = escala_base
+		sprite.play(anim)
+	else:
+		# Respaldo: la animación "idle" agrandada
+		sprite.scale = escala_base * ESCALA[tamano]
+		sprite.play("idle")

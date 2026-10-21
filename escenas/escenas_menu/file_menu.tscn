@@ -210,13 +210,13 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_ab6sv")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_d0tnb")
 theme_override_styles/hover = SubResource("StyleBoxTexture_xgu7g")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_xgu7g")
-text = "Ultimo Nivel
-Jugado: Nivel 2"
+text = "Nueva 
+Partida"
 script = ExtResource("6_xnm4b")
 sonido_hover = ExtResource("7_0nv83")
 sonido_click = ExtResource("8_jplno")
 
-[node name="Label" type="Label" parent="ContenedorSlots/Slot1" unique_id=951020849]
+[node name="labelArchivo1" type="Label" parent="ContenedorSlots/Slot1" unique_id=951020849]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -249,7 +249,7 @@ script = ExtResource("6_xnm4b")
 sonido_hover = ExtResource("7_0nv83")
 sonido_click = ExtResource("8_jplno")
 
-[node name="Label" type="Label" parent="ContenedorSlots/Slot2" unique_id=872476370]
+[node name="labelArchivo2" type="Label" parent="ContenedorSlots/Slot2" unique_id=872476370]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -281,7 +281,7 @@ script = ExtResource("6_xnm4b")
 sonido_hover = ExtResource("7_0nv83")
 sonido_click = ExtResource("8_jplno")
 
-[node name="Label" type="Label" parent="ContenedorSlots/Slot3" unique_id=601247477]
+[node name="labelArchivo3" type="Label" parent="ContenedorSlots/Slot3" unique_id=601247477]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
