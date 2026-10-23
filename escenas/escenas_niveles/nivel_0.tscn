@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://bwifygw7em4t3"]
 
 [ext_resource type="Script" uid="uid://bs1awv3po1kbe" path="res://scripts/nivel/nivel.gd" id="1_ejscs"]
-[ext_resource type="Texture2D" uid="uid://1eeywjuhrj0o" path="res://tiles.png" id="2_hlm2r"]
+[ext_resource type="Texture2D" uid="uid://1eeywjuhrj0o" path="res://tiles_niveles/tiles_nivel_1/tiles.png" id="2_hlm2r"]
 [ext_resource type="PackedScene" uid="uid://c27e4q5612yee" path="res://escenas/escenas_espiritu/espiritu_prueba.tscn" id="2_vqj75"]
-[ext_resource type="Texture2D" uid="uid://b2h7efnabng63" path="res://path.png" id="3_vqj75"]
+[ext_resource type="Texture2D" uid="uid://b2h7efnabng63" path="res://tiles_niveles/tiles_nivel_1/path.png" id="3_vqj75"]
 [ext_resource type="PackedScene" uid="uid://b5h57urphn8pc" path="res://escenas/escenas_hud/hud.tscn" id="4_86ku8"]
 [ext_resource type="PackedScene" uid="uid://6l2g6rvhgb5g" path="res://escenas/escenas_arboles/arbol_base.tscn" id="4_da70j"]
 [ext_resource type="PackedScene" uid="uid://cw30n5qcn1ba6" path="res://escenas/escenas_arboles/arbol_madre.tscn" id="4_vqj75"]
