@@ -25,10 +25,6 @@ const ATAQUES := [
 	{"nombre": "Venenum", "dano": 100, "radio": 2.5, "capacidad": 2},
 ]
 
-# Por ahora solo Natura (índice 0). Agrega índices para habilitar más.
-const SEMILLAS_ACTIVAS := [0]
-const ATAQUES_ACTIVOS := [0]
-
 @onready var barra: PanelContainer = $Barra
 @onready var fila_semillas: HBoxContainer = $Barra/Margen/Fila/Semillas
 @onready var fila_ataques: HBoxContainer = $Barra/Margen/Fila/Ataques
@@ -41,10 +37,17 @@ var botones_ataque: Array[Button] = []
 var boton_ronda: Button
 var boton_pala: Button
 
+var SEMILLAS_ACTIVAS := [0]
+var ATAQUES_ACTIVOS := [0]
+
 func _ready():
 	for l in [label_gotas, label_ronda, label_vida]:
 		l.add_theme_font_size_override("font_size", 26)
 
+	if Guardado.slot_actual >= 0:
+		SEMILLAS_ACTIVAS = Guardado.plantas_activas()
+		ATAQUES_ACTIVOS = Guardado.ataques_activos()
+	
 	for i in SEMILLAS.size():
 		var costo: int = SEMILLAS[i].costo
 		var b := _crear_boton("%s\n%d gota%s" % [SEMILLAS[i].nombre, costo, "" if costo == 1 else "s"])

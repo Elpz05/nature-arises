@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-@export_file("escenas/escenas_menu/file_menu.tscn") var escena_salida: String   # menú de slots o menú principal
+@export_file("*.tscn") var escena_salida: String   # menú de slots o menú principal
 var numero_nivel := 0                              # lo asigna el nivel
 
 @onready var panel_principal: Control = %PanelPrincipal
@@ -28,11 +28,30 @@ func _ready() -> void:
 
 	_mostrar_sonido(false)
 	
+	$Fondo.color = Color(0, 0, 0, 0.55)
+
+	# Ventana pequeña y centrada
+	for p in [panel_principal, panel_sonido]:
+		p.custom_minimum_size = Vector2(340, 0)
+		p.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+		var estilo := StyleBoxFlat.new()
+		estilo.bg_color = Color(0.1, 0.25, 0.1, 0.95)
+		estilo.border_color = Color(0.5, 0.8, 0.4)
+		estilo.set_border_width_all(3)
+		estilo.set_corner_radius_all(12)
+		estilo.set_content_margin_all(24)
+		p.add_theme_stylebox_override("panel", estilo)
+
+		p.get_child(0).add_theme_constant_override("separation", 14)
+
 	for b in [boton_continuar, boton_sonido, boton_salir, boton_atras]:
-		b.custom_minimum_size = Vector2(320, 70)
-		b.add_theme_font_size_override("font_size", 32)
-	check_musica.add_theme_font_size_override("font_size", 32)
-	check_efectos.add_theme_font_size_override("font_size", 32)
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(260, 56)
+		b.add_theme_font_size_override("font_size", 24)
+	check_musica.add_theme_font_size_override("font_size", 24)
+	check_efectos.add_theme_font_size_override("font_size", 24)
 
 func _mostrar_sonido(ver: bool) -> void:
 	panel_principal.visible = not ver
@@ -43,7 +62,7 @@ func _mostrar_sonido(ver: bool) -> void:
 		boton_continuar.grab_focus()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("Pausa"):
 		if panel_sonido.visible:
 			_mostrar_sonido(false)
 		else:

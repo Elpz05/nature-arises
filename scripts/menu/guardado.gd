@@ -3,6 +3,12 @@ extends Node
 const NIVEL_0 := "res://escenas/escenas_niveles/nivel_0.tscn"
 const TOTAL_SLOTS := 3
 
+# Rutas de tus niveles, en orden. Agrega los demás conforme los hagas.
+const NIVELES := [
+	"res://escenas/escenas_niveles/nivel_0.tscn",
+]
+const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"   # ajusta a tu ruta real
+
 var slot_actual := -1
 var datos := {}
 
@@ -44,4 +50,41 @@ func completar_nivel(n: int):
 	if not datos.get("niveles_completados", []).has(n):
 		datos["niveles_completados"].append(n)
 	datos["nivel_actual"] = n + 1
+	guardar()
+
+func ir_a_nivel(n: int) -> void:
+	get_tree().paused = false
+	if n < NIVELES.size():
+		get_tree().change_scene_to_file(NIVELES[n])
+	else:
+		get_tree().change_scene_to_file(ESCENA_SLOTS)   # aún no existe ese nivel
+
+func plantas_activas() -> Array:
+	var lista: Array = [0]                              # Natura siempre
+	for i in datos.get("plantas", []):
+		if not lista.has(int(i)):
+			lista.append(int(i))
+	return lista
+
+func desbloquear(indices: Array) -> void:
+	var actuales: Array = plantas_activas()
+	for i in indices:
+		if not actuales.has(i):
+			actuales.append(i)
+	datos["plantas"] = actuales
+	guardar()
+
+func ataques_activos() -> Array:
+	var lista: Array = [0]                              # Natura siempre
+	for i in datos.get("ataques", []):
+		if not lista.has(int(i)):
+			lista.append(int(i))
+	return lista
+
+func desbloquear_ataques(indices: Array) -> void:
+	var actuales: Array = ataques_activos()
+	for i in indices:
+		if not actuales.has(i):
+			actuales.append(i)
+	datos["ataques"] = actuales
 	guardar()

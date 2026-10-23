@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bglprybfm0gox"]
+
+[ext_resource type="Script" uid="uid://be3668oh0j4bo" path="res://scripts/nivel/derrota.gd" id="1_clqg2"]
+
+[node name="Derrota" type="CanvasLayer" unique_id=1814906998]
+script = ExtResource("1_clqg2")

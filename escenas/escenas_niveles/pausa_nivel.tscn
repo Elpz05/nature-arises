@@ -4,6 +4,7 @@
 
 [node name="PausaNivel" type="CanvasLayer" unique_id=180869974]
 script = ExtResource("1_8b2kj")
+escena_salida = "uid://c8wmgn88bcsrt"
 
 [node name="Fondo" type="ColorRect" parent="." unique_id=1700143933]
 anchors_preset = 15

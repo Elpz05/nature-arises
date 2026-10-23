@@ -14,10 +14,10 @@ func _on_quit_pressed() -> void:
 	get_tree().quit()
 
 func _on_new_game_pressed() -> void:
-	get_tree().change_scene_to_file("res://escenas_menu/file_menu.tscn")
+	get_tree().change_scene_to_file("res://escenas/escenas_menu/file_menu.tscn")
 
 func _on_options_pressed() -> void:
-	get_tree().change_scene_to_file("res://escenas_menu/settings_menu.tscn")
+	get_tree().change_scene_to_file("res://escenas/escenas_menu/settings_menu.tscn")
 
 func _input(event: InputEvent) -> void:
 	UIInputManager.manejar_input(event, get_viewport(), boton_jugar)

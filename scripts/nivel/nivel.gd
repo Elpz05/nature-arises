@@ -6,6 +6,10 @@ extends Node2D
 @export var semillas_escenas: Array[PackedScene]
 @export var pausa_escena: PackedScene
 @export var numero_nivel := 0          # 0 en nivel_0, 1 en el siguiente, etc.
+@export var victoria_escena: PackedScene
+@export var desbloqueos: Array[int] = [1, 2]
+@export var desbloqueos_ataques: Array[int] = [1]
+@export var derrota_escena: PackedScene
 
 @onready var suelo: TileMapLayer = $Suelo
 @onready var camino: TileMapLayer = $Camino
@@ -38,6 +42,8 @@ const RUTA := [
 	Vector2i(10, 3), Vector2i(15, 3), Vector2i(15, 12), Vector2i(20, 12),
 	Vector2i(20, 3), Vector2i(25, 3), Vector2i(25, 13),
 ]
+
+const FILAS_BLOQUEADAS := 3 
 
 var hud
 var source_pasto: int
@@ -178,7 +184,7 @@ func _iniciar_ronda():
 func _terminar_ronda():
 	ronda_activa = false
 	if ronda >= TOTAL_RONDAS:
-		#_ganar_nivel()
+		_ganar_nivel()
 		return
 	ronda += 1
 	hud.actualizar_ronda(ronda, TOTAL_RONDAS)
@@ -219,16 +225,43 @@ func _process(delta):
 		vista.queue_redraw()
 
 func _perder_nivel():
+	if terminado:
+		return
 	terminado = true
-	#label_derrota.text = "¡Nivel perdido!"
-	#label_derrota.show()
+	if derrota_escena == null:
+		push_error("Falta asignar Derrota Escena en el Inspector de Nivel0")
+		get_tree().paused = true
+		return
+	var d = derrota_escena.instantiate()
+	add_child(d)
 	get_tree().paused = true
 
-#func _ganar_nivel():
-	#terminado = true
-	#label_derrota.text = "¡Nivel superado!"
-	#label_derrota.show()
-	#get_tree().paused = true
+func _ganar_nivel():
+	terminado = true
+	print("Ganaste el nivel, creando ventana de victoria")
+	if Guardado.slot_actual >= 0:
+		Guardado.completar_nivel(numero_nivel)
+		Guardado.desbloquear(desbloqueos)
+		Guardado.desbloquear_ataques(desbloqueos_ataques)
+
+	if victoria_escena == null:
+		push_error("Falta asignar Victoria Escena en el Inspector de Nivel0")
+		return
+	
+	var nombres: Array = []
+	for i in desbloqueos:
+		nombres.append(hud.SEMILLAS[i].nombre)
+
+	var nombres_ataques: Array = []
+	for i in desbloqueos_ataques:
+		nombres_ataques.append(hud.ATAQUES[i].nombre)
+
+	var v = victoria_escena.instantiate()
+	v.numero_nivel = numero_nivel
+	v.desbloqueos = nombres
+	v.desbloqueos_ataques = nombres_ataques
+	add_child(v)
+	get_tree().paused = true
 
 # ---------------- Selección (arrastrar o clic + clic) ----------------
 func _on_semilla_pulsada(i: int, arrastre: bool):
@@ -302,7 +335,7 @@ func _confirmar(pos: Vector2):
 		_deseleccionar()
 
 func _se_puede_plantar(celda: Vector2i) -> bool:
-	if celda.x < 0 or celda.x >= ANCHO or celda.y < 0 or celda.y >= ALTO:
+	if celda.x < 0 or celda.x >= ANCHO or celda.y < FILAS_BLOQUEADAS or celda.y >= ALTO:
 		return false
 	return not celdas_ocupadas.has(celda)
 

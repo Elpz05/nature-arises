@@ -8,9 +8,9 @@ extends Control
 @onready var boton_eliminar: Button = %EliminarFile
 
 @onready var estados: Array[Label] = [
-	$ContenedorSlots/Slot1/Label,
-	$ContenedorSlots/Slot2/Label,
-	$ContenedorSlots/Slot3/Label,
+	$ContenedorSlots/Slot1/labelArchivo1,
+	$ContenedorSlots/Slot2/labelArchivo2,
+	$ContenedorSlots/Slot3/labelArchivo3,
 ]
 
 var slots: Array[Button]
@@ -42,8 +42,8 @@ func _refrescar() -> void:
 	for i in slots.size():
 		if Guardado.existe(i):
 			var d: Dictionary = Guardado.leer(i)
-			var hechos: int = d.get("niveles_completados", []).size()
-			slots[i].text = "Niveles\n%d/5" % hechos
+			var actual: int = d.get("nivel_actual", 0)
+			slots[i].text = "Nivel Actual\n%d/5" % mini(actual + 1, 5)
 		else:
 			slots[i].text = "Nueva\nPartida"
 
@@ -77,4 +77,4 @@ func _borrar_confirmado() -> void:
 	_refrescar()
 
 func _on_volver_pressed() -> void:
-	get_tree().change_scene_to_file("res://escenas_menu/menu.tscn")
+	get_tree().change_scene_to_file("res://escenas/escenas_menu/menu.tscn")
