@@ -26,13 +26,13 @@ const TOTAL_RONDAS := 5
 const TAMANOS := ["pequeno", "mediano", "grande"]
 const NOMBRES_TAMANO := ["pequeño", "mediano", "grande"]
 const RONDAS := [
-	{"pequeno": 4},                       # ronda 1
-	{"pequeno": 4, "mediano": 2},         # ronda 2
-	{"pequeno": 3, "mediano": 4},         # ronda 3
-	{"mediano": 5, "grande": 3},          # ronda 4
-	{"grande": 5},                        # ronda 5
+	{"pequeno": 4},                       # 800
+	{"pequeno": 4, "mediano": 2},         # 1800
+	{"pequeno": 3, "mediano": 4},         # 2600
+	{"mediano": 4, "grande": 2},          # 4000
+	{"grande": 6},                        # 6000       # ronda 5
 ]
-const INTERVALO_SPAWN := 3.0        # segundos entre bestias de una ronda
+const INTERVALOS_SPAWN := [3.0, 2.6, 2.2, 1.8, 1.5]
 const GOTAS_INICIALES := 3
 const INTERVALO_GOTAS := 4.0        # 1 gota cada 4 s
 const RECARGA_ATAQUE := 3.0
@@ -178,7 +178,7 @@ func _iniciar_ronda():
 		for k in receta[tam]:
 			cola_bestias.append(tam)
 	cola_bestias.shuffle()
-	_acum_spawn = INTERVALO_SPAWN       # la primera sale de inmediato
+	_acum_spawn = INTERVALOS_SPAWN[ronda - 1]
 	hud.mostrar_boton_ronda("Ronda %d en curso" % ronda, false)
 
 func _terminar_ronda():
@@ -214,7 +214,7 @@ func _process(delta):
 		# Salida de bestias
 		if cola_bestias.size() > 0:
 			_acum_spawn += delta
-			if _acum_spawn >= INTERVALO_SPAWN:
+		if _acum_spawn >= INTERVALOS_SPAWN[ronda - 1]:
 				_acum_spawn = 0.0
 				_crear_espiritu(cola_bestias.pop_front())
 		elif ruta.get_child_count() == 0:

@@ -5,7 +5,7 @@ signal invocar_copia(tamano: String, progreso: float)
 
 const TAMANO_CELDA := 64
 const VELOCIDAD_CASILLAS := 0.4            # casillas por segundo
-const DANO_CONTACTO := 2
+const DANO := {"pequeno": 2, "mediano": 3, "grande": 5}
 const PROBABILIDAD_INVOCAR := 0.3          # 30%
 
 const VIDA := {"pequeno": 200, "mediano": 500, "grande": 1000}
@@ -43,7 +43,7 @@ func _process(delta):
 	seguidor.progress += velocidad * delta
 	if seguidor.progress_ratio >= 1.0:
 		muerto = true
-		llego_a_meta.emit(DANO_CONTACTO)
+		llego_a_meta.emit(DANO[tamano])
 		seguidor.queue_free()
 
 func recibir_dano(cantidad: int):
