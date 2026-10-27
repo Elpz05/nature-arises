@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://bglprybfm0gox"]
 
 [ext_resource type="Script" uid="uid://be3668oh0j4bo" path="res://scripts/nivel/derrota.gd" id="1_clqg2"]
+[ext_resource type="AudioStream" uid="uid://uyqpmvo7rr2c" path="res://audios/derrota_musica/game_over.wav" id="2_isg66"]
 
 [node name="Derrota" type="CanvasLayer" unique_id=1814906998]
 script = ExtResource("1_clqg2")
+musica_derrota = ExtResource("2_isg66")

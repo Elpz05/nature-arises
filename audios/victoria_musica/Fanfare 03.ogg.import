@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://crxg1qf5j2dha"
+path="res://.godot/imported/Fanfare 03.ogg-78996ad0c8b469273ed5e554c5d6f04b.oggvorbisstr"
+
+[deps]
+
+source_file="res://audios/victoria_musica/Fanfare 03.ogg"
+dest_files=["res://.godot/imported/Fanfare 03.ogg-78996ad0c8b469273ed5e554c5d6f04b.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

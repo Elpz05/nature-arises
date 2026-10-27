@@ -2,7 +2,9 @@
 
 [ext_resource type="Script" uid="uid://7rg0i6espg0i" path="res://scripts/nivel/victoria.gd" id="1_tb75w"]
 [ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/sfx_menu/001_Hover_01.wav" id="2_ij2e2"]
+[ext_resource type="AudioStream" uid="uid://crxg1qf5j2dha" path="res://audios/victoria_musica/Fanfare 03.ogg" id="3_a35w5"]
 
 [node name="VictoriaNivel" type="CanvasLayer" unique_id=1020778259]
 script = ExtResource("1_tb75w")
 sonido_hover = ExtResource("2_ij2e2")
+musica_victoria = ExtResource("3_a35w5")

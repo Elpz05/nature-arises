@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 @export var sonido_hover: AudioStream
+@export var musica_victoria: AudioStream
 
 const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"   # ajusta a tu ruta real
 
@@ -14,6 +15,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 100
 
+	if musica_victoria != null:
+		MusicaManager.reproducir(musica_victoria)
+		
 	var fondo := ColorRect.new()
 	fondo.color = Color(0, 0, 0, 0.55)
 	add_child(fondo)
@@ -70,6 +74,7 @@ func _boton(texto: String, accion: Callable) -> Button:
 
 func _mostrar_victoria() -> void:
 	_limpiar()
+	musica_victoria
 	_titulo("¡Nivel %d superado!" % (numero_nivel + 1))
 	var siguiente := _boton("Siguiente nivel", _siguiente)
 	_boton("Salir", _salir)

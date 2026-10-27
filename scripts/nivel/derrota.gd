@@ -1,11 +1,16 @@
 extends CanvasLayer
 
+@export var musica_derrota: AudioStream
+
 const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"   # ajusta a tu ruta real
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 100
 
+	if musica_derrota != null:
+		MusicaManager.reproducir(musica_derrota)
+		
 	var fondo := ColorRect.new()
 	fondo.color = Color(0, 0, 0, 0.55)
 	add_child(fondo)

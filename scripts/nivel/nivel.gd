@@ -233,6 +233,9 @@ func _perder_nivel():
 		push_error("Falta asignar Derrota Escena en el Inspector de Nivel0")
 		get_tree().paused = true
 		return
+	if has_node("MusicaNivel"):
+		$MusicaNivel.stop()
+	
 	var d = derrota_escena.instantiate()
 	add_child(d)
 	get_tree().paused = true
@@ -257,6 +260,9 @@ func _ganar_nivel():
 	for i in desbloqueos_ataques:
 		nombres_ataques.append(hud.ATAQUES[i].nombre)
 
+	if has_node("MusicaNivel"):
+		$MusicaNivel.stop()
+	
 	var v = victoria_escena.instantiate()
 	v.numero_nivel = numero_nivel
 	v.desbloqueos = nombres
