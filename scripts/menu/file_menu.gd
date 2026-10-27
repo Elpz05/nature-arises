@@ -34,6 +34,8 @@ func _ready() -> void:
 
 	_refrescar()
 	UIInputManager.inicializar(slot1)
+	
+	MusicaManager.reproducir(preload("res://audios/menu_musica/Forest 01.ogg"))
 
 func _input(event: InputEvent) -> void:
 	UIInputManager.manejar_input(event, get_viewport(), slot1)

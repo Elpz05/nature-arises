@@ -4,6 +4,10 @@ var objetivo: Node2D
 var dano := 0
 var velocidad := 400.0
 
+@onready var sonidoBala: AudioStreamPlayer = $SonidoBala
+
+func _ready():
+	sonidoBala.play()
 
 func _process(delta):
 	# Si el objetivo murió o desapareció, la semilla se destruye

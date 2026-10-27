@@ -6,8 +6,8 @@
 [ext_resource type="FontFile" uid="uid://ci5pxwub8ardw" path="res://fuentes/PixelOperatorMono-Bold.ttf" id="4_wupu0"]
 [ext_resource type="Texture2D" uid="uid://1frb8okq8qyn" path="res://backgrounds/ui_wood_1.png" id="5_ctmbh"]
 [ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://scripts/menu/boton_menu.gd" id="6_xnm4b"]
-[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="7_0nv83"]
-[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="8_jplno"]
+[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/sfx_menu/001_Hover_01.wav" id="7_0nv83"]
+[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/sfx_menu/013_Confirm_03.wav" id="8_jplno"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_qfiju"]
 particle_flag_disable_z = true

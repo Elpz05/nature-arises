@@ -1,10 +1,14 @@
 [gd_scene format=3 uid="uid://61hc1k43e0c5"]
 
 [ext_resource type="Script" uid="uid://ueathxfalfip" path="res://scripts/nivel/pausa.gd" id="1_8b2kj"]
+[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/sfx_menu/001_Hover_01.wav" id="2_wvt3l"]
+[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/sfx_menu/013_Confirm_03.wav" id="3_3xstv"]
 
 [node name="PausaNivel" type="CanvasLayer" unique_id=180869974]
 script = ExtResource("1_8b2kj")
 escena_salida = "uid://c8wmgn88bcsrt"
+sonido_hover = ExtResource("2_wvt3l")
+sonido_abrir = ExtResource("3_3xstv")
 
 [node name="Fondo" type="ColorRect" parent="." unique_id=1700143933]
 anchors_preset = 15

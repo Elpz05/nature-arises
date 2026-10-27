@@ -87,6 +87,7 @@ func _ready():
 	_crear_arbol_madre()
 	_crear_vista()
 	_crear_tooltip()
+	MusicaManager.reproducir(preload("res://audios/nivel_musica/Forest 03.ogg"))
 	#label_derrota.hide()
 
 	for i in hud.ATAQUES.size():

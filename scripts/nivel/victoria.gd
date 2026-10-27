@@ -1,11 +1,14 @@
 extends CanvasLayer
 
+@export var sonido_hover: AudioStream
+
 const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"   # ajusta a tu ruta real
 
 var numero_nivel := 0
 var desbloqueos: Array = []          # nombres de plantas, los asigna el nivel
 var desbloqueos_ataques: Array = [] 
 var contenedor: VBoxContainer
+var hover_boton: AudioStreamPlayer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -34,7 +37,12 @@ func _ready() -> void:
 	contenedor = VBoxContainer.new()
 	contenedor.add_theme_constant_override("separation", 16)
 	panel.add_child(contenedor)
-
+	
+	hover_boton = AudioStreamPlayer.new()
+	hover_boton.stream = sonido_hover
+	hover_boton.bus = "SFX"
+	add_child(hover_boton)
+	
 	_mostrar_victoria()
 
 func _limpiar() -> void:
@@ -56,6 +64,7 @@ func _boton(texto: String, accion: Callable) -> Button:
 	b.custom_minimum_size = Vector2(260, 56)
 	b.add_theme_font_size_override("font_size", 24)
 	b.pressed.connect(accion)
+	b.mouse_entered.connect(_on_hover)
 	contenedor.add_child(b)
 	return b
 
@@ -91,3 +100,7 @@ func _ir_al_siguiente_nivel() -> void:
 func _salir() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file(ESCENA_SLOTS)
+
+func _on_hover() -> void:
+	if sonido_hover != null:
+		hover_boton.play()

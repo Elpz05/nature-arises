@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cf8t4guu1l03g" path="res://scripts/balas/bala.gd" id="1_4snxd"]
 [ext_resource type="Texture2D" uid="uid://b00rj2kitmhgc" path="res://icon.svg" id="1_lw71p"]
+[ext_resource type="AudioStream" uid="uid://cokhphgs2bfj3" path="res://audios/sfx_arboles/bala_natura/pop.ogg" id="3_3cv8j"]
 
 [node name="Bala" type="Node2D" unique_id=513268879]
 script = ExtResource("1_4snxd")
@@ -10,3 +11,7 @@ script = ExtResource("1_4snxd")
 modulate = Color(0.125, 1, 0, 1)
 scale = Vector2(0.05273438, 0.060546875)
 texture = ExtResource("1_lw71p")
+
+[node name="SonidoBala" type="AudioStreamPlayer" parent="." unique_id=2085037805]
+stream = ExtResource("3_3cv8j")
+bus = &"SFX"

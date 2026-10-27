@@ -1,7 +1,9 @@
 extends CanvasLayer
 
 @export_file("*.tscn") var escena_salida: String   # menú de slots o menú principal
-var numero_nivel := 0                              # lo asigna el nivel
+var numero_nivel := 0                          # lo asigna el nivel
+@export var sonido_hover: AudioStream
+@export var sonido_abrir: AudioStream
 
 @onready var panel_principal: Control = %PanelPrincipal
 @onready var panel_sonido: Control = %PanelSonido
@@ -11,6 +13,8 @@ var numero_nivel := 0                              # lo asigna el nivel
 @onready var check_musica: CheckBox = %CheckMusica
 @onready var check_efectos: CheckBox = %CheckEfectos
 @onready var boton_atras: Button = %Atras
+
+var hover_boton: AudioStreamPlayer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -26,6 +30,21 @@ func _ready() -> void:
 	check_musica.toggled.connect(func(on: bool): _silenciar_bus("Music", not on))
 	check_efectos.toggled.connect(func(on: bool): _silenciar_bus("SFX", not on))
 
+	hover_boton = AudioStreamPlayer.new()
+	hover_boton.stream = sonido_hover
+	hover_boton.bus = "SFX"
+	add_child(hover_boton)
+	
+	if sonido_abrir != null:
+		var abrir := AudioStreamPlayer.new()
+		abrir.stream = sonido_abrir
+		abrir.bus = "SFX"
+		add_child(abrir)
+		abrir.play()
+		
+	for c in [boton_continuar, boton_sonido, boton_salir, boton_atras, check_musica, check_efectos]:
+		c.mouse_entered.connect(_on_hover)
+	
 	_mostrar_sonido(false)
 	
 	$Fondo.color = Color(0, 0, 0, 0.55)
@@ -92,3 +111,7 @@ func _silenciar_bus(nombre: String, silenciar: bool) -> void:
 		push_warning("No existe el bus '%s' en el panel Audio" % nombre)
 		return
 	AudioServer.set_bus_mute(idx, silenciar)
+
+func _on_hover() -> void:
+	if sonido_hover != null:
+		hover_boton.play()

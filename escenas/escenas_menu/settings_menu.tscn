@@ -9,8 +9,8 @@
 [ext_resource type="Script" uid="uid://bxbu0e4vu01fk" path="res://scripts/sonidos/slider_musica.gd" id="7_j1g41"]
 [ext_resource type="Script" uid="uid://ddtdo2plyiqyd" path="res://scripts/menu/slider_sfx.gd" id="8_wtbfw"]
 [ext_resource type="Script" uid="uid://d3vm20q03ytle" path="res://scripts/menu/boton_menu.gd" id="9_7636t"]
-[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/001_Hover_01.wav" id="10_y1e2s"]
-[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/013_Confirm_03.wav" id="11_3kqom"]
+[ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/sfx_menu/001_Hover_01.wav" id="10_y1e2s"]
+[ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/sfx_menu/013_Confirm_03.wav" id="11_3kqom"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_0cmel"]
 particle_flag_disable_z = true
