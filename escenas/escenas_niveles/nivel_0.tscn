@@ -10,6 +10,8 @@
 [ext_resource type="PackedScene" uid="uid://61hc1k43e0c5" path="res://escenas/escenas_niveles/pausa_nivel.tscn" id="6_da70j"]
 [ext_resource type="PackedScene" uid="uid://b2nrtxhi4v7tr" path="res://escenas/escenas_niveles/victoria_nivel.tscn" id="7_tss67"]
 [ext_resource type="PackedScene" uid="uid://bglprybfm0gox" path="res://escenas/escenas_niveles/derrota.tscn" id="8_fd034"]
+[ext_resource type="AudioStream" uid="uid://b2fkv1kr47xhh" path="res://audios/ataques_sonidos/ataque_natura/sfx_throw.wav" id="9_u8jnm"]
+[ext_resource type="AudioStream" uid="uid://7p268nu32tob" path="res://audios/sfx_arboles/dano_arbol_madre/424911-impactshort78.wav" id="10_3t7eq"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hlm2r"]
 texture = ExtResource("2_hlm2r")
@@ -41,6 +43,8 @@ semillas_escenas = Array[PackedScene]([ExtResource("4_da70j"), null, null, null,
 pausa_escena = ExtResource("6_da70j")
 victoria_escena = ExtResource("7_tss67")
 derrota_escena = ExtResource("8_fd034")
+sonidos_ataque = Array[AudioStream]([ExtResource("9_u8jnm")])
+sonido_dano_arbol = ExtResource("10_3t7eq")
 
 [node name="Suelo" type="TileMapLayer" parent="." unique_id=1719594258]
 texture_filter = 1

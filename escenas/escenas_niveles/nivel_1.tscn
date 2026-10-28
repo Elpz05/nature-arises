@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://cxj5udw31nums"]
+
+[ext_resource type="Script" uid="uid://txbweihvol5u" path="res://scripts/nivel/nivel_1.gd" id="1_huwg2"]
+[ext_resource type="PackedScene" uid="uid://cw30n5qcn1ba6" path="res://escenas/escenas_arboles/arbol_madre.tscn" id="3_38e28"]
+[ext_resource type="PackedScene" uid="uid://b5h57urphn8pc" path="res://escenas/escenas_hud/hud.tscn" id="4_mgvlk"]
+[ext_resource type="Texture2D" uid="uid://k8pl8bjnr6yv" path="res://tiles_niveles/tiles_nivel_2/path_fuego.png" id="5_dy2p3"]
+[ext_resource type="PackedScene" uid="uid://61hc1k43e0c5" path="res://escenas/escenas_niveles/pausa_nivel.tscn" id="6_stj5n"]
+[ext_resource type="AudioStream" uid="uid://b2fkv1kr47xhh" path="res://audios/ataques_sonidos/ataque_natura/sfx_throw.wav" id="7_ics3g"]
+[ext_resource type="PackedScene" uid="uid://b2nrtxhi4v7tr" path="res://escenas/escenas_niveles/victoria_nivel.tscn" id="7_j2mg8"]
+[ext_resource type="PackedScene" uid="uid://bglprybfm0gox" path="res://escenas/escenas_niveles/derrota.tscn" id="8_f1x6p"]
+[ext_resource type="Texture2D" uid="uid://c4mf72juuwrbg" path="res://tiles_niveles/tiles_nivel_2/tiles_fuego.png" id="10_5w2bm"]
+[ext_resource type="AudioStream" uid="uid://7p268nu32tob" path="res://audios/sfx_arboles/dano_arbol_madre/424911-impactshort78.wav" id="10_p1vmi"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qeiqq"]
+texture = ExtResource("10_5w2bm")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_5w2bm"]
+tile_size = Vector2i(64, 64)
+sources/2 = SubResource("TileSetAtlasSource_qeiqq")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_w77ca"]
+texture = ExtResource("5_dy2p3")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_ofi78"]
+tile_size = Vector2i(64, 64)
+sources/1 = SubResource("TileSetAtlasSource_w77ca")
+
+[sub_resource type="Curve2D" id="Curve2D_56kgh"]
+
+[node name="Nivel0" type="Node2D" unique_id=701081404]
+script = ExtResource("1_huwg2")
+arbol_madre_escena = ExtResource("3_38e28")
+hud_escena = ExtResource("4_mgvlk")
+pausa_escena = ExtResource("6_stj5n")
+numero_nivel = 1
+victoria_escena = ExtResource("7_j2mg8")
+derrota_escena = ExtResource("8_f1x6p")
+sonidos_ataque = Array[AudioStream]([ExtResource("7_ics3g"), null])
+sonido_dano_arbol = ExtResource("10_p1vmi")
+
+[node name="Suelo" type="TileMapLayer" parent="." unique_id=1719594258]
+texture_filter = 1
+tile_set = SubResource("TileSet_5w2bm")
+
+[node name="Camino" type="TileMapLayer" parent="." unique_id=1268522513]
+tile_set = SubResource("TileSet_ofi78")
+
+[node name="RutaEspiritu" type="Path2D" parent="." unique_id=183939674]
+curve = SubResource("Curve2D_56kgh")
+
+[node name="Arboles" type="Node2D" parent="." unique_id=976145673]

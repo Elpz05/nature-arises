@@ -10,6 +10,8 @@ extends Node2D
 @export var desbloqueos: Array[int] = [1, 2]
 @export var desbloqueos_ataques: Array[int] = [1]
 @export var derrota_escena: PackedScene
+@export var sonidos_ataque: Array[AudioStream] = []
+@export var sonido_dano_arbol: AudioStream
 
 @onready var suelo: TileMapLayer = $Suelo
 @onready var camino: TileMapLayer = $Camino
@@ -76,6 +78,9 @@ var costos_plantados := {}
 
 var pausa
 
+var sfx_ataque: AudioStreamPlayer
+var sfx_arbol: AudioStreamPlayer
+
 func _ready():
 	source_pasto = suelo.tile_set.get_source_id(0)
 	source_camino = camino.tile_set.get_source_id(0)
@@ -98,6 +103,14 @@ func _ready():
 	hud.actualizar_ronda(ronda, TOTAL_RONDAS)
 	hud.mostrar_boton_ronda("Iniciar ronda %d" % ronda, true)
 
+	sfx_ataque = AudioStreamPlayer.new()
+	sfx_ataque.bus = "SFX"
+	add_child(sfx_ataque)
+	
+	sfx_arbol = AudioStreamPlayer.new()
+	sfx_arbol.stream = sonido_dano_arbol
+	sfx_arbol.bus = "SFX"
+	add_child(sfx_arbol)
 # ---------------- HUD ----------------
 func _crear_hud():
 	hud = hud_escena.instantiate()
@@ -163,6 +176,8 @@ func _crear_espiritu(tamano := "pequeno", progreso := 0.0):
 	espiritu.invocar_copia.connect(_crear_espiritu)
 
 func _on_espiritu_llego(dano: int):
+	if sonido_dano_arbol != null:
+		sfx_arbol.play()
 	arbol_meta.recibir_dano(dano)
 
 func _on_vida_arbol_cambiada(actual: int, maxima: int):
@@ -368,6 +383,10 @@ func _lanzar_ataque(pos: Vector2, i: int):
 		recarga[i] = RECARGA_ATAQUE
 	hud.actualizar_ataque(i, cargas[i], datos.capacidad)
 
+	if i < sonidos_ataque.size() and sonidos_ataque[i] != null:
+		sfx_ataque.stream = sonidos_ataque[i]
+		sfx_ataque.play()
+	
 	var centro := to_global(pos)
 	var radio: float = datos.radio * TAM_CELDA
 	var golpeadas := 0
