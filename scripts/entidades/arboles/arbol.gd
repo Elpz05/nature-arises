@@ -103,11 +103,13 @@ func _limpiar_enemigos_muertos():
 
 func _mas_adelantada():
 	var mejor = null
-	var mejor_progreso := -1.0
+	var menor := INF
 	for e in enemigos_en_rango:
-		var progreso: float = (e.get_parent() as PathFollow2D).progress
-		if progreso > mejor_progreso:
-			mejor_progreso = progreso
+		var seg := e.get_parent() as PathFollow2D
+		var largo: float = (seg.get_parent() as Path2D).curve.get_baked_length()
+		var faltante: float = largo - seg.progress
+		if faltante < menor:
+			menor = faltante
 			mejor = e
 	return mejor
 

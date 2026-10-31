@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c27e4q5612yee"]
 
 [ext_resource type="Texture2D" uid="uid://b00rj2kitmhgc" path="res://icon.svg" id="1_1en1q"]
-[ext_resource type="Script" uid="uid://h1ejmqsiipwi" path="res://scripts/entidades/espiritu.gd" id="1_ex3n5"]
+[ext_resource type="Script" uid="uid://h1ejmqsiipwi" path="res://scripts/entidades/bestias/espiritu.gd" id="1_ex3n5"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hlm2r"]
 radius = 28.0

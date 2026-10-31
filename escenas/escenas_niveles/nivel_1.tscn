@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://txbweihvol5u" path="res://scripts/nivel/nivel_1.gd" id="1_huwg2"]
 [ext_resource type="PackedScene" uid="uid://cw30n5qcn1ba6" path="res://escenas/escenas_arboles/arbol_madre.tscn" id="3_38e28"]
+[ext_resource type="PackedScene" uid="uid://6l2g6rvhgb5g" path="res://escenas/escenas_arboles/arbol_base.tscn" id="4_gp2ld"]
 [ext_resource type="PackedScene" uid="uid://b5h57urphn8pc" path="res://escenas/escenas_hud/hud.tscn" id="4_mgvlk"]
 [ext_resource type="Texture2D" uid="uid://k8pl8bjnr6yv" path="res://tiles_niveles/tiles_nivel_2/path_fuego.png" id="5_dy2p3"]
 [ext_resource type="PackedScene" uid="uid://61hc1k43e0c5" path="res://escenas/escenas_niveles/pausa_nivel.tscn" id="6_stj5n"]
@@ -10,6 +11,10 @@
 [ext_resource type="PackedScene" uid="uid://bglprybfm0gox" path="res://escenas/escenas_niveles/derrota.tscn" id="8_f1x6p"]
 [ext_resource type="Texture2D" uid="uid://c4mf72juuwrbg" path="res://tiles_niveles/tiles_nivel_2/tiles_fuego.png" id="10_5w2bm"]
 [ext_resource type="AudioStream" uid="uid://7p268nu32tob" path="res://audios/sfx_arboles/dano_arbol_madre/424911-impactshort78.wav" id="10_p1vmi"]
+[ext_resource type="PackedScene" uid="uid://c27e4q5612yee" path="res://escenas/escenas_espiritu/espiritu_prueba.tscn" id="10_stj5n"]
+[ext_resource type="Texture2D" uid="uid://d2rvwiemrxcl5" path="res://tiles_niveles/tiles_nivel_2/atajo_fuego.png" id="11_5w2bm"]
+[ext_resource type="PackedScene" uid="uid://bhmsd5y4fyo7g" path="res://escenas/escenas_espiritu/espiritu_flamma.tscn" id="11_j2mg8"]
+[ext_resource type="PackedScene" uid="uid://bcmhl1ea4dab" path="res://escenas/escenas_espiritu/espiritu_aqua.tscn" id="12_gp2ld"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qeiqq"]
 texture = ExtResource("10_5w2bm")
@@ -30,18 +35,29 @@ texture_region_size = Vector2i(64, 64)
 tile_size = Vector2i(64, 64)
 sources/1 = SubResource("TileSetAtlasSource_w77ca")
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_38e28"]
+texture = ExtResource("11_5w2bm")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_ics3g"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_38e28")
+
 [sub_resource type="Curve2D" id="Curve2D_56kgh"]
 
-[node name="Nivel0" type="Node2D" unique_id=701081404]
+[node name="Nivel1" type="Node2D" unique_id=701081404]
 script = ExtResource("1_huwg2")
 arbol_madre_escena = ExtResource("3_38e28")
 hud_escena = ExtResource("4_mgvlk")
+semillas_escenas = Array[PackedScene]([ExtResource("4_gp2ld"), null, null, null, null, null, null])
 pausa_escena = ExtResource("6_stj5n")
 numero_nivel = 1
 victoria_escena = ExtResource("7_j2mg8")
 derrota_escena = ExtResource("8_f1x6p")
 sonidos_ataque = Array[AudioStream]([ExtResource("7_ics3g"), null])
 sonido_dano_arbol = ExtResource("10_p1vmi")
+bestias_escenas = Array[PackedScene]([ExtResource("10_stj5n"), ExtResource("11_j2mg8"), ExtResource("12_gp2ld"), null, null, null, null])
 
 [node name="Suelo" type="TileMapLayer" parent="." unique_id=1719594258]
 texture_filter = 1
@@ -49,6 +65,9 @@ tile_set = SubResource("TileSet_5w2bm")
 
 [node name="Camino" type="TileMapLayer" parent="." unique_id=1268522513]
 tile_set = SubResource("TileSet_ofi78")
+
+[node name="Atajo" type="TileMapLayer" parent="." unique_id=488151899]
+tile_set = SubResource("TileSet_ics3g")
 
 [node name="RutaEspiritu" type="Path2D" parent="." unique_id=183939674]
 curve = SubResource("Curve2D_56kgh")

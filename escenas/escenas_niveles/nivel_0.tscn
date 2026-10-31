@@ -13,7 +13,7 @@
 [ext_resource type="AudioStream" uid="uid://b2fkv1kr47xhh" path="res://audios/ataques_sonidos/ataque_natura/sfx_throw.wav" id="9_u8jnm"]
 [ext_resource type="AudioStream" uid="uid://7p268nu32tob" path="res://audios/sfx_arboles/dano_arbol_madre/424911-impactshort78.wav" id="10_3t7eq"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hlm2r"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3t7eq"]
 texture = ExtResource("2_hlm2r")
 texture_region_size = Vector2i(64, 64)
 0:0/0 = 0
@@ -21,16 +21,16 @@ texture_region_size = Vector2i(64, 64)
 
 [sub_resource type="TileSet" id="TileSet_3ahnv"]
 tile_size = Vector2i(64, 64)
-sources/1 = SubResource("TileSetAtlasSource_hlm2r")
+sources/2 = SubResource("TileSetAtlasSource_3t7eq")
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6qfd4"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_dkhx0"]
 texture = ExtResource("3_vqj75")
 texture_region_size = Vector2i(64, 64)
 0:0/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_ofi78"]
 tile_size = Vector2i(64, 64)
-sources/0 = SubResource("TileSetAtlasSource_6qfd4")
+sources/2 = SubResource("TileSetAtlasSource_dkhx0")
 
 [sub_resource type="Curve2D" id="Curve2D_56kgh"]
 

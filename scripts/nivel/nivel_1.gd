@@ -1,6 +1,5 @@
 extends Node2D
 
-@export var espiritu_escena: PackedScene
 @export var arbol_madre_escena: PackedScene
 @export var hud_escena: PackedScene
 @export var semillas_escenas: Array[PackedScene]
@@ -12,36 +11,46 @@ extends Node2D
 @export var derrota_escena: PackedScene
 @export var sonidos_ataque: Array[AudioStream] = []
 @export var sonido_dano_arbol: AudioStream
+@export var bestias_escenas: Array[PackedScene]
 
 @onready var suelo: TileMapLayer = $Suelo
 @onready var camino: TileMapLayer = $Camino
 @onready var ruta: Path2D = $RutaEspiritu
 @onready var arboles: Node2D = $Arboles
+@onready var atajo: TileMapLayer = $Atajo
 #@onready var label_derrota: Label = $Interfaz/LabelDerrota
 
 const ANCHO := 30
 const ALTO := 17
 const TAM_CELDA := 64
-const CELDA_ARBOL_MADRE := Vector2i(14, 9)
+const CELDA_ARBOL_MADRE := Vector2i(1, 15)
 
 const TOTAL_RONDAS := 5
 const TAMANOS := ["pequeno", "mediano", "grande"]
 const NOMBRES_TAMANO := ["pequeño", "mediano", "grande"]
 const RONDAS := [
-	{"pequeno": 4},                       # 800
-	{"pequeno": 4, "mediano": 2},         # 1800
-	{"pequeno": 3, "mediano": 4},         # 2600
-	{"mediano": 4, "grande": 2},          # 4000
-	{"grande": 6},                        # 6000       # ronda 5
+	{"natura:pequeno": 4, "flamma:pequeno": 2},
+	{"natura:pequeno": 4, "flamma:pequeno": 3, "natura:mediano": 1},
+	{"natura:pequeno": 3, "flamma:pequeno": 3, "flamma:mediano": 2},
+	{"natura:mediano": 4, "flamma:mediano": 3, "natura:grande": 1},
+	{"natura:grande": 3, "flamma:grande": 3},
 ]
 const INTERVALOS_SPAWN := [3.0, 2.6, 2.2, 1.8, 1.5]
 const GOTAS_INICIALES := 3
 const INTERVALO_GOTAS := 4.0        # 1 gota cada 4 s
 const RECARGA_ATAQUE := 3.0
+const TIPOS_BESTIA := ["natura", "flamma", "aqua"] 
 
 const RUTA := [
-	Vector2i(0, 5), Vector2i(10, 5), Vector2i(10, 11), Vector2i(20, 11),
-	Vector2i(20, 5), Vector2i(27, 5), Vector2i(27, 14),
+	Vector2i(0, 4), Vector2i(26, 4), Vector2i(26, 7), Vector2i(3, 7),
+	Vector2i(3, 10), Vector2i(26, 10), Vector2i(26, 13), Vector2i(3, 13),
+	Vector2i(3, 15), Vector2i(2, 15),
+]
+
+# Atajo de las Flamma: bajan recto por la columna 26
+const RUTA_FUEGO := [
+	Vector2i(0, 4), Vector2i(26, 4), Vector2i(26, 13), Vector2i(3, 13),
+	Vector2i(3, 15), Vector2i(2, 15),
 ]
 
 const FILAS_BLOQUEADAS := 3 
@@ -80,9 +89,13 @@ var pausa
 var sfx_ataque: AudioStreamPlayer
 var sfx_arbol: AudioStreamPlayer
 
+var ruta_fuego: Path2D
+var source_atajo: int
+
 func _ready():
 	source_pasto = suelo.tile_set.get_source_id(0)
 	source_camino = camino.tile_set.get_source_id(0)
+	source_atajo = atajo.tile_set.get_source_id(0)
 
 	_crear_hud()
 	_generar_tablero()
@@ -120,6 +133,19 @@ func _crear_hud():
 	hud.pala_pulsada.connect(_on_pala_pulsada)
 
 # ---------------- Tablero y camino ----------------
+func _celdas_de(puntos: Array) -> Array:
+	var celdas: Array = []
+	for i in range(puntos.size() - 1):
+		var desde: Vector2i = puntos[i]
+		var hasta: Vector2i = puntos[i + 1]
+		var paso: Vector2i = (hasta - desde).sign()
+		var celda := desde
+		while celda != hasta:
+			celdas.append(celda)
+			celda += paso
+	celdas.append(puntos[-1])
+	return celdas
+
 func _generar_tablero():
 	var fuente := suelo.tile_set.get_source(source_pasto) as TileSetAtlasSource
 	var hay_variante := fuente.has_tile(Vector2i(1, 0))
@@ -131,26 +157,28 @@ func _generar_tablero():
 			suelo.set_cell(Vector2i(x, y), source_pasto, coords)
 
 func _generar_camino():
-	for i in range(RUTA.size() - 1):
-		var desde: Vector2i = RUTA[i]
-		var hasta: Vector2i = RUTA[i + 1]
-		var paso: Vector2i = (hasta - desde).sign()
-		var celda := desde
-		while celda != hasta:
-			_pintar_camino(celda)
-			celda += paso
-		_pintar_camino(hasta)
+	var principales := _celdas_de(RUTA)
+	for c in principales:
+		camino.set_cell(c, source_camino, Vector2i(0, 0))
+		celdas_ocupadas[c] = true
 
-func _pintar_camino(celda: Vector2i):
-	camino.set_cell(celda, source_camino, Vector2i(0, 0))
-	celdas_ocupadas[celda] = true
+	for c in _celdas_de(RUTA_FUEGO):
+		if not principales.has(c):
+			atajo.set_cell(c, source_atajo, Vector2i(0, 0))
+			celdas_ocupadas[c] = true
 
 func _generar_curva():
-	var curva := Curve2D.new()
-	for celda in RUTA:
-		curva.add_point(suelo.map_to_local(celda))
-	ruta.curve = curva
+	ruta.curve = _curva_de(RUTA)
+	ruta_fuego = Path2D.new()
+	ruta_fuego.position = ruta.position
+	ruta_fuego.curve = _curva_de(RUTA_FUEGO)
+	add_child(ruta_fuego)
 
+func _curva_de(puntos: Array) -> Curve2D:
+	var curva := Curve2D.new()
+	for celda in puntos:
+		curva.add_point(suelo.map_to_local(celda))
+	return curva
 # ---------------- Árbol madre y espíritus ----------------
 func _crear_arbol_madre():
 	arbol_meta = arbol_madre_escena.instantiate()
@@ -161,18 +189,31 @@ func _crear_arbol_madre():
 	arbol_meta.murio.connect(_perder_nivel)
 	_on_vida_arbol_cambiada(arbol_meta.vida, arbol_meta.vida_maxima)
 
-func _crear_espiritu(tamano := "pequeno", progreso := 0.0):
+func _crear_espiritu(tamano := "pequeno", progreso := 0.0, tipo := "natura"):
+	var i: int = TIPOS_BESTIA.find(tipo)
+	if i < 0 or i >= bestias_escenas.size() or bestias_escenas[i] == null:
+		push_error("Falta la escena de la bestia '%s' en Bestias Escenas" % tipo)
+		return
+
+	var camino_bestia: Path2D = ruta
+	if tipo == "flamma":
+		camino_bestia = ruta_fuego            # toma el atajo
+
 	var seguidor := PathFollow2D.new()
 	seguidor.loop = false
 	seguidor.rotates = false
-	ruta.add_child(seguidor)
+	camino_bestia.add_child(seguidor)
 	seguidor.progress = progreso
 
-	var espiritu = espiritu_escena.instantiate()
+	var espiritu = bestias_escenas[i].instantiate()
 	espiritu.tamano = tamano
+	espiritu.tipo = tipo
 	seguidor.add_child(espiritu)
 	espiritu.llego_a_meta.connect(_on_espiritu_llego)
 	espiritu.invocar_copia.connect(_crear_espiritu)
+
+func _bestias_en_camino() -> int:
+	return ruta.get_child_count() + ruta_fuego.get_child_count()
 
 func _on_espiritu_llego(dano: int):
 	if sonido_dano_arbol != null:
@@ -225,14 +266,14 @@ func _process(delta):
 			_acum_gotas -= INTERVALO_GOTAS
 			gotas += 1
 			hud.actualizar_gotas(gotas)
-
-		# Salida de bestias
+				# Salida de bestias
 		if cola_bestias.size() > 0:
 			_acum_spawn += delta
-		if _acum_spawn >= INTERVALOS_SPAWN[ronda - 1]:
+			if _acum_spawn >= INTERVALOS_SPAWN[ronda - 1]:
 				_acum_spawn = 0.0
-				_crear_espiritu(cola_bestias.pop_front())
-		elif ruta.get_child_count() == 0:
+				var partes: PackedStringArray = String(cola_bestias.pop_front()).split(":")
+				_crear_espiritu(partes[1], 0.0, partes[0])
+		elif _bestias_en_camino() == 0:
 			_terminar_ronda()
 
 	_actualizar_tooltip()

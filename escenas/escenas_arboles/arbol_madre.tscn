@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cw30n5qcn1ba6"]
 
-[ext_resource type="Script" uid="uid://bn5r1rdeimk54" path="res://scripts/entidades/arbol_madre.gd" id="1_p3m80"]
+[ext_resource type="Script" uid="uid://bn5r1rdeimk54" path="res://scripts/entidades/arboles/arbol_madre.gd" id="1_p3m80"]
 [ext_resource type="Texture2D" uid="uid://b00rj2kitmhgc" path="res://icon.svg" id="2_12fde"]
 
 [node name="ArbolMadre" type="Node2D" unique_id=1100795989]
