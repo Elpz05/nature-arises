@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_elemental_base.tscn" id="1_base"]
+
+[node name="ArbolAqua" instance=ExtResource("1_base")]
+dano_bala = 10
+balas_por_segundo = 1.0
+costos = Array[int]([6, 8, 10])
+factor_lentitud = 0.6
+duracion_lentitud = 2.0
+color_bala = Color(0.1, 0.65, 1, 1)
+
+[node name="Placeholder" parent="Arbol" index="0"]
+polygon = PackedVector2Array(0, -24, 20, 0, 0, 24, -20, 0)
+color = Color(0.1, 0.65, 1, 1)

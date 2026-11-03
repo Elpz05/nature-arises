@@ -12,6 +12,9 @@
 [ext_resource type="PackedScene" uid="uid://bglprybfm0gox" path="res://escenas/escenas_niveles/derrota.tscn" id="8_fd034"]
 [ext_resource type="AudioStream" uid="uid://b2fkv1kr47xhh" path="res://audios/ataques_sonidos/ataque_natura/sfx_throw.wav" id="9_u8jnm"]
 [ext_resource type="AudioStream" uid="uid://7p268nu32tob" path="res://audios/sfx_arboles/dano_arbol_madre/424911-impactshort78.wav" id="10_3t7eq"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_flamma.tscn" id="11_flamma"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_aqua.tscn" id="12_aqua"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_niveles/nivel_base.tscn" id="13_base"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3t7eq"]
 texture = ExtResource("2_hlm2r")
@@ -34,26 +37,24 @@ sources/2 = SubResource("TileSetAtlasSource_dkhx0")
 
 [sub_resource type="Curve2D" id="Curve2D_56kgh"]
 
-[node name="Nivel0" type="Node2D" unique_id=701081404]
+[node name="Nivel0" instance=ExtResource("13_base")]
 script = ExtResource("1_ejscs")
 espiritu_escena = ExtResource("2_vqj75")
 arbol_madre_escena = ExtResource("4_vqj75")
 hud_escena = ExtResource("4_86ku8")
-semillas_escenas = Array[PackedScene]([ExtResource("4_da70j"), null, null, null, null, null, null])
+semillas_escenas = Array[PackedScene]([ExtResource("4_da70j"), ExtResource("11_flamma"), ExtResource("12_aqua"), null, null, null, null])
 pausa_escena = ExtResource("6_da70j")
 victoria_escena = ExtResource("7_tss67")
 derrota_escena = ExtResource("8_fd034")
 sonidos_ataque = Array[AudioStream]([ExtResource("9_u8jnm")])
 sonido_dano_arbol = ExtResource("10_3t7eq")
 
-[node name="Suelo" type="TileMapLayer" parent="." unique_id=1719594258]
+[node name="Suelo" parent="." index="0"]
 texture_filter = 1
 tile_set = SubResource("TileSet_3ahnv")
 
-[node name="Camino" type="TileMapLayer" parent="." unique_id=1268522513]
+[node name="Camino" parent="." index="1"]
 tile_set = SubResource("TileSet_ofi78")
 
-[node name="RutaEspiritu" type="Path2D" parent="." unique_id=183939674]
+[node name="RutaEspiritu" parent="." index="2"]
 curve = SubResource("Curve2D_56kgh")
-
-[node name="Arboles" type="Node2D" parent="." unique_id=976145673]

@@ -66,7 +66,7 @@ func _ready() -> void:
 		p.get_child(0).add_theme_constant_override("separation", 14)
 
 	for b in [boton_continuar, boton_sonido, boton_salir, boton_atras]:
-		b.focus_mode = Control.FOCUS_NONE
+		b.focus_mode = Control.FOCUS_ALL
 		b.custom_minimum_size = Vector2(260, 56)
 		b.add_theme_font_size_override("font_size", 24)
 	check_musica.add_theme_font_size_override("font_size", 24)
@@ -80,13 +80,13 @@ func _mostrar_sonido(ver: bool) -> void:
 	else:
 		boton_continuar.grab_focus()
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("Pausa"):
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("Pausa", false, true) or event.is_action_pressed("Atras", false, true):
+		get_viewport().set_input_as_handled()
 		if panel_sonido.visible:
 			_mostrar_sonido(false)
 		else:
 			_continuar()
-		get_viewport().set_input_as_handled()
 
 func _continuar() -> void:
 	get_tree().paused = false

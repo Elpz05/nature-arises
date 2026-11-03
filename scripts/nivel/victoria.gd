@@ -2,6 +2,7 @@ extends CanvasLayer
 
 @export var sonido_hover: AudioStream
 @export var musica_victoria: AudioStream
+@export var campana_finalizada := false
 
 const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"   # ajusta a tu ruta real
 
@@ -73,13 +74,19 @@ func _boton(texto: String, accion: Callable) -> Button:
 	return b
 
 func _mostrar_victoria() -> void:
+	if campana_finalizada or Guardado.es_ultimo_nivel(numero_nivel):
+		_mostrar_final_campana()
+		return
 	_limpiar()
-	musica_victoria
 	_titulo("¡Nivel %d superado!" % (numero_nivel + 1))
 	var siguiente := _boton("Siguiente nivel", _siguiente)
+	siguiente.grab_focus()
 	_boton("Salir", _salir)
 
 func _siguiente() -> void:
+	if campana_finalizada or Guardado.es_ultimo_nivel(numero_nivel):
+		_mostrar_final_campana()
+		return
 	if desbloqueos.is_empty() and desbloqueos_ataques.is_empty():
 		_ir_al_siguiente_nivel()
 	else:
@@ -96,15 +103,35 @@ func _mostrar_desbloqueo() -> void:
 		_titulo("Ataques elementales", 22)
 		for nombre in desbloqueos_ataques:
 			_titulo("✨ " + str(nombre), 28)
-	_boton("Continuar", _ir_al_siguiente_nivel)
+	_boton("Continuar", _ir_al_siguiente_nivel).grab_focus()
 
 func _ir_al_siguiente_nivel() -> void:
+	if campana_finalizada or Guardado.es_ultimo_nivel(numero_nivel):
+		_mostrar_final_campana()
+		return
 	get_tree().paused = false
 	Guardado.ir_a_nivel(numero_nivel + 1)
+
+func _mostrar_final_campana():
+	campana_finalizada = true
+	_limpiar()
+	_titulo("¡Campaña completada!", 36)
+	_titulo("Has protegido el bosque.\n¡Gracias por jugar!", 24)
+	_boton("Volver a partidas", _salir).grab_focus()
+	_boton("Menú principal", _ir_al_menu)
+
+func _ir_al_menu():
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://escenas/escenas_menu/menu.tscn")
 
 func _salir() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file(ESCENA_SLOTS)
+
+func _unhandled_input(event: InputEvent):
+	if event.is_action_pressed("Atras"):
+		get_viewport().set_input_as_handled()
+		_salir()
 
 func _on_hover() -> void:
 	if sonido_hover != null:

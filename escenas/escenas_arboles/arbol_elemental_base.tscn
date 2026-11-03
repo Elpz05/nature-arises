@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/entidades/arboles/arbol.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_balas/bala.tscn" id="2_bala"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_placeholder"]
+
+[node name="ArbolElemental" type="Node2D"]
+script = ExtResource("1_script")
+semilla_escena = ExtResource("2_bala")
+
+[node name="Arbol" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_placeholder")
+
+[node name="Placeholder" type="Polygon2D" parent="Arbol"]
+polygon = PackedVector2Array(-20, 20, -20, -20, 20, -20, 20, 20)
+
+[node name="Rango" type="Area2D" parent="Arbol"]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Arbol/Rango"]
+
+[node name="TemporizadorDisparo" type="Timer" parent="."]

@@ -15,6 +15,9 @@
 [ext_resource type="Texture2D" uid="uid://d2rvwiemrxcl5" path="res://tiles_niveles/tiles_nivel_2/atajo_fuego.png" id="11_5w2bm"]
 [ext_resource type="PackedScene" uid="uid://bhmsd5y4fyo7g" path="res://escenas/escenas_espiritu/espiritu_flamma.tscn" id="11_j2mg8"]
 [ext_resource type="PackedScene" uid="uid://bcmhl1ea4dab" path="res://escenas/escenas_espiritu/espiritu_aqua.tscn" id="12_gp2ld"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_flamma.tscn" id="13_flamma"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_aqua.tscn" id="14_aqua"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_niveles/nivel_base.tscn" id="15_base"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qeiqq"]
 texture = ExtResource("10_5w2bm")
@@ -46,11 +49,11 @@ sources/0 = SubResource("TileSetAtlasSource_38e28")
 
 [sub_resource type="Curve2D" id="Curve2D_56kgh"]
 
-[node name="Nivel1" type="Node2D" unique_id=701081404]
+[node name="Nivel1" instance=ExtResource("15_base")]
 script = ExtResource("1_huwg2")
 arbol_madre_escena = ExtResource("3_38e28")
 hud_escena = ExtResource("4_mgvlk")
-semillas_escenas = Array[PackedScene]([ExtResource("4_gp2ld"), null, null, null, null, null, null])
+semillas_escenas = Array[PackedScene]([ExtResource("4_gp2ld"), ExtResource("13_flamma"), ExtResource("14_aqua"), null, null, null, null])
 pausa_escena = ExtResource("6_stj5n")
 numero_nivel = 1
 victoria_escena = ExtResource("7_j2mg8")
@@ -59,17 +62,15 @@ sonidos_ataque = Array[AudioStream]([ExtResource("7_ics3g"), null])
 sonido_dano_arbol = ExtResource("10_p1vmi")
 bestias_escenas = Array[PackedScene]([ExtResource("10_stj5n"), ExtResource("11_j2mg8"), ExtResource("12_gp2ld"), null, null, null, null])
 
-[node name="Suelo" type="TileMapLayer" parent="." unique_id=1719594258]
+[node name="Suelo" parent="." index="0"]
 texture_filter = 1
 tile_set = SubResource("TileSet_5w2bm")
 
-[node name="Camino" type="TileMapLayer" parent="." unique_id=1268522513]
+[node name="Camino" parent="." index="1"]
 tile_set = SubResource("TileSet_ofi78")
 
 [node name="Atajo" type="TileMapLayer" parent="." unique_id=488151899]
 tile_set = SubResource("TileSet_ics3g")
 
-[node name="RutaEspiritu" type="Path2D" parent="." unique_id=183939674]
+[node name="RutaEspiritu" parent="." index="2"]
 curve = SubResource("Curve2D_56kgh")
-
-[node name="Arboles" type="Node2D" parent="." unique_id=976145673]

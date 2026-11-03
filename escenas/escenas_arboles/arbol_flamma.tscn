@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_elemental_base.tscn" id="1_base"]
+
+[node name="ArbolFlamma" instance=ExtResource("1_base")]
+dano_bala = 30
+balas_por_segundo = 0.8
+costos = Array[int]([3, 4, 5])
+radio_explosion = 64.0
+color_bala = Color(1, 0.3, 0.05, 1)
+
+[node name="Placeholder" parent="Arbol" index="0"]
+polygon = PackedVector2Array(-22, 20, 0, -24, 22, 20)
+color = Color(1, 0.3, 0.05, 1)

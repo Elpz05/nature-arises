@@ -16,11 +16,19 @@ const STATS := {
 }
 
 @export var semilla_escena: PackedScene
+@export var dano_bala := DANO_BALA
+@export var balas_por_segundo := BALAS_POR_SEGUNDO_BASE
+@export var costos: Array[int] = [1, 2, 3]
+@export var radio_explosion := 0.0
+@export_range(0.1, 1.0) var factor_lentitud := 1.0
+@export var duracion_lentitud := 0.0
+@export var color_bala := Color(0.125, 1, 0)
 
 var tamano := "pequeno"
 var vida := 100
 var enemigos_en_rango: Array = []
 var escala_base := Vector2.ONE
+var rango_visible := false
 
 @onready var rango: Area2D = $Arbol/Rango
 @onready var forma: CollisionShape2D = $Arbol/Rango/CollisionShape2D
@@ -30,8 +38,7 @@ var escala_base := Vector2.ONE
 
 func _ready():
 	escala_base = sprite.scale
-	rango.body_entered.connect(_on_body_entered)
-	rango.body_exited.connect(_on_body_exited)
+	temporizador.process_callback = Timer.TIMER_PROCESS_PHYSICS
 	temporizador.timeout.connect(_disparar)
 	_aplicar_tamano("pequeno")
 
@@ -45,8 +52,42 @@ func _aplicar_tamano(nuevo: String):
 	circulo.radius = datos["radio"] * TAMANO_CELDA / sprite.scale.x
 	forma.shape = circulo
 
-	temporizador.wait_time = 1.0 / (BALAS_POR_SEGUNDO_BASE * datos["vel_ataque"])
+	temporizador.wait_time = 1.0 / (balas_por_segundo * datos["vel_ataque"])
 	temporizador.start()
+	queue_redraw()
+
+func obtener_estadisticas() -> Dictionary:
+	return {
+		"dano": dano_bala,
+		"disparos_segundo": 1.0 / temporizador.wait_time,
+		"radio": float(STATS[tamano].radio) * TAMANO_CELDA,
+		"radio_explosion": radio_explosion,
+		"factor_lentitud": factor_lentitud,
+		"duracion_lentitud": duracion_lentitud,
+	}
+
+# Consulta antes de _ready(): la vista previa no activa timers ni dispara.
+func obtener_datos_colocacion() -> Dictionary:
+	var visual: Node2D = get_node("Arbol")
+	var area: Node2D = get_node("Arbol/Rango")
+	var colision: Node2D = get_node("Arbol/Rango/CollisionShape2D")
+	return {
+		"radio": float(STATS["pequeno"].radio) * TAMANO_CELDA,
+		"centro": visual.transform * (area.transform * colision.position),
+	}
+
+func mostrar_rango(mostrar: bool):
+	if rango_visible != mostrar:
+		rango_visible = mostrar
+		queue_redraw()
+
+func _draw():
+	if not rango_visible or not is_instance_valid(forma) or forma.shape == null:
+		return
+	var centro := to_local(forma.global_position)
+	var radio: float = forma.shape.radius * absf(forma.global_scale.x / global_scale.x)
+	draw_circle(centro, radio, Color(0.2, 0.8, 1.0, 0.12))
+	draw_arc(centro, radio, 0.0, TAU, 64, Color(0.3, 0.9, 1.0, 0.8), 2.0, true)
 
 
 # Sube al siguiente tamaño (pequeno -> mediano -> grande)
@@ -61,7 +102,7 @@ func mejorar() -> bool:
 
 
 func obtener_costo() -> int:
-	return STATS[tamano]["costo"]
+	return costos[["pequeno", "mediano", "grande"].find(tamano)]
 
 
 func recibir_dano(cantidad: int):
@@ -71,15 +112,21 @@ func recibir_dano(cantidad: int):
 		queue_free()
 
 
-func _on_body_entered(body):
-	if body.is_in_group("enemigo") and not enemigos_en_rango.has(body):
-		enemigos_en_rango.append(body)
-		print("Enemigo entró al rango: ", body.name)
+func _physics_process(_delta: float):
+	# Area2D ya calcula solapamientos en física. Usa su lista en caché,
+	# sin escanear todos los enemigos ni conservar referencias obsoletas.
+	enemigos_en_rango = rango.get_overlapping_bodies().filter(_es_objetivo_valido)
 
-
-func _on_body_exited(body):
-	if enemigos_en_rango.has(body):
-		enemigos_en_rango.erase(body)
+func _es_objetivo_valido(enemigo) -> bool:
+	if not is_instance_valid(enemigo) or not enemigo.is_inside_tree() or enemigo.is_queued_for_deletion():
+		return false
+	if not enemigo.is_in_group("enemigo") or enemigo.muerto:
+		return false
+	var seguidor := enemigo.get_parent() as PathFollow2D
+	if seguidor == null or seguidor.is_queued_for_deletion():
+		return false
+	var recorrido := seguidor.get_parent() as Path2D
+	return recorrido != null and not recorrido.is_queued_for_deletion() and recorrido.curve != null
 
 
 func _disparar():
@@ -89,22 +136,28 @@ func _disparar():
 
 	# El primero que entró suele ser el más adelantado en el camino
 	var objetivo = _mas_adelantada()
+	if not _es_objetivo_valido(objetivo) or semilla_escena == null or not rango.overlaps_body(objetivo):
+		return
 	var semilla = semilla_escena.instantiate()
-	semilla.global_position = global_position
 	semilla.objetivo = objetivo
-	semilla.dano = DANO_BALA
+	semilla.dano = dano_bala
+	semilla.radio_explosion = radio_explosion
+	semilla.factor_lentitud = factor_lentitud
+	semilla.duracion_lentitud = duracion_lentitud
+	semilla.color_bala = color_bala
 	get_parent().add_child(semilla)
+	semilla.global_position = global_position
 
 
 func _limpiar_enemigos_muertos():
-	enemigos_en_rango = enemigos_en_rango.filter(
-		func(enemigo): return is_instance_valid(enemigo)
-	)
+	enemigos_en_rango = enemigos_en_rango.filter(_es_objetivo_valido)
 
 func _mas_adelantada():
 	var mejor = null
 	var menor := INF
 	for e in enemigos_en_rango:
+		if not _es_objetivo_valido(e):
+			continue
 		var seg := e.get_parent() as PathFollow2D
 		var largo: float = (seg.get_parent() as Path2D).curve.get_baked_length()
 		var faltante: float = largo - seg.progress
@@ -122,4 +175,5 @@ func _actualizar_sprite():
 	else:
 		# Respaldo: la animación "idle" agrandada
 		sprite.scale = escala_base * ESCALA[tamano]
-		sprite.play("idle")
+		if sprite.sprite_frames.has_animation("idle"):
+			sprite.play("idle")

@@ -18,6 +18,10 @@ func _ready() -> void:
 	print("Mandos conectados: ", Input.get_connected_joypads())
 
 func _unhandled_input(event: InputEvent) -> void:
+	if accion_esperando == "" and event.is_action_pressed("Atras"):
+		get_viewport().set_input_as_handled()
+		_on_volver_pressed()
+		return
 	if event is InputEventMouseMotion:
 		print("Mouse motion en _unhandled_input")
 	UIInputManager.manejar_input(event, get_viewport(), boton_volver)
@@ -140,4 +144,4 @@ func _on_restablecer_pressed() -> void:
 
 
 func _on_volver_pressed() -> void:
-	get_tree().change_scene_to_file("res://escenas_menu/menu.tscn")
+	get_tree().change_scene_to_file("res://escenas/escenas_menu/menu.tscn")

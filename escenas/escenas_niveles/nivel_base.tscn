@@ -1,3 +1,15 @@
 [gd_scene format=3 uid="uid://cgfif4ebbohfe"]
 
+[ext_resource type="Script" path="res://scripts/nivel/nivel_base.gd" id="1_base"]
+
 [node name="nivel" type="Node2D" unique_id=1098879805]
+script = ExtResource("1_base")
+
+[node name="Suelo" type="TileMapLayer" parent="."]
+texture_filter = 1
+
+[node name="Camino" type="TileMapLayer" parent="."]
+
+[node name="RutaEspiritu" type="Path2D" parent="."]
+
+[node name="Arboles" type="Node2D" parent="."]

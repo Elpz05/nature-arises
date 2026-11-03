@@ -45,7 +45,7 @@ func _refrescar() -> void:
 		if Guardado.existe(i):
 			var d: Dictionary = Guardado.leer(i)
 			var actual: int = d.get("nivel_actual", 0)
-			slots[i].text = "Nivel Actual\n%d/5" % mini(actual + 1, 5)
+			slots[i].text = "Campaña\nCompletada" if Guardado.campana_completada(d) else "Nivel Actual\n%d/%d" % [mini(actual + 1, Guardado.NIVELES.size()), Guardado.NIVELES.size()]
 		else:
 			slots[i].text = "Nueva\nPartida"
 
@@ -80,3 +80,11 @@ func _borrar_confirmado() -> void:
 
 func _on_volver_pressed() -> void:
 	get_tree().change_scene_to_file("res://escenas/escenas_menu/menu.tscn")
+
+func _unhandled_input(event: InputEvent):
+	if event.is_action_pressed("Atras"):
+		get_viewport().set_input_as_handled()
+		if dialogo.visible:
+			dialogo.hide()
+		else:
+			_on_volver_pressed()

@@ -6,6 +6,13 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_geety"]
 bg_color = Color(0.18061538, 0.45507813, 0.018665314, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_combate"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.04, 0.08, 0.06, 0.94)
+
 [node name="HUD" type="CanvasLayer" unique_id=1832469491]
 script = ExtResource("1_1kbos")
 
@@ -56,3 +63,36 @@ theme_override_fonts/font = ExtResource("2_geety")
 texture_filter = 1
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_geety")
+
+[node name="PanelCombate" type="PanelContainer" parent="."]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -516.0
+offset_top = -174.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_combate")
+
+[node name="Datos" type="VBoxContainer" parent="PanelCombate"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LabelEstado" type="Label" parent="PanelCombate/Datos"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_geety")
+theme_override_font_sizes/font_size = 24
+
+[node name="LabelRestantes" type="Label" parent="PanelCombate/Datos"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_geety")
+theme_override_font_sizes/font_size = 22
+
+[node name="LabelEntrantes" type="Label" parent="PanelCombate/Datos"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_geety")
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3

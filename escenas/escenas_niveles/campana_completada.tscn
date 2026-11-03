@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_niveles/victoria_nivel.tscn" id="1_victoria"]
+
+[node name="CampanaCompletada" instance=ExtResource("1_victoria")]
+campana_finalizada = true

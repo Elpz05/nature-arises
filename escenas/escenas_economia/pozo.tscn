@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/economia/pozo.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_economia/gota.tscn" id="2_gota"]
+
+[node name="Pozo" type="Node2D"]
+z_index = 20
+script = ExtResource("1_script")
+gota_escena = ExtResource("2_gota")
+
+[node name="Temporizador" type="Timer" parent="."]
+
+[node name="Gotas" type="Node2D" parent="."]

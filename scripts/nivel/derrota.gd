@@ -44,7 +44,7 @@ func _ready() -> void:
 	var reiniciar := _boton("Reiniciar Nivel", _reiniciar)
 	caja.add_child(reiniciar)
 	caja.add_child(_boton("Volver al Menú", _volver))
-	reiniciar
+	reiniciar.grab_focus()
 
 func _boton(texto: String, accion: Callable) -> Button:
 	var b := Button.new()
@@ -61,3 +61,8 @@ func _reiniciar() -> void:
 func _volver() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file(ESCENA_SLOTS)
+
+func _unhandled_input(event: InputEvent):
+	if event.is_action_pressed("Atras"):
+		get_viewport().set_input_as_handled()
+		_volver()

@@ -14,8 +14,12 @@ func inicializar(boton_default: Button) -> void:
 		boton_default.grab_focus()
 	else:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		boton_default.grab_focus()
 
 func manejar_input(event: InputEvent, viewport: Viewport, boton_default: Button) -> void:
+	if event is InputEventKey and (event.is_action_pressed("Confirmar") or event.is_action_pressed("Izquierda") or event.is_action_pressed("Derecha") or event.is_action_pressed("Arriba") or event.is_action_pressed("Abajo")):
+		if not viewport.gui_get_focus_owner():
+			boton_default.grab_focus()
 	if event is InputEventMouseMotion:
 		if Input.mouse_mode == Input.MOUSE_MODE_HIDDEN:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
