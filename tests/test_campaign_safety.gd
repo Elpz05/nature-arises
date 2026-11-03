@@ -51,13 +51,16 @@ func _run():
 	_check(FileAccess.get_file_as_string(save._ruta(0) + ".bak") == broken, "First repair must preserve original bytes in a backup")
 	_check(save.leer(0).nivel_actual == 1 and not FileAccess.file_exists(save._ruta(0) + ".tmp"), "Successful save must replace the destination and leave no temp file")
 	save.completar_nivel(1)
-	_check(save.leer(0).campana_completada and save.datos.nivel_actual == 2, "Final victory must persist completion")
+	_check(not save.leer(0).campana_completada and save.datos.nivel_actual == 2, "Second victory must unlock the expanded campaign")
+	for n in range(2, save.NIVELES.size()):
+		save.completar_nivel(n)
+	_check(save.leer(0).campana_completada and save.datos.nivel_actual == save.NIVELES.size(), "Final victory must persist completion")
 	save.completar_nivel(0)
-	_check(save.datos.nivel_actual == 2, "Replaying earlier levels must preserve completion")
+	_check(save.datos.nivel_actual == save.NIVELES.size(), "Replaying earlier levels must preserve completion")
 	save.entrar(0)
-	_check(save.loaded_level == 2 and save.escena_para_nivel(save.loaded_level) == save.ESCENA_CAMPANA, "Completed saves must route to the final screen, never level 0")
+	_check(save.loaded_level == save.NIVELES.size() and save.escena_para_nivel(save.loaded_level) == save.ESCENA_CAMPANA, "Completed saves must route to the final screen, never level 0")
 	_check(save.escena_para_nivel(1) == save.NIVELES[1], "Level 0 victory must still lead to level 1")
-	_check(save.validar_datos({"nivel_actual": 2}).campana_completada, "Legacy completed saves must migrate to the final outcome")
+	_check(not save.validar_datos({"nivel_actual": 2}).campana_completada and save.validar_datos({"nivel_actual": 2}).nivel_actual == 2, "Legacy completion must resume at the first new level")
 	var valid_bytes := FileAccess.get_file_as_string(save._ruta(0))
 	var fixture_dir: String = save.directory
 	save.directory = fixture_dir.path_join("missing/directory")
@@ -76,7 +79,7 @@ func _run():
 	var singleton = root.get_node("Guardado")
 	var original_slot: int = singleton.slot_actual
 	singleton.slot_actual = -1
-	for index in 2:
+	for index in singleton.NIVELES.size():
 		var level = load("res://escenas/escenas_niveles/nivel_%d.tscn" % index).instantiate()
 		root.add_child(level)
 		level._ganar_nivel()
@@ -88,9 +91,9 @@ func _run():
 		var texts: Array = []
 		for child in victory.contenedor.get_children():
 			texts.append(child.text)
-		_check(victory.campana_finalizada == (index == 1), "Only the final level must display campaign completion")
-		_check(texts.has("Siguiente nivel") == (index == 0), "The final screen must not offer another level")
-		if index == 1:
+		_check(victory.campana_finalizada == (index == singleton.NIVELES.size() - 1), "Only the final level must display campaign completion")
+		_check(texts.has("Siguiente nivel") == (index < singleton.NIVELES.size() - 1), "The final screen must not offer another level")
+		if index == singleton.NIVELES.size() - 1:
 			_check(texts.has("¡Campaña completada!") and texts.has("Menú principal"), "Final victory must have explicit completion and menu actions")
 			victory._siguiente()
 			victory._ir_al_siguiente_nivel()

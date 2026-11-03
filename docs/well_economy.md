@@ -1,3 +1,5 @@
+> Actualización: las reglas de economía, pala, Flamma y Aqua de este documento han sido sustituidas por [el primer bloque de mecánicas](mecanicas_implementacion.md).
+
 # Placement range and well economy
 
 Both features are implemented in the shared level, so they work in level 0 and

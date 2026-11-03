@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_prueba.tscn" id="1_base"]
+
+[node name="BestiaTerra" instance=ExtResource("1_base")]
+tipo = "terra"
+
+[node name="Sprite2D" parent="." index="0"]
+modulate = Color(0.65, 0.43, 0.2, 1)

@@ -1,3 +1,5 @@
+> Actualización: las reglas de economía, pala, Flamma y Aqua de este documento han sido sustituidas por [el primer bloque de mecánicas](mecanicas_implementacion.md).
+
 # Tower scenes and roles
 
 Both levels use the same `semillas_escenas` order as `hud.gd` and saved plant unlocks:

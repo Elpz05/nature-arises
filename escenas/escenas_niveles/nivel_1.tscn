@@ -19,6 +19,22 @@
 [ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_aqua.tscn" id="14_aqua"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_niveles/nivel_base.tscn" id="15_base"]
 
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_terra.tscn" id="terra"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_glacies.tscn" id="glacies"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_electricitas.tscn" id="electricitas"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_venenum.tscn" id="venenum"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_terra.tscn" id="bestia_terra"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_electricitas.tscn" id="bestia_electricitas"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_glacies.tscn" id="bestia_glacies"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_venenum.tscn" id="bestia_venenum"]
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qeiqq"]
 texture = ExtResource("10_5w2bm")
 texture_region_size = Vector2i(64, 64)
@@ -53,14 +69,16 @@ sources/0 = SubResource("TileSetAtlasSource_38e28")
 script = ExtResource("1_huwg2")
 arbol_madre_escena = ExtResource("3_38e28")
 hud_escena = ExtResource("4_mgvlk")
-semillas_escenas = Array[PackedScene]([ExtResource("4_gp2ld"), ExtResource("13_flamma"), ExtResource("14_aqua"), null, null, null, null])
+semillas_escenas = Array[PackedScene]([ExtResource("4_gp2ld"), ExtResource("13_flamma"), ExtResource("14_aqua"), ExtResource("terra"), ExtResource("electricitas"), ExtResource("glacies"), ExtResource("venenum")])
 pausa_escena = ExtResource("6_stj5n")
 numero_nivel = 1
+clima = "lluvia"
+celdas_inundadas = Array[Vector2i]([Vector2i(6, 4), Vector2i(7, 4), Vector2i(8, 4), Vector2i(9, 4), Vector2i(10, 4)])
 victoria_escena = ExtResource("7_j2mg8")
 derrota_escena = ExtResource("8_f1x6p")
 sonidos_ataque = Array[AudioStream]([ExtResource("7_ics3g"), null])
 sonido_dano_arbol = ExtResource("10_p1vmi")
-bestias_escenas = Array[PackedScene]([ExtResource("10_stj5n"), ExtResource("11_j2mg8"), ExtResource("12_gp2ld"), null, null, null, null])
+bestias_escenas = Array[PackedScene]([ExtResource("10_stj5n"), ExtResource("11_j2mg8"), ExtResource("12_gp2ld"), ExtResource("bestia_terra"), ExtResource("bestia_electricitas"), ExtResource("bestia_glacies"), ExtResource("bestia_venenum")])
 
 [node name="Suelo" parent="." index="0"]
 texture_filter = 1

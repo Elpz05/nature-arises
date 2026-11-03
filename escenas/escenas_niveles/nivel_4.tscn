@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_niveles/nivel_1.tscn" id="1_base"]
+[ext_resource type="Script" path="res://scripts/nivel/nivel_campana.gd" id="2_script"]
+
+[node name="Nivel4" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+numero_nivel = 4

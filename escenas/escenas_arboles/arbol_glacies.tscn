@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_elemental_base.tscn" id="1_base"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_balas/carambano.tscn" id="2_bala"]
+
+[node name="ArbolGlacies" instance=ExtResource("1_base")]
+elemento = "glacies"
+semilla_escena = ExtResource("2_bala")
+dano_bala = 2
+balas_por_segundo = 1.0
+costos = Array[int]([3, 5, 8])
+color_bala = Color(0.55, 0.9, 1, 1)
+
+[node name="Placeholder" parent="Arbol" index="0"]
+polygon = PackedVector2Array(0, -28, 12, -8, 23, -17, 18, 9, 25, 22, -25, 22, -18, 9, -23, -17, -12, -8)
+color = Color(0.55, 0.9, 1, 1)

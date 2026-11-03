@@ -19,6 +19,11 @@ extends Node2D
 @export var sonido_dano_arbol: AudioStream
 @export var pozo_escena: PackedScene = preload("res://escenas/escenas_economia/pozo.tscn")
 @export var celda_pozo := Vector2i(28, 5)
+@export_enum("despejado", "lluvia", "tormenta", "volcan", "ventisca", "derrumbe", "radiacion") var clima := "despejado"
+@export_enum("pequeno", "mediano", "grande") var intensidad_tormenta := "mediano"
+@export var celdas_inundadas: Array[Vector2i] = []
+@export var celdas_geiser: Array[Vector2i] = []
+var gestor_clima: Node2D
 
 @onready var suelo: TileMapLayer = $Suelo
 @onready var camino: TileMapLayer = $Camino
@@ -32,9 +37,12 @@ const TAM_CELDA := 64
 const TAMANOS := ["pequeno", "mediano", "grande"]
 const NOMBRES_TAMANO := ["pequeño", "mediano", "grande"]
 const GOTAS_INICIALES := 3
+@export var gotas_iniciales := GOTAS_INICIALES
+@export var titulo_nivel := ""
+@export_multiline var consejo_nivel := ""
 const RECARGA_ATAQUE := 3.0
 const FILAS_BLOQUEADAS := 3
-const TIPOS_BESTIA := ["natura", "flamma", "aqua"]
+const TIPOS_BESTIA := ["natura", "flamma", "aqua", "terra", "electricitas", "glacies", "venenum"]
 
 # Los hijos rellenan estos datos en _configurar_nivel(), antes de generar el mapa.
 var puntos_ruta: Array = []
@@ -51,6 +59,11 @@ var celdas_ocupadas := {}
 var arbol_meta
 
 var gotas := GOTAS_INICIALES
+var _agua_acumulada := 0.0
+var _tiempo_ventus := 0.0
+var _contactos_aqua: Dictionary = {}
+var _dano_aura_acumulado: Dictionary = {}
+var _conexiones_ruta_principal: Dictionary = {}
 var pozo: Node2D
 var _clic_gota_consumido := false
 var datos_rango_colocacion: Dictionary = {}
@@ -75,7 +88,7 @@ var seleccion_tipo := ""          # "", "semilla" o "ataque"
 var seleccion_indice := -1
 var arrastrando := false
 
-var cargas: Array[int] = []
+var cargas: Array[float] = []
 var recarga: Array[float] = []
 var vista: Node2D
 
@@ -92,6 +105,9 @@ func _configurar_nivel() -> void:
 	pass
 
 func _validar_configuracion() -> bool:
+	if not preload("res://scripts/nivel/clima.gd").NOMBRES.has(clima) or not preload("res://scripts/nivel/clima.gd").RAYOS.has(intensidad_tormenta):
+		push_error("Clima o intensidad de tormenta inválidos.")
+		return false
 	if rondas.is_empty() or rondas.size() > intervalos_spawn.size():
 		push_error("El nivel necesita rondas e intervalos de aparición compatibles.")
 		return false
@@ -142,6 +158,15 @@ func _validar_configuracion() -> bool:
 		if _celdas_de(puntos).has(celda_pozo):
 			push_error("El pozo no puede ocupar un camino de enemigos.")
 			return false
+	if clima == "volcan":
+		for celda in celdas_geiser:
+			if not _se_puede_plantar(celda) or celda == celda_pozo or celdas_bloqueadas.has(celda):
+				push_error("Los géiseres necesitan casillas libres dentro del tablero.")
+				return false
+			for puntos in recorridos:
+				if _celdas_de(puntos).has(celda):
+					push_error("Un géiser no puede ocupar un camino.")
+					return false
 	return true
 
 func _puede_jugar() -> bool:
@@ -149,6 +174,7 @@ func _puede_jugar() -> bool:
 
 func _ready():
 	_configurar_nivel()
+	gotas = gotas_iniciales
 	if not _validar_configuracion():
 		set_process(false)
 		set_process_input(false)
@@ -160,6 +186,10 @@ func _ready():
 	_crear_hud()
 	_generar_tablero()
 	_generar_camino()
+	if clima == "volcan":
+		for celda in celdas_geiser:
+			celdas_ocupadas[celda] = true
+	_marcar_inundaciones()
 	_generar_curva()
 	_crear_arbol_madre()
 	_crear_pozo()
@@ -171,6 +201,7 @@ func _ready():
 	for i in hud.ATAQUES.size():
 		cargas.append(hud.ATAQUES[i].capacidad)
 		recarga.append(0.0)
+		hud.actualizar_ataque(i, cargas[i], hud.ATAQUES[i].capacidad)
 
 	hud.actualizar_gotas(gotas)
 	hud.actualizar_ronda(ronda, rondas.size())
@@ -185,11 +216,21 @@ func _ready():
 	sfx_arbol.bus = "SFX"
 	add_child(sfx_arbol)
 	inicializado = true
+	gestor_clima = preload("res://scripts/nivel/clima.gd").new()
+	gestor_clima.nivel = self
+	add_child(gestor_clima)
+	hud.actualizar_produccion(obtener_produccion_agua(), clima)
 	_actualizar_combate_hud()
 # ---------------- HUD ----------------
 func _crear_hud():
 	hud = hud_escena.instantiate()
 	add_child(hud)
+	if not titulo_nivel.is_empty():
+		hud.mostrar_mision("%d/%d · %s" % [numero_nivel + 1, Guardado.NIVELES.size(), titulo_nivel], consejo_nivel)
+	if Guardado.slot_actual < 0:
+		var disponibles: Dictionary = preload("res://scripts/nivel/campana.gd").disponibles_para_nivel(numero_nivel)
+		hud.SEMILLAS_ACTIVAS = disponibles.plantas
+		hud.ATAQUES_ACTIVOS = disponibles.ataques
 	hud.semilla_pulsada.connect(_on_semilla_pulsada)
 	hud.ataque_pulsado.connect(_on_ataque_pulsado)
 	hud.ronda_solicitada.connect(_iniciar_ronda)
@@ -289,6 +330,29 @@ func _pintar_camino(celda: Vector2i):
 	camino.set_cell(celda, source_camino, Vector2i(0, 0))
 	celdas_ocupadas[celda] = true
 
+func _es_camino(celda: Vector2i) -> bool:
+	if camino.get_cell_source_id(celda) != -1:
+		return true
+	for datos in rutas_adicionales:
+		if (get_node(NodePath(datos.capa)) as TileMapLayer).get_cell_source_id(celda) != -1:
+			return true
+	return false
+
+func _esta_inundada(celda: Vector2i) -> bool:
+	return clima in ["lluvia", "tormenta"] and celdas_inundadas.has(celda) and _es_camino(celda)
+
+func _marcar_inundaciones():
+	var agua := Node2D.new()
+	agua.name = "Inundaciones"
+	agua.draw.connect(func():
+		for celda in celdas_inundadas:
+			if _esta_inundada(celda):
+				var centro := agua.to_local(suelo.to_global(suelo.map_to_local(celda)))
+				agua.draw_rect(Rect2(centro - Vector2.ONE * 32, Vector2.ONE * 64), Color(0.1, 0.55, 0.95, 0.5))
+	)
+	add_child(agua)
+	move_child(agua, arboles.get_index())
+
 func _generar_curva():
 	ruta.curve = _curva_de(puntos_ruta, ruta)
 	for datos in rutas_adicionales:
@@ -345,6 +409,10 @@ func _crear_espiritu(tipo: String = "natura", tamano: String = "pequeno", progre
 	var espiritu = escena.instantiate()
 	espiritu.tipo = tipo
 	espiritu.tamano = tamano
+	espiritu.resolver_avance = _resolver_avance_terra
+	espiritu.puede_avanzar = _puede_jugar
+	espiritu.cambiar_ruta = _ignorar_atajos
+	espiritu.clima = clima
 	espiritu.llego_a_meta.connect(_on_espiritu_llego)
 	espiritu.invocar_copia.connect(_crear_espiritu)
 	seguidor.add_child(espiritu)
@@ -419,19 +487,64 @@ func _terminar_ronda():
 	hud.mostrar_boton_ronda("Iniciar ronda %d" % ronda, true)
 	_actualizar_combate_hud()
 
+func _physics_process(delta: float):
+	_actualizar_auras_bestias(delta)
+	if is_instance_valid(gestor_clima):
+		gestor_clima.actualizar(delta)
+
+func _actualizar_auras_bestias(delta: float):
+	if not _puede_jugar():
+		return
+	var auras: Dictionary = {}
+	for bestia in _bestias_vivas():
+		if bestia.tipo not in ["electricitas", "glacies", "venenum"]:
+			continue
+		var celda := suelo.local_to_map(suelo.to_local(bestia.global_position))
+		for x in range(-1, 2):
+			for y in range(-1, 2):
+				if x == 0 and y == 0:
+					continue
+				var vecina := celda + Vector2i(x, y)
+				if not auras.has(vecina):
+					auras[vecina] = {"electricitas": 0, "glacies": 0, "venenum": 0}
+				auras[vecina][bestia.tipo] += 1
+	var llamas: Array = arboles_plantados.values().filter(func(arbol):
+		return is_instance_valid(arbol) and not arbol.is_queued_for_deletion() and arbol.vida > 0 and arbol.elemento == "flamma"
+	)
+	var acumulados: Dictionary = {}
+	# La muerte por aura puede liberar una celda: se itera una copia de las claves.
+	for celda in arboles_plantados.keys():
+		var arbol = arboles_plantados[celda]
+		if not is_instance_valid(arbol) or arbol.is_queued_for_deletion() or arbol.vida <= 0:
+			continue
+		var efectos: Dictionary = auras.get(celda, {})
+		var protegido: bool = arbol.elemento == "glacies"
+		for flamma in llamas:
+			if not is_instance_valid(flamma) or flamma.is_queued_for_deletion() or flamma.vida <= 0:
+				continue
+			var radio: float = flamma.obtener_estadisticas().radio
+			if flamma.forma.global_position.distance_squared_to(arbol.global_position) <= radio * radio:
+				protegido = true
+				break
+		arbol.aplicar_auras(efectos.get("glacies", 0) > 0 and not protegido, efectos.get("venenum", 0) > 0)
+		var id: int = arbol.get_instance_id()
+		var dosis: float = _dano_aura_acumulado.get(id, 0.0) + efectos.get("electricitas", 0) * maxf(0.0, delta)
+		var dano := floori(dosis + 0.000001)
+		if dano > 0:
+			arbol.recibir_dano(dano)
+		if arbol.vida > 0:
+			acumulados[id] = maxf(0.0, dosis - dano)
+	_dano_aura_acumulado = acumulados
+
 func _process(delta):
 	if not _puede_jugar():
 		return
 	_actualizar_cursor(delta)
+	_actualizar_recursos(delta)
+	_actualizar_ventus(delta)
+	_actualizar_contactos_aqua()
 
-	# Recarga de ataques elementales
-	for i in cargas.size():
-		if recarga[i] > 0.0:
-			recarga[i] -= delta
-			if recarga[i] <= 0.0:
-				recarga[i] = 0.0
-				cargas[i] = hud.ATAQUES[i].capacidad
-				hud.actualizar_ataque(i, cargas[i], cargas[i])
+	_actualizar_recargas(delta)
 
 	if ronda_activa:
 		# Salida de bestias
@@ -448,6 +561,147 @@ func _process(delta):
 	_actualizar_tooltip()
 	if seleccion_tipo != "" or usar_cursor_tablero:
 		vista.queue_redraw()
+
+func obtener_produccion_agua() -> float:
+	var produccion: float = 0.5 + {"lluvia": 0.25, "tormenta": 0.5}.get(clima, 0.0)
+	if clima == "volcan":
+		produccion = 0.25
+	for arbol in arboles_plantados.values():
+		if is_instance_valid(arbol) and not arbol.is_queued_for_deletion() and arbol.vida > 0:
+			produccion += arbol.obtener_produccion()
+	return produccion
+
+func _actualizar_recursos(delta: float):
+	_agua_acumulada += obtener_produccion_agua() * delta
+	var completas := floori(_agua_acumulada + 0.000001)
+	if completas > 0:
+		_agua_acumulada = maxf(0.0, _agua_acumulada - completas)
+		gotas += completas
+		hud.actualizar_gotas(gotas)
+	hud.actualizar_produccion(obtener_produccion_agua(), clima)
+
+func _bestias_vivas() -> Array:
+	var bestias: Array = []
+	for recorrido in [ruta] + rutas_enemigos.values():
+		for seguidor in recorrido.get_children():
+			if seguidor.is_queued_for_deletion():
+				continue
+			for bestia in seguidor.get_children():
+				if bestia.is_in_group("bestias") and not bestia.muerto and not bestia.is_queued_for_deletion():
+					bestias.append(bestia)
+	return bestias
+
+func _actualizar_ventus(delta: float):
+	_tiempo_ventus += delta
+	while _tiempo_ventus >= 20.0:
+		_tiempo_ventus -= 20.0
+		var candidatas := _bestias_vivas()
+		if not candidatas.is_empty():
+			candidatas.pick_random().bendecir_ventus()
+
+func _resolver_avance_terra(bestia, desde: float, hasta: float) -> float:
+	if not _puede_jugar():
+		return desde
+	if bestia.efecto_elemental.elemento == "electricitas" and hasta <= desde:
+		return hasta
+	if bestia.efecto_elemental.elemento == "aqua":
+		var cambio := _resolver_confusion(bestia, desde, hasta, minf(hasta, bestia.limite_confusion))
+		desde = cambio.x
+		hasta = cambio.y
+	if bestia.tipo == "aqua" or hasta < desde:
+		return hasta
+	var seguidor := bestia.get_parent() as PathFollow2D
+	var recorrido := seguidor.get_parent() as Path2D
+	var primera_entrada := INF
+	var bloqueo: Arbol = null
+	for celda in arboles_plantados:
+		var arbol = arboles_plantados[celda]
+		if not is_instance_valid(arbol) or arbol.is_queued_for_deletion() or arbol.vida <= 0 or arbol.elemento != "terra":
+			continue
+		# Solo bloquea rutas que atraviesan el centro de su casilla.
+		# La posición sobre la curva permite empujar también en giros y atajos.
+		var centro := recorrido.to_local(arbol.global_position)
+		var offset := recorrido.curve.get_closest_offset(centro)
+		if recorrido.curve.sample_baked(offset).distance_squared_to(centro) > 1.0:
+			continue
+		var entrada := maxf(0.0, offset - TAM_CELDA * 0.5)
+		var salida := offset + TAM_CELDA * 0.5
+		# Comprueba todo el tramo, para no atravesar Terra con un delta grande.
+		if desde > salida or hasta < entrada:
+			continue
+		if entrada < primera_entrada:
+			primera_entrada = entrada
+			bloqueo = arbol
+	if bloqueo == null:
+		return hasta
+	if bestia.recarga_contacto > 0.0:
+		return primera_entrada
+	bestia.recarga_contacto = bestia.INTERVALO_CONTACTO
+	var empuje := bloqueo.obtener_empuje() * TAM_CELDA
+	bloqueo.recibir_dano(bestia.DANO_CONTACTO.get(bestia.tipo, 0))
+	return maxf(0.0, primera_entrada - empuje)
+
+func _ignorar_atajos(bestia):
+	var seguidor := bestia.get_parent() as PathFollow2D
+	_resolver_confusion(bestia, seguidor.progress, seguidor.progress, seguidor.progress)
+
+func _resolver_confusion(bestia, desde: float, hasta: float, limite: float) -> Vector2:
+	var seguidor := bestia.get_parent() as PathFollow2D
+	var actual := seguidor.get_parent() as Path2D
+	if actual == ruta or hasta < desde:
+		return Vector2(desde, hasta)
+	var posicion := actual.to_global(actual.curve.sample_baked(desde))
+	var offset := ruta.curve.get_closest_offset(ruta.to_local(posicion))
+	var punto := ruta.to_global(ruta.curve.sample_baked(offset))
+	var enlace := Vector2(INF, INF)
+	if posicion.distance_squared_to(punto) <= 1.0:
+		enlace = Vector2(desde, offset)
+	else:
+		var id := actual.get_instance_id()
+		if not _conexiones_ruta_principal.has(id):
+			var conexiones: Array[Vector2] = []
+			for celda in _celdas_de(puntos_ruta):
+				var mundo := suelo.to_global(suelo.map_to_local(celda))
+				var progreso := actual.curve.get_closest_offset(actual.to_local(mundo))
+				if actual.to_global(actual.curve.sample_baked(progreso)).distance_squared_to(mundo) <= 1.0:
+					conexiones.append(Vector2(progreso, ruta.curve.get_closest_offset(ruta.to_local(mundo))))
+			_conexiones_ruta_principal[id] = conexiones
+		for conexion in _conexiones_ruta_principal[id]:
+			if conexion.x >= desde and conexion.x <= limite and conexion.x < enlace.x:
+				enlace = conexion
+	if is_inf(enlace.x):
+		return Vector2(desde, hasta)
+	# Antes de cambiar de ruta debe respetar los bloqueos del tramo antiguo.
+	if bestia.tipo != "aqua":
+		for arbol in arboles_plantados.values():
+			if not is_instance_valid(arbol) or arbol.is_queued_for_deletion() or arbol.vida <= 0 or arbol.elemento != "terra":
+				continue
+			var centro := actual.to_local(arbol.global_position)
+			var obstaculo := actual.curve.get_closest_offset(centro)
+			if actual.curve.sample_baked(obstaculo).distance_squared_to(centro) <= 1.0 and desde <= obstaculo + TAM_CELDA * 0.5 and maxf(0.0, obstaculo - TAM_CELDA * 0.5) <= enlace.x:
+				return Vector2(desde, hasta)
+	seguidor.reparent(ruta)
+	seguidor.progress = enlace.y
+	# Se conserva el recorrido restante del fotograma sobre el camino normal.
+	return Vector2(enlace.y, enlace.y + hasta - enlace.x)
+
+func _actualizar_contactos_aqua():
+	var actuales: Dictionary = {}
+	for bestia in _bestias_vivas():
+		var celda := suelo.local_to_map(suelo.to_local(bestia.global_position))
+		var arbol = arboles_plantados.get(celda)
+		if not is_instance_valid(arbol) or arbol.is_queued_for_deletion() or arbol.elemento != "aqua":
+			continue
+		var clave := "%s:%s" % [bestia.get_instance_id(), arbol.get_instance_id()]
+		actuales[clave] = true
+		if _contactos_aqua.has(clave) or bestia.tipo == "aqua":
+			continue
+		if bestia.tipo == "flamma":
+			arbol.recibir_dano(25)
+			bestia.recibir_dano(100)
+		else:
+			arbol.recibir_dano(arbol.vida)
+	_contactos_aqua = actuales
 
 func _perder_nivel():
 	if terminado:
@@ -487,8 +741,6 @@ func _ganar_nivel():
 
 	if Guardado.slot_actual >= 0:
 		Guardado.completar_nivel(numero_nivel)
-		Guardado.desbloquear(desbloqueos)
-		Guardado.desbloquear_ataques(desbloqueos_ataques)
 
 	if victoria_escena == null:
 		push_error("Falta asignar Victoria Escena en el Inspector del nivel")
@@ -532,7 +784,7 @@ func _on_semilla_pulsada(i: int, arrastre: bool):
 func _on_ataque_pulsado(i: int, arrastre: bool):
 	if not _puede_jugar():
 		return
-	if not hud.ATAQUES_ACTIVOS.has(i) or cargas[i] <= 0:
+	if i < 0 or i >= cargas.size() or not hud.ATAQUES_ACTIVOS.has(i) or cargas[i] < 1.0:
 		return
 	seleccion_tipo = "ataque"
 	seleccion_indice = i
@@ -630,7 +882,7 @@ func _confirmar(pos: Vector2):
 	if seleccion_tipo == "semilla":
 		var celda := suelo.local_to_map(pos)
 		var costo: int = hud.SEMILLAS[seleccion_indice].costo
-		if _se_puede_plantar(celda) and gotas >= costo and _plantar(celda, seleccion_indice):
+		if _se_puede_plantar(celda, seleccion_indice) and gotas >= costo and _plantar(celda, seleccion_indice):
 			gotas -= costo
 			hud.actualizar_gotas(gotas)
 			_deseleccionar()
@@ -641,18 +893,27 @@ func _confirmar(pos: Vector2):
 		_quitar_arbol(suelo.local_to_map(pos))
 		_deseleccionar()
 
-func _se_puede_plantar(celda: Vector2i) -> bool:
+func _se_puede_plantar(celda: Vector2i, tipo: int = -1) -> bool:
 	if celda.x < 0 or celda.x >= ANCHO or celda.y < FILAS_BLOQUEADAS or celda.y >= ALTO:
 		return false
+	if arboles_plantados.has(celda) or celda == celda_arbol_madre or celdas_bloqueadas.has(celda):
+		return false
+	if tipo == 2:
+		return _esta_inundada(celda)
+	if tipo == 3:
+		return not _esta_inundada(celda) and (_es_camino(celda) or not celdas_ocupadas.has(celda))
 	return not celdas_ocupadas.has(celda)
 
 func _plantar(celda: Vector2i, tipo: int) -> bool:
-	if not _puede_jugar() or not _se_puede_plantar(celda) or tipo < 0:
+	if not _puede_jugar() or not _se_puede_plantar(celda, tipo) or tipo < 0:
 		return false
 	if tipo >= semillas_escenas.size() or semillas_escenas[tipo] == null:
 		push_warning("Falta la escena de la semilla %d en Semillas Escenas" % tipo)
 		return false
 	var arbol = semillas_escenas[tipo].instantiate()
+	var modificadores: Dictionary = preload("res://scripts/nivel/clima.gd").modificadores_arbol(clima, arbol.elemento)
+	arbol.modificador_cadencia = modificadores.cadencia
+	arbol.modificador_dano = modificadores.dano
 	arbol.position = suelo.map_to_local(celda)
 	arboles.add_child(arbol)
 	celdas_ocupadas[celda] = true
@@ -661,35 +922,52 @@ func _plantar(celda: Vector2i, tipo: int) -> bool:
 	tamanos_plantados[celda] = 0
 	costos_plantados[celda] = hud.SEMILLAS[tipo].costos[0]
 	arbol.murio.connect(liberar_celda.bind(celda))
+	if is_instance_valid(gestor_clima):
+		gestor_clima.actualizar_proteccion()
+	hud.actualizar_produccion(obtener_produccion_agua(), clima)
 	return true
 
-func _lanzar_ataque(pos: Vector2, i: int):
-	if not _puede_jugar():
-		return
-	var datos = hud.ATAQUES[i]
-	cargas[i] -= 1
+func _actualizar_recargas(delta: float):
+	for i in cargas.size():
+		if recarga[i] <= 0.0:
+			continue
+		recarga[i] -= delta
+		var maxima: float = hud.ATAQUES[i].capacidad
+		while recarga[i] <= 0.000001:
+			cargas[i] = minf(maxima, cargas[i] + 1.0)
+			if cargas[i] >= maxima:
+				recarga[i] = 0.0
+				break
+			recarga[i] += RECARGA_ATAQUE
+		hud.actualizar_ataque(i, cargas[i], maxima, recarga[i])
+
+func _lanzar_ataque(pos: Vector2, i: int) -> bool:
+	if not _puede_jugar() or i < 0 or i >= cargas.size() or not hud.ATAQUES_ACTIVOS.has(i) or cargas[i] < 1.0:
+		return false
+	var datos: Dictionary = hud.ATAQUES[i]
+	cargas[i] -= 1.0
 	if recarga[i] == 0.0:
 		recarga[i] = RECARGA_ATAQUE
-	hud.actualizar_ataque(i, cargas[i], datos.capacidad)
-
+	hud.actualizar_ataque(i, cargas[i], datos.capacidad, recarga[i])
 	if i < sonidos_ataque.size() and sonidos_ataque[i] != null:
 		sfx_ataque.stream = sonidos_ataque[i]
 		sfx_ataque.play()
-
 	var centro := to_global(pos)
 	var radio: float = datos.radio * TAM_CELDA
-	var golpeadas := 0
-	for bestia in get_tree().get_nodes_in_group("bestias"):
-		if bestia.global_position.distance_to(centro) > radio:
-			continue
-		golpeadas += 1
-		if bestia.has_method("aplicar_ataque_elemental"):
-			bestia.aplicar_ataque_elemental(datos.nombre, datos.dano)
-		elif bestia.has_method("recibir_dano"):
-			bestia.recibir_dano(datos.dano)
-		else:
-			push_warning("La bestia no tiene recibir_dano() ni aplicar_ataque_elemental()")
-	print("Ataque %s: %d bestias golpeadas" % [datos.nombre, golpeadas])
+	var victimas: Array = _bestias_vivas().filter(func(bestia): return bestia.global_position.distance_squared_to(centro) <= radio * radio)
+	var lentas: Array = []
+	if datos.nombre == "Venenum":
+		lentas = victimas.filter(func(bestia): return bestia.tipo != "venenum" and not (bestia.tipo == "natura" and bestia.tamano == "pequeno"))
+		lentas.shuffle()
+		lentas.resize(mini(3, lentas.size()))
+	for bestia in victimas:
+		bestia.aplicar_ataque_elemental(datos.nombre, datos.dano, lentas.has(bestia))
+	var visual = preload("res://scripts/nivel/efecto_ataque.gd").new()
+	visual.radio = radio
+	visual.color = preload("res://scripts/entidades/bestias/efecto_elemental.gd").COLORES[datos.nombre.to_lower()]
+	visual.position = pos
+	add_child(visual)
+	return true
 
 # ---------------- Vista previa ----------------
 func _crear_vista():
@@ -710,7 +988,7 @@ func _dibujar_vista():
 	if seleccion_tipo == "semilla":
 		var celda := suelo.local_to_map(pos)
 		var costo: int = hud.SEMILLAS[seleccion_indice].costo
-		var ok := _se_puede_plantar(celda) and gotas >= costo
+		var ok := _se_puede_plantar(celda, seleccion_indice) and gotas >= costo
 		var color := Color(0, 1, 0, 0.4) if ok else Color(1, 0, 0, 0.4)
 		var origen := suelo.map_to_local(celda) - Vector2(TAM_CELDA, TAM_CELDA) / 2.0
 		if not datos_rango_colocacion.is_empty():
@@ -745,9 +1023,6 @@ func _quitar_arbol(celda: Vector2i):
 	if is_instance_valid(arbol):
 		arbol.queue_free()
 
-	gotas += costos_plantados.get(celda, 0)
-	hud.actualizar_gotas(gotas)
-
 	liberar_celda(celda)
 
 func liberar_celda(celda: Vector2i):
@@ -757,7 +1032,9 @@ func liberar_celda(celda: Vector2i):
 	costos_plantados.erase(celda)
 	tipos_plantados.erase(celda)
 	tamanos_plantados.erase(celda)
-	celdas_ocupadas.erase(celda)
+	if not _es_camino(celda):
+		celdas_ocupadas.erase(celda)
+	hud.actualizar_produccion(obtener_produccion_agua(), clima)
 
 func _costo_mejora(celda: Vector2i) -> int:
 	var tipo: int = tipos_plantados[celda]
@@ -782,9 +1059,10 @@ func _mejorar_arbol(celda: Vector2i):
 		return
 
 	gotas -= costo
-	costos_plantados[celda] += costo        # la pala devuelve todo lo invertido
+	costos_plantados[celda] += costo
 	tamanos_plantados[celda] = t + 1
 	hud.actualizar_gotas(gotas)
+	hud.actualizar_produccion(obtener_produccion_agua(), clima)
 
 func _crear_tooltip():
 	var capa := CanvasLayer.new()
@@ -828,10 +1106,34 @@ func _mostrar_info_torre(celda: Vector2i):
 	var t: int = tamanos_plantados[celda]
 	var datos: Dictionary = arbol.obtener_estadisticas()
 	var texto := "%s | Nivel %d/%d (%s)" % [hud.SEMILLAS[tipo].nombre, t + 1, TAMANOS.size(), NOMBRES_TAMANO[t]]
-	texto += "\nDaño: %d | Disparos/s: %.2f" % [datos.dano, datos.disparos_segundo]
-	texto += "\nAlcance: %.1f celdas" % (datos.radio / TAM_CELDA)
+	texto += "\nVida: %d" % arbol.vida
+	if datos.nivel_congelacion > 0 or clima == "ventisca":
+		texto += "\nCongelación climática: %d/3%s" % [datos.nivel_congelacion, " | Protegido por Flamma" if datos.protegido_ventisca else ""]
+	if clima == "derrumbe" and arbol.elemento == "terra":
+		texto += "\nRocas absorbidas: %d/3" % datos.golpes_derrumbe
+	if datos.bono_geiser > 0.0:
+		texto += "\nGéiser: cadencia +25%% por %.1f s" % datos.bono_geiser
+	if datos.congelado_por_aura:
+		texto += "\nCongelado por aura gélida: no dispara"
+	if datos.intoxicado_por_aura:
+		texto += "\nAura tóxica: cadencia -30% | Fallo 30%"
+	if datos.produccion > 0.0:
+		texto += "\nProducción: +%.1f gotas/s" % datos.produccion
+	elif datos.empuje > 0.0:
+		texto += "\nBloqueo | Empuje: %.1f celdas" % datos.empuje
+		texto += "\nAqua lo atraviesa. Plantar en camino seco para bloquear."
+	else:
+		texto += "\nDaño: %d | Disparos/s: %.2f" % [datos.dano, datos.disparos_segundo]
+		texto += "\nAlcance: %.1f celdas" % (datos.radio / TAM_CELDA)
 	if datos.radio_explosion > 0.0:
 		texto += "\nExplosión: %.1f celdas" % (datos.radio_explosion / TAM_CELDA)
+	if datos.congelacion > 0.0:
+		texto += "\nPenetra hasta %d bestias | Congela %.1f s" % [datos.objetivos, datos.congelacion]
+	elif arbol.elemento == "electricitas":
+		texto += "\nEncadena hasta %d bestias | Salto máximo: 2 casillas" % datos.objetivos
+	if datos.veneno_segundo > 0.0:
+		texto += "\nVeneno: %.0f HP/s durante %.1f s" % [datos.veneno_segundo, datos.duracion_veneno]
+		texto += "\nLentitud: %d%% mientras dure el veneno" % roundi((1.0 - datos.factor_lentitud) * 100)
 	if datos.duracion_lentitud > 0.0:
 		texto += "\nLentitud: %d%% durante %.1f s" % [roundi((1.0 - datos.factor_lentitud) * 100), datos.duracion_lentitud]
 	if t >= TAMANOS.size() - 1:

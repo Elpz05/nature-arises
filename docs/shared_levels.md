@@ -1,3 +1,7 @@
+> Actualización: la campaña tiene ahora ocho niveles y guardado v2. Véase [campana.md](campana.md) para progresión, migración y validación actuales.
+
+> Actualización: las reglas de economía, pala, Flamma y Aqua de este documento han sido sustituidas por [el primer bloque de mecánicas](mecanicas_implementacion.md).
+
 # Shared level structure
 
 Both playable scenes now inherit `res://escenas/escenas_niveles/nivel_base.tscn`.

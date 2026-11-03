@@ -1,14 +1,12 @@
 extends Node
 
 const TOTAL_SLOTS := 3
-const VERSION_GUARDADO := 1
+const VERSION_GUARDADO := 2
+const NIVELES_LEGACY := 2
 const TOTAL_PLANTAS := 7
 const TOTAL_ATAQUES := 7
 const MAX_BYTES := 1048576
-const NIVELES := [
-	"res://escenas/escenas_niveles/nivel_0.tscn",
-	"res://escenas/escenas_niveles/nivel_1.tscn",
-]
+const NIVELES = preload("res://scripts/nivel/campana.gd").ESCENAS
 const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"
 const ESCENA_CAMPANA := "res://escenas/escenas_niveles/campana_completada.tscn"
 
@@ -48,13 +46,16 @@ func _lista_ids(valor: Variant, limite: int, incluir_cero: bool = false) -> Arra
 
 func validar_datos(entrada: Variant) -> Dictionary:
 	var resultado: Dictionary = entrada.duplicate(true) if entrada is Dictionary else {}
-	var progreso := clampi(_entero_seguro(resultado.get("nivel_actual"), 0), 0, NIVELES.size())
-	var completados := _lista_ids(resultado.get("niveles_completados"), NIVELES.size())
+	# Una campaña v1 terminada significaba dos niveles, no los ocho actuales.
+	var legado := _entero_seguro(resultado.get("version"), 1) < VERSION_GUARDADO
+	var limite := NIVELES_LEGACY if legado else NIVELES.size()
+	var progreso := clampi(_entero_seguro(resultado.get("nivel_actual"), 0), 0, limite)
+	var completados := _lista_ids(resultado.get("niveles_completados"), limite)
 	for n in completados:
 		progreso = maxi(progreso, n + 1)
 	var finalizada: bool = resultado.get("campana_completada") is bool and resultado.get("campana_completada") == true
 	if finalizada:
-		progreso = NIVELES.size()
+		progreso = limite
 	# Recupera listas ausentes en partidas antiguas que solo guardaban progreso.
 	for n in progreso:
 		if not completados.has(n):
@@ -62,12 +63,9 @@ func validar_datos(entrada: Variant) -> Dictionary:
 	completados.sort()
 	var plantas := _lista_ids(resultado.get("plantas"), TOTAL_PLANTAS, true)
 	var ataques := _lista_ids(resultado.get("ataques"), TOTAL_ATAQUES, true)
-	if progreso >= 1:
-		for n in [1, 2]:
-			if not plantas.has(n):
-				plantas.append(n)
-		if not ataques.has(1):
-			ataques.append(1)
+	var ganados: Dictionary = preload("res://scripts/nivel/campana.gd").disponibles_para_nivel(progreso)
+	plantas = _lista_ids(plantas + ganados.plantas, TOTAL_PLANTAS, true)
+	ataques = _lista_ids(ataques + ganados.ataques, TOTAL_ATAQUES, true)
 	plantas.sort()
 	ataques.sort()
 	resultado["version"] = VERSION_GUARDADO

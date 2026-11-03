@@ -113,10 +113,13 @@ func _run():
 		_check(level.arboles_plantados.has(cell), "Remapped mouse confirmation must place once")
 		_check(level.gotas == 99, "Mouse press/release must not duplicate placement")
 		level.usar_cursor_tablero = true
-		level.cursor_tablero = Vector2i(1, row)
+		var wet_cell: Vector2i = level.puntos_ruta[0] + Vector2i(1, 0)
+		level.clima = "lluvia"
+		level.celdas_inundadas.assign([wet_cell])
+		level.cursor_tablero = wet_cell
 		root.push_input(_key(KEY_U), true)
 		root.push_input(_key(KEY_K), true)
-		_check(level.arboles_plantados.has(Vector2i(1, row)), "Keyboard confirmation must place at the grid cursor")
+		_check(level.arboles_plantados.has(wet_cell), "Keyboard confirmation must place at the grid cursor")
 		level.usar_cursor_tablero = false
 		var drag_money: int = level.gotas
 		_click(MOUSE_BUTTON_MIDDLE, screen)

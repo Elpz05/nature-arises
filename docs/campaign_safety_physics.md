@@ -1,3 +1,5 @@
+> Actualización: la campaña tiene ahora ocho niveles y guardado v2. Véase [campana.md](campana.md) para progresión, migración y validación actuales.
+
 # Campaign completion, save safety and combat cleanup
 
 ## Campaign ending

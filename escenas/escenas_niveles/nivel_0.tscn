@@ -16,6 +16,26 @@
 [ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_aqua.tscn" id="12_aqua"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_niveles/nivel_base.tscn" id="13_base"]
 
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_terra.tscn" id="terra"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_glacies.tscn" id="glacies"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_electricitas.tscn" id="electricitas"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_venenum.tscn" id="venenum"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_flamma.tscn" id="bestia_flamma"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_aqua.tscn" id="bestia_aqua"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_terra.tscn" id="bestia_terra"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_electricitas.tscn" id="bestia_electricitas"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_glacies.tscn" id="bestia_glacies"]
+
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_venenum.tscn" id="bestia_venenum"]
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3t7eq"]
 texture = ExtResource("2_hlm2r")
 texture_region_size = Vector2i(64, 64)
@@ -40,9 +60,10 @@ sources/2 = SubResource("TileSetAtlasSource_dkhx0")
 [node name="Nivel0" instance=ExtResource("13_base")]
 script = ExtResource("1_ejscs")
 espiritu_escena = ExtResource("2_vqj75")
+bestias_escenas = Array[PackedScene]([ExtResource("2_vqj75"), ExtResource("bestia_flamma"), ExtResource("bestia_aqua"), ExtResource("bestia_terra"), ExtResource("bestia_electricitas"), ExtResource("bestia_glacies"), ExtResource("bestia_venenum")])
 arbol_madre_escena = ExtResource("4_vqj75")
 hud_escena = ExtResource("4_86ku8")
-semillas_escenas = Array[PackedScene]([ExtResource("4_da70j"), ExtResource("11_flamma"), ExtResource("12_aqua"), null, null, null, null])
+semillas_escenas = Array[PackedScene]([ExtResource("4_da70j"), ExtResource("11_flamma"), ExtResource("12_aqua"), ExtResource("terra"), ExtResource("electricitas"), ExtResource("glacies"), ExtResource("venenum")])
 pausa_escena = ExtResource("6_da70j")
 victoria_escena = ExtResource("7_tss67")
 derrota_escena = ExtResource("8_fd034")

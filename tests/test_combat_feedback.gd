@@ -63,7 +63,7 @@ func _run():
 			_check(fire.obtener_porcentaje_vida() == 0.0, "Lethal damage must clamp the health fraction")
 		level.gotas = 100
 		var row := 4 if index == 0 else 3
-		for type in 3:
+		for type in 2:
 			var cell := Vector2i(type, row)
 			_check(level._plantar(cell, type), "All tower scenes must support inspection")
 			var tower = level.arboles_plantados[cell]
@@ -80,7 +80,7 @@ func _run():
 			level._mejorar_arbol(cell)
 			level._mostrar_info_torre(cell)
 			_check(level.tooltip.text.contains("Nivel 2/3"), "Inspection must update after an upgrade")
-			_check(is_equal_approx(tower.obtener_estadisticas().radio, 160.0), "Inspected range must update with upgrades")
+			_check(is_equal_approx(tower.obtener_estadisticas().radio, 160.0 if type == 0 else 192.0), "Inspected range must update with upgrades")
 			level._mejorar_arbol(cell)
 			level._mostrar_info_torre(cell)
 			_check(level.tooltip.text.contains("Tamaño máximo"), "Max-level towers must not display a nonexistent upgrade")
@@ -114,7 +114,7 @@ func _capture_preview():
 	level.hud.ATAQUES_ACTIVOS = [0, 1, 2]
 	level.gotas = 20
 	level.hud.actualizar_gotas(20)
-	for type in 3:
+	for type in 2:
 		level._plantar(Vector2i(5 + type * 3, 3), type)
 	for entry in [["natura", 350.0], ["natura", 500.0], ["flamma", 680.0], ["aqua", 860.0]]:
 		level._crear_espiritu(entry[0], "mediano", entry[1])

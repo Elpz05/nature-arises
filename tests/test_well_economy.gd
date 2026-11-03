@@ -42,8 +42,8 @@ func _run():
 			item.expiracion.start(0.04)
 		await create_timer(0.06).timeout
 		_check(_pending(well).is_empty() and level.gotas == 3, "Actual item timers must expire drops without currency")
-		level._process(4.0)
-		_check(level.gotas == 3, "Elapsed time alone must never grant currency")
+		level._process(0.0)
+		_check(level.gotas == 3, "A zero-duration frame must not grant currency")
 		well.temporizador.timeout.emit()
 		_check(_pending(well).size() == 1 and level.gotas == 3, "Timer must spawn an item instead of currency")
 		var drop = _pending(well)[0]
@@ -93,7 +93,7 @@ func _run():
 		level._terminar_ronda()
 		_check(well.temporizador.paused, "Wave completion must pause well generation")
 		_check(drop.intentar_recoger() and level.gotas == amount + 1, "Existing drops must remain collectible between waves")
-		for type in 3:
+		for type in 2:
 			level.hud.SEMILLAS_ACTIVAS = [0, 1, 2]
 			level._on_semilla_pulsada(type, false)
 			var data: Dictionary = level.datos_rango_colocacion.duplicate()

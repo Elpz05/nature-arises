@@ -7,22 +7,22 @@ signal pala_pulsada(arrastre: bool)
 
 const SEMILLAS := [
 	{"nombre": "Natura", "costo": 1, "costos": [1, 2, 3], "rol": "Disparo rápido a un objetivo."},
-	{"nombre": "Flamma", "costo": 3, "costos": [3, 4, 5], "rol": "30 de daño en un radio de 1 celda. 0.8 disparos/s."},
-	{"nombre": "Aqua", "costo": 6, "costos": [6, 8, 10], "rol": "10 de daño y 40% de lentitud durante 2 s. 1 disparo/s."},
-	{"nombre": "Terra", "costo": 3, "costos": [3, 6, 9]},
-	{"nombre": "Electricitas", "costo": 2, "costos": [2, 4, 8]},
-	{"nombre": "Glacies", "costo": 3, "costos": [3, 5, 8]},
-	{"nombre": "Venenum", "costo": 10, "costos": [10, 12, 14]},
+	{"nombre": "Flamma", "costo": 3, "costos": [3, 4, 5], "rol": "40 de daño de área. 1 disparo/s. Área: 1 / 1.5 / 2 celdas."},
+	{"nombre": "Aqua", "costo": 6, "costos": [6, 8, 10], "rol": "Produce +0.1 / 0.2 / 0.3 gotas/s. Solo en caminos inundados con lluvia o tormenta."},
+	{"nombre": "Terra", "costo": 3, "costos": [3, 6, 9], "rol": "Bloquea caminos secos y empuja 0.5 / 0.7 / 1 casilla. 1000 / 2000 / 3000 HP. Aqua lo atraviesa."},
+	{"nombre": "Electricitas", "costo": 2, "costos": [2, 4, 8], "rol": "Descargas de 10 de daño, 3/s. Encadena 3 / 5 / 7 bestias en rango; salta hasta 2 casillas."},
+	{"nombre": "Glacies", "costo": 3, "costos": [3, 5, 8], "rol": "Carámbanos penetrantes: 2 de daño, hasta 3 / 4 / 5 bestias y congelación de 2 s. 1 disparo/s."},
+	{"nombre": "Venenum", "costo": 10, "costos": [10, 12, 14], "rol": "100 de daño, 0.3 disparos/s. Veneno: 1 / 2 / 3 HP/s y lentitud 25 / 27 / 30% por 6 s. Alcance: 4 / 5 / 6 casillas."},
 ]
 
 const ATAQUES := [
-	{"nombre": "Natura", "dano": 10, "radio": 2.5, "capacidad": 2},
-	{"nombre": "Flamma", "dano": 20, "radio": 2.5, "capacidad": 3},
-	{"nombre": "Aqua", "dano": 30, "radio": 3.0, "capacidad": 2},
-	{"nombre": "Terra", "dano": 50, "radio": 2.0, "capacidad": 2},
-	{"nombre": "Electricitas", "dano": 40, "radio": 2.5, "capacidad": 2},
-	{"nombre": "Glacies", "dano": 10, "radio": 4.0, "capacidad": 3},
-	{"nombre": "Venenum", "dano": 100, "radio": 2.5, "capacidad": 2},
+	{"nombre": "Natura", "dano": 10, "radio": 2.5, "capacidad": 2, "rol": "Inmoviliza 0.5 s. Sin efecto contra Flamma y Venenum."},
+	{"nombre": "Flamma", "dano": 20, "radio": 2.5, "capacidad": 3, "rol": "Quemadura: 10 HP/s por 3 s. Daño x2 a Glacies. Sin efecto contra Flamma y Aqua."},
+	{"nombre": "Aqua", "dano": 30, "radio": 3.0, "capacidad": 2, "rol": "Confusión por 6 s: ignora atajos. 50% de natación visual de 0.5 s. Daño x2 a Flamma. Sin efecto contra Aqua."},
+	{"nombre": "Terra", "dano": 50, "radio": 2.0, "capacidad": 2, "rol": "Mareo por 3 s: se detiene 0.5 s cada segundo. Sin efecto contra Terra."},
+	{"nombre": "Electricitas", "dano": 40, "radio": 2.5, "capacidad": 2, "rol": "Invierte la marcha 0.5 s. Sin efecto contra Electricitas."},
+	{"nombre": "Glacies", "dano": 10, "radio": 4.0, "capacidad": 3, "rol": "Congela 2 s. Daño x2 a Flamma y Aqua. Sin efecto contra Glacies."},
+	{"nombre": "Venenum", "dano": 100, "radio": 2.5, "capacidad": 2.5, "rol": "Vulnerabilidad: +1 por proyectil durante 6 s. Ralentiza 25% a 3 bestias al azar. Elimina Natura pequeño. Sin efecto contra Venenum."},
 ]
 
 @onready var barra: PanelContainer = $Barra
@@ -36,7 +36,35 @@ const ATAQUES := [
 @onready var label_restantes: Label = $PanelCombate/Datos/LabelRestantes
 @onready var label_entrantes: Label = $PanelCombate/Datos/LabelEntrantes
 var ultimo_resumen: Dictionary = {}
-var cargas_mostradas: Array[int] = []
+var produccion_agua := 0.5
+var clima_actual := "despejado"
+var label_produccion: Label
+var label_evento_clima: Label
+var label_mision: Label
+var label_consejo: Label
+var panel_laboratorio: Control
+var botones_laboratorio: Array[Button] = []
+
+func actualizar_produccion(produccion: float, clima: String):
+	produccion_agua = produccion
+	clima_actual = clima
+	var nombre: String = preload("res://scripts/nivel/clima.gd").NOMBRES.get(clima, clima.capitalize())
+	label_gotas.tooltip_text = "Producción pasiva: %.2f gotas/s | %s" % [produccion, nombre]
+	if is_instance_valid(label_produccion):
+		label_produccion.text = "+%.2f gotas/s · %s" % [produccion, nombre]
+
+func actualizar_evento_clima(texto: String):
+	if is_instance_valid(label_evento_clima):
+		label_evento_clima.text = texto
+
+func mostrar_mision(titulo: String, consejo: String):
+	label_mision.text = titulo
+	label_consejo.text = consejo
+	label_mision.visible = not titulo.is_empty()
+	label_consejo.visible = not consejo.is_empty()
+var cargas_mostradas: Array[float] = []
+var barras_recarga: Array[ProgressBar] = []
+var tiempos_recarga: Array[float] = []
 var plantas_disponibles: Array[int] = []
 var grupo_seleccion := "semilla"
 var indice_seleccion := 0
@@ -50,6 +78,27 @@ var SEMILLAS_ACTIVAS := [0]
 var ATAQUES_ACTIVOS := [0]
 
 func _ready():
+	label_mision = Label.new()
+	label_mision.add_theme_font_size_override("font_size", 20)
+	label_mision.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	$PanelCombate/Datos.add_child(label_mision)
+	$PanelCombate/Datos.move_child(label_mision, 0)
+	label_mision.hide()
+	label_consejo = Label.new()
+	label_consejo.add_theme_font_size_override("font_size", 16)
+	label_consejo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	$PanelCombate/Datos.add_child(label_consejo)
+	$PanelCombate/Datos.move_child(label_consejo, 1)
+	label_consejo.hide()
+	label_evento_clima = Label.new()
+	label_evento_clima.add_theme_font_size_override("font_size", 16)
+	label_evento_clima.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label_evento_clima.custom_minimum_size.x = 440.0
+	$PanelCombate/Datos.add_child(label_evento_clima)
+	label_produccion = Label.new()
+	label_produccion.add_theme_font_size_override("font_size", 16)
+	label_gotas.get_parent().add_child(label_produccion)
+	actualizar_produccion(0.5, "despejado")
 	for l in [label_gotas, label_ronda, label_vida]:
 		l.add_theme_font_size_override("font_size", 26)
 
@@ -66,6 +115,7 @@ func _ready():
 		botones_semilla.append(b)
 
 	boton_pala = _crear_boton("Pala")
+	boton_pala.tooltip_text = "Retira un árbol sin devolver el agua invertida."
 	boton_pala.button_down.connect(func(): pala_pulsada.emit(Input.is_action_pressed("Clic Izquierdo")))
 	fila_semillas.add_child(boton_pala)
 
@@ -74,7 +124,16 @@ func _ready():
 		b.button_down.connect(func(): ataque_pulsado.emit(i, Input.is_action_pressed("Clic Izquierdo")))
 		fila_ataques.add_child(b)
 		botones_ataque.append(b)
+		var progreso := ProgressBar.new()
+		progreso.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		progreso.offset_top = -5.0
+		progreso.offset_bottom = -1.0
+		progreso.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		progreso.show_percentage = false
+		b.add_child(progreso)
+		barras_recarga.append(progreso)
 		cargas_mostradas.append(ATAQUES[i].capacidad)
+		tiempos_recarga.append(0.0)
 		actualizar_ataque(i, ATAQUES[i].capacidad, ATAQUES[i].capacidad)
 
 	boton_ronda = Button.new()
@@ -107,10 +166,15 @@ func actualizar_ronda(actual: int, total: int):
 func actualizar_vida(actual: int, maxima: int):
 	label_vida.text = "Árbol madre: %d / %d" % [actual, maxima]
 
-func actualizar_ataque(i: int, cargas: int, maxima: int):
+func actualizar_ataque(i: int, cargas: float, maxima: float, tiempo: float = -1.0):
 	cargas_mostradas[i] = cargas
-	botones_ataque[i].text = "[%s]\n%s\n%d/%d" % [ControlesManager.etiqueta_accion("Elemento " + ATAQUES[i].nombre), ATAQUES[i].nombre, cargas, maxima]
-	botones_ataque[i].disabled = not ATAQUES_ACTIVOS.has(i) or cargas <= 0
+	if tiempo >= 0.0:
+		tiempos_recarga[i] = tiempo
+	botones_ataque[i].text = "[%s]\n%s\n%s/%s" % [ControlesManager.etiqueta_accion("Elemento " + ATAQUES[i].nombre), ATAQUES[i].nombre, str(cargas).trim_suffix(".0"), str(maxima).trim_suffix(".0")]
+	botones_ataque[i].disabled = not ATAQUES_ACTIVOS.has(i) or cargas < 1.0
+	barras_recarga[i].visible = tiempos_recarga[i] > 0.0
+	barras_recarga[i].value = clampf(1.0 - tiempos_recarga[i] / 3.0, 0.0, 1.0) * 100.0
+	botones_ataque[i].tooltip_text = "%s\nDaño: %d | Radio: %.1f casillas\nRecupera 1 carga cada 3 s. Próxima: %.1f s\n%s" % [ATAQUES[i].rol, ATAQUES[i].dano, ATAQUES[i].radio, tiempos_recarga[i], ControlesManager.etiqueta_accion("Elemento " + ATAQUES[i].nombre)]
 
 func mostrar_boton_ronda(texto: String, habilitado: bool):
 	boton_ronda.text = texto
@@ -128,7 +192,7 @@ func resaltar(tipo: String, indice: int):
 	boton_pala.modulate = Color(1.4, 1.4, 0.8) if tipo == "pala" else Color.WHITE
 
 func punto_sobre_hud(p: Vector2) -> bool:
-	return barra.get_global_rect().has_point(p) or panel_combate.get_global_rect().has_point(p)
+	return barra.get_global_rect().has_point(p) or panel_combate.get_global_rect().has_point(p) or (is_instance_valid(panel_laboratorio) and panel_laboratorio.get_global_rect().has_point(p))
 
 func actualizar_combate(resumen: Dictionary):
 	if resumen == ultimo_resumen:
@@ -163,7 +227,7 @@ func manejar_accion(event: InputEvent) -> bool:
 			return true
 	for i in ATAQUES.size():
 		if event.is_action_pressed("Elemento " + ATAQUES[i].nombre, false, true):
-			if ATAQUES_ACTIVOS.has(i) and cargas_mostradas[i] > 0:
+			if ATAQUES_ACTIVOS.has(i) and cargas_mostradas[i] >= 1.0:
 				ataque_pulsado.emit(i, false)
 			return true
 	if event.is_action_pressed("Alternar Elemento o Planta", false, true):
@@ -190,7 +254,7 @@ func _indices_seleccionables(grupo: String) -> Array[int]:
 				lista.append(i)
 	else:
 		for i in ATAQUES_ACTIVOS:
-			if i >= 0 and i < cargas_mostradas.size() and cargas_mostradas[i] > 0:
+			if i >= 0 and i < cargas_mostradas.size() and cargas_mostradas[i] >= 1.0:
 				lista.append(i)
 	lista.sort()
 	return lista
@@ -213,12 +277,15 @@ func actualizar_textos_controles():
 		botones_semilla[i].tooltip_text = SEMILLAS[i].get("rol", "") + "\n" + ControlesManager.etiqueta_accion("Casilla Planta %d" % i)
 	for i in botones_ataque.size():
 		actualizar_ataque(i, cargas_mostradas[i], ATAQUES[i].capacidad)
-		botones_ataque[i].tooltip_text = ControlesManager.etiqueta_accion("Elemento " + ATAQUES[i].nombre)
 	boton_pala.text = "[%s]\nPala" % ControlesManager.etiqueta_accion("Pala")
 	if boton_ronda != null:
 		boton_ronda.tooltip_text = ControlesManager.etiqueta_accion("Iniciar Ronda")
 
 func activar_en_punto(punto: Vector2, arrastre: bool):
+	for boton in botones_laboratorio:
+		if boton.get_global_rect().has_point(punto):
+			boton.pressed.emit()
+			return
 	for i in botones_semilla.size():
 		if botones_semilla[i].get_global_rect().has_point(punto):
 			if not botones_semilla[i].disabled:

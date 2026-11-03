@@ -1,3 +1,5 @@
+> Actualización: las reglas de economía, pala, Flamma y Aqua de este documento han sido sustituidas por [el primer bloque de mecánicas](mecanicas_implementacion.md).
+
 # Combat information
 
 The feedback is implemented in the shared level, HUD, tower and enemy scripts,

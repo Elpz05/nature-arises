@@ -43,10 +43,12 @@ func _run():
 	save.saved_data = {"nivel_actual": 1, "niveles_completados": [0]}
 	save.entrar(0)
 	_check(save.loaded_level == 1, "Existing saves must resume level 1")
-	_check(save.NIVELES.size() == 2 and ResourceLoader.exists(save.NIVELES[1]), "Level 1 must be registered")
+	_check(save.NIVELES.size() == 8 and ResourceLoader.exists(save.NIVELES[1]), "Level 1 must be registered")
 	save.completar_nivel(1)
 	save.completar_nivel(0)
 	_check(save.datos.nivel_actual == 2, "Replaying level 0 must preserve campaign completion")
+	for n in range(2, save.NIVELES.size()):
+		save.completar_nivel(n)
 	save.entrar(0)
 	_check(save.loaded_level == save.NIVELES.size(), "Completed saves must route to the campaign outcome")
 	save.saved_data = {"nivel_actual": -5}

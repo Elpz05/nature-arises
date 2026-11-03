@@ -33,7 +33,9 @@ func _run():
 		level.set_process(false)
 		var row := 4 if index == 0 else 3
 		var fire_cell := Vector2i(0, row)
-		var water_cell := Vector2i(1, row)
+		var water_cell: Vector2i = level.puntos_ruta[0]
+		level.clima = "lluvia"
+		level.celdas_inundadas.assign([water_cell])
 		level.gotas = 40
 		level.hud.actualizar_gotas(level.gotas)
 		for entry in [[1, fire_cell], [2, water_cell]]:
@@ -55,28 +57,19 @@ func _run():
 		await physics_frame
 		await physics_frame
 		_check(fire.enemigos_en_rango.has(target), "Actual Area2D must detect enemies for Flamma")
-		_check(water.enemigos_en_rango.has(target), "Actual Area2D must detect enemies for Aqua")
+		_check(water.temporizador.is_stopped(), "Aqua must never start its firing timer")
 		fire.enemigos_en_rango = [target]
 		fire._disparar()
 		var fire_bullet = level.arboles.get_child(level.arboles.get_child_count() - 1)
 		fire_bullet._process(2.0)
-		_check(target.vida == 470 and nearby.vida == 470, "Flamma must splash both nearby enemies exactly once")
+		_check(target.vida == 468 and nearby.vida == 468, "Flamma must splash both nearby enemies exactly once")
 		_check(distant.vida == 500, "Flamma must not damage enemies outside its splash radius")
 		fire_bullet._process(2.0)
-		_check(target.vida == 470, "Queued projectiles must not hit twice")
-		water.enemigos_en_rango = [target]
+		_check(target.vida == 468, "Queued projectiles must not hit twice")
+		var child_count: int = level.arboles.get_child_count()
 		water._disparar()
-		var water_bullet = level.arboles.get_child(level.arboles.get_child_count() - 1)
-		water_bullet._process(2.0)
-		_check(target.vida == 460 and nearby.vida == 470, "Aqua must damage only its target")
-		_check(is_equal_approx(target.factor_lentitud, 0.6), "Aqua must apply 40% slow")
-		var before: float = target.get_parent().progress
-		target._physics_process(0.5)
-		_check(is_equal_approx(target.get_parent().progress - before, target.velocidad * 0.6 * 0.5), "Slow must reduce actual path movement")
-		target.aplicar_lentitud(0.6, 2.0)
-		_check(is_equal_approx(target.factor_lentitud, 0.6) and is_equal_approx(target.lentitud_restante, 2.0), "Repeated slows must refresh without stacking")
-		target._physics_process(3.0)
-		_check(is_equal_approx(target.factor_lentitud, 1.0) and target.lentitud_restante == 0.0, "Slow must expire and restore normal speed")
+		_check(level.arboles.get_child_count() == child_count, "Aqua must not create projectiles")
+		_check(is_equal_approx(level.obtener_produccion_agua(), 0.85), "Small Aqua must add 0.1 water/s to rain income")
 		for cell in [fire_cell, water_cell]:
 			level._mejorar_arbol(cell)
 			level._mejorar_arbol(cell)
@@ -84,7 +77,7 @@ func _run():
 		_check(level.gotas == 4, "Upgrades must charge 4 + 5 + 8 + 10 drops")
 		level._quitar_arbol(fire_cell)
 		level._quitar_arbol(water_cell)
-		_check(level.gotas == 40 and level.arboles_plantados.is_empty(), "Shovel must refund all investment and free occupied cells")
+		_check(level.gotas == 4 and level.arboles_plantados.is_empty(), "Shovel must free cells without refunding water")
 		level.free()
 
 	save.slot_actual = previous_slot
