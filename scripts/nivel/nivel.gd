@@ -10,4 +10,5 @@ func _configurar_nivel() -> void:
 	puntos_ruta = RUTA
 	celda_arbol_madre = CELDA_ARBOL_MADRE
 	preload("res://scripts/nivel/campana.gd").configurar_progreso(self, 0)
-	musica_nivel = preload("res://audios/nivel_musica/Forest 03.ogg")
+	musica_nivel = preload("res://audios/nivel_musica/nivel_0/Forest 03.ogg")
+	musica_nivel.loop = true

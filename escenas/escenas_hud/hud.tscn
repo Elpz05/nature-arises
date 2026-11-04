@@ -64,34 +64,33 @@ texture_filter = 1
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_geety")
 
-[node name="PanelCombate" type="PanelContainer" parent="."]
+[node name="PanelCombate" type="PanelContainer" parent="." unique_id=1197159048]
+anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -516.0
-offset_top = -174.0
-offset_right = -16.0
-offset_bottom = -16.0
+offset_left = -500.0
+offset_top = -158.0
 grow_horizontal = 0
 grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_combate")
 
-[node name="Datos" type="VBoxContainer" parent="PanelCombate"]
+[node name="Datos" type="VBoxContainer" parent="PanelCombate" unique_id=199045737]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="LabelEstado" type="Label" parent="PanelCombate/Datos"]
+[node name="LabelEstado" type="Label" parent="PanelCombate/Datos" unique_id=1314425358]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_geety")
 theme_override_font_sizes/font_size = 24
 
-[node name="LabelRestantes" type="Label" parent="PanelCombate/Datos"]
+[node name="LabelRestantes" type="Label" parent="PanelCombate/Datos" unique_id=68602998]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_geety")
 theme_override_font_sizes/font_size = 22
 
-[node name="LabelEntrantes" type="Label" parent="PanelCombate/Datos"]
+[node name="LabelEntrantes" type="Label" parent="PanelCombate/Datos" unique_id=927221365]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_geety")
 theme_override_font_sizes/font_size = 20

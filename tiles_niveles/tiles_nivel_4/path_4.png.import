@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c4mf72juuwrbg"
-path="res://.godot/imported/tiles_fuego.png-fbf8db2854cd1b9411f353fb99ff143b.ctex"
+uid="uid://c47v7cqo36h72"
+path="res://.godot/imported/path_4.png-b1cd9609333f35014e368c005c628dac.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://tiles_niveles/tiles_nivel_2/tiles_fuego.png"
-dest_files=["res://.godot/imported/tiles_fuego.png-fbf8db2854cd1b9411f353fb99ff143b.ctex"]
+source_file="res://tiles_niveles/tiles_nivel_4/path_4.png"
+dest_files=["res://.godot/imported/path_4.png-b1cd9609333f35014e368c005c628dac.ctex"]
 
 [params]
 

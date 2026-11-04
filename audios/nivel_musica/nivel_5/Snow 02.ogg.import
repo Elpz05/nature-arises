@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://clrxngjisw6e6"
+path="res://.godot/imported/Snow 02.ogg-4146184c450a52c47a1ec16ebcb78710.oggvorbisstr"
+
+[deps]
+
+source_file="res://audios/nivel_musica/nivel_5/Snow 02.ogg"
+dest_files=["res://.godot/imported/Snow 02.ogg-4146184c450a52c47a1ec16ebcb78710.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

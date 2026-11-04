@@ -18,3 +18,5 @@ func _configurar_nivel() -> void:
 	rutas_adicionales = [
 		{"tipo": "flamma", "puntos": RUTA_FUEGO, "capa": "Atajo"},
 	]
+	musica_nivel = preload("res://audios/nivel_musica/nivel_1/Beach_01.ogg")
+	musica_nivel.loop = true

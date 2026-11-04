@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://b8dw3twwimx8b"
+path="res://.godot/imported/Desert 01.ogg-7413476d94f3daa3a11d99dfdc6e594c.oggvorbisstr"
+
+[deps]
+
+source_file="res://audios/nivel_musica/nivel_4/Desert 01.ogg"
+dest_files=["res://.godot/imported/Desert 01.ogg-7413476d94f3daa3a11d99dfdc6e594c.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
