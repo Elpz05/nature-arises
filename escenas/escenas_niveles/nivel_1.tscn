@@ -20,7 +20,7 @@
 [ext_resource type="AudioStream" uid="uid://bvspbokkdsvms" path="res://audios/ataques_sonidos/ataque_flamma/04_Fire_explosion_04_medium.wav" id="23_2r0n1"]
 [ext_resource type="AudioStream" uid="uid://cuhfmijtiwh1j" path="res://audios/ataques_sonidos/ataque_aqua/22_Water_02.wav" id="24_nmiqp"]
 [ext_resource type="AudioStream" uid="uid://cvdta5lb21agb" path="res://audios/ataques_sonidos/ataque_terra/30_Earth_02.wav" id="25_nmiqp"]
-[ext_resource type="AudioStream" uid="uid://bf7pgasacusih" path="res://audios/ataque_electricitas/18_Thunder_02.wav" id="26_y3ixt"]
+[ext_resource type="AudioStream" uid="uid://bf7pgasacusih" path="res://audios/ataques_sonidos/ataque_electricitas/18_Thunder_02.wav" id="26_y3ixt"]
 [ext_resource type="AudioStream" uid="uid://oca3lr00a1qm" path="res://audios/ataques_sonidos/ataque_glacies/13_Ice_explosion_01.wav" id="27_u2gu4"]
 [ext_resource type="AudioStream" uid="uid://bng036nh0d13i" path="res://audios/ataques_sonidos/ataque_venenum/46_Poison_01.wav" id="28_fo18d"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_electricitas.tscn" id="bestia_electricitas"]

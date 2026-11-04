@@ -1,14 +1,16 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://4b6yhqq888xf"]
 
 [ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_elemental_base.tscn" id="1_base"]
+[ext_resource type="PackedScene" uid="uid://bwtqsvlfb1mn5" path="res://escenas/escenas_balas/bala_venenum.tscn" id="2_bvnna"]
 
-[node name="ArbolVenenum" instance=ExtResource("1_base")]
+[node name="ArbolVenenum" unique_id=651769690 instance=ExtResource("1_base")]
 elemento = "venenum"
+semilla_escena = ExtResource("2_bvnna")
 dano_bala = 100
 balas_por_segundo = 0.3
 costos = Array[int]([10, 12, 14])
 color_bala = Color(0.7, 0.2, 0.95, 1)
 
 [node name="Placeholder" parent="Arbol" index="0"]
-polygon = PackedVector2Array(-10, 24, -8, 0, -27, 0, -23, -15, -10, -25, 10, -25, 23, -15, 27, 0, 8, 0, 10, 24)
 color = Color(0.7, 0.2, 0.95, 1)
+polygon = PackedVector2Array(-10, 24, -8, 0, -27, 0, -23, -15, -10, -25, 10, -25, 23, -15, 27, 0, 8, 0, 10, 24)

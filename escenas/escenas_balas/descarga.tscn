@@ -1,7 +1,11 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://ctfhu6yn5y8ym"]
 
-[ext_resource type="PackedScene" path="res://escenas/escenas_balas/bala.tscn" id="1_base"]
-[ext_resource type="Script" path="res://scripts/balas/descarga.gd" id="2_script"]
+[ext_resource type="PackedScene" uid="uid://bgutfgltlujfi" path="res://escenas/escenas_balas/bala.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://yq8sujiyry84" path="res://scripts/balas/descarga.gd" id="2_script"]
+[ext_resource type="AudioStream" uid="uid://bf7pgasacusih" path="res://audios/ataques_sonidos/ataque_electricitas/18_Thunder_02.wav" id="3_ctnil"]
 
-[node name="Descarga" instance=ExtResource("1_base")]
+[node name="Descarga" unique_id=614684686 instance=ExtResource("1_base")]
 script = ExtResource("2_script")
+
+[node name="SonidoBala" parent="." index="1" unique_id=2085037805]
+stream = ExtResource("3_ctnil")
