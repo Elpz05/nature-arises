@@ -13,11 +13,13 @@ La campaña principal ya integra los siete árboles, las siete bestias, los siet
 | 5 | Corazón volcánico | Volcán | 12 | Árbol y ataque Venenum |
 | 6 | El bosque helado | Ventisca | 14 | Acceso al desfiladero |
 | 7 | El desfiladero | Derrumbe | 16 | Acceso al último nivel |
-| 8 | El último brote | Radiación | 18 | Campaña completada |
+| 8 | El último brote | Radiación | 29 | Campaña completada |
 
 Una partida nueva comienza con Natura y su ataque. Cada nivel tiene cinco rondas, con un total de 40 en la campaña. El HUD presenta el nombre, posición en la campaña y un consejo que explica el sistema principal del nivel. Las victorias anuncian los desbloqueos de plantas y ataques.
 
-El segundo nivel tiene cinco casillas inundadas (6..10,4), de modo que el árbol Aqua ya es usable al desbloquearse. La muralla introduce bestias Terra y caminos verticales. La tormenta incorpora bestias Electricitas cuando el jugador ya dispone de su árbol. El volcán añade bestias Glacies y dos géiseres. Ventisca introduce bestias Venenum con todos los árboles disponibles. El desfiladero emplea el mapa de seis columnas verticales para defenderse de rocas con Terra. Radiación culmina con enemigos mixtos y grandes, y permite usar Venenum como defensa inmune al entorno.
+El segundo nivel tiene cinco casillas inundadas (6..10,4), de modo que el árbol Aqua ya es usable al desbloquearse. La muralla introduce bestias Terra y caminos verticales. La tormenta incorpora bestias Electricitas cuando el jugador ya dispone de su árbol. El volcán añade bestias Glacies y dos géiseres. Ventisca introduce bestias Venenum con todos los árboles disponibles. El desfiladero emplea el mapa de seis columnas verticales para defenderse de rocas con Terra.
+
+El último brote combina grupos numerosos, bestias blindadas, Aqua que atraviesan barreras y grandes de varios elementos. Natura ofrece cobertura barata al principio. Flamma daña grupos y protege a otros árboles del aura gélida. Aqua carga el pozo desde pozas fuera del camino y protege a sus vecinos de los pulsos. Terra bloquea los atajos de Flamma y Electricitas. Electricitas encadena a los grupos, Glacies frena a quienes atraviesan el bloqueo y Venenum cubre varios tramos con alcance e inmunidad. Los consejos del HUD cambian con la ronda.
 
 La selección de mapas, recetas, economía, consejos y recompensas vive en `scripts/nivel/campana.gd`. `nivel_campana.gd` configura los seis niveles nuevos reutilizando las escenas y sistemas compartidos; no importa las escenas de laboratorio ni su selector. El laboratorio sigue habilitando todo y no guarda progreso.
 

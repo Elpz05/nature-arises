@@ -15,28 +15,28 @@ El controlador toma decisiones cada medio segundo de juego. Prioriza la bestia c
 | 5 | Flamma y Electricitas; reposición de bajas por erupción. |
 | 6 | Terra, Natura, Flamma y Glacies en la primera sección vertical. |
 | 7 | Terra en la cabecera de las columnas con atacantes detrás; reposición de barreras. |
-| 8 | Venenum en dos filas con alcance sobre varios tramos, aprovechando su inmunidad a radiación. |
+| 8 | Aqua en una poza, Terra en los atajos, y los cinco árboles de ataque con alcance sobre los tramos de entrada y salida. |
 
 Las estrategias están fijadas por nivel: no tienen acceso a eventos futuros, no teletransportan defensas ni conceden recursos. No intentan demostrar que todas las combinaciones sean viables.
 
 ## Resultados observados
 
-Godot 4.7.2, campaña completa con semilla base `20261103`: ocho victorias, todas con 20/20 HP. Una pasada adicional de los niveles 3–8 con base `20261102` también terminó con seis victorias y 20/20 HP.
+Godot 4.7.2 y economía de recogida manual del pozo. Los niveles 1–7 terminaron con 20/20 HP en la pasada con semilla base `20261102`. El final terminó con 20/20 HP en dos pasadas con la formación mixta, bases `20261104` y `20261105`.
 
-| Nivel | Tiempo simulado, base 20261103 | Base 20261102 | Eventos en la pasada completa |
-| --- | ---: | ---: | --- |
-| 1 | 91.5 s | No ejecutado | Sin peligros periódicos |
-| 2 | 101.7 s | No ejecutado | Lluvia pasiva |
-| 3 | 90.5 s | 92.9 s | Sin peligros periódicos |
-| 4 | 97.6 s | 105.2 s | 18 rayos |
-| 5 | 82.8 s | 83.6 s | 16 emisiones de géiser y 3 erupciones |
-| 6 | 132.0 s | 132.0 s | 13 ventiscas y 6 pulsos de calor |
-| 7 | 112.1 s | 108.4 s | 7 derrumbes |
-| 8 | 311.0 s | 304.9 s | 310 pulsos de radiación |
+| Nivel | Tiempo simulado | Eventos |
+| --- | ---: | --- |
+| 1 | 105.0 s | Sin peligros periódicos |
+| 2 | 173.1 s | Lluvia |
+| 3 | 106.7 s | Sin peligros periódicos |
+| 4 | 114.7 s | 18 rayos |
+| 5 | 86.8 s | 16 emisiones de géiser y 3 erupciones |
+| 6 | 111.2 s | 11 ventiscas y 5 pulsos de calor |
+| 7 | 166.0 s | 11 derrumbes |
+| 8 | 221.1 s / 213.3 s | 27 / 26 pulsos de radiación |
 
-El control sin defensas del nivel 8, base `20261102`, perdió realmente en la segunda ronda: 0 HP a los 359.3 s, sin compras ni ataques. La simulación informó PASS porque esa derrota era su resultado esperado. No se alteraron recetas, estadísticas ni ingresos para conseguir los resultados.
+El control sin defensas del nivel 8, base `20261103`, perdió en la segunda ronda con 0 HP a los 333.0 s. La simulación exige ese resultado cuando se ejecuta con `--without-defense`.
 
-La duración del nivel final destaca: aproximadamente cinco minutos frente a 83–132 s en los niveles anteriores. Es un candidato a revisar jugando, especialmente el precio y la cadencia de Venenum frente a enemigos de su propio elemento. No se reduce su dificultad basándose únicamente en un controlador automático.
+La prueba del final registra los árboles comprados y los proyectiles emitidos por elemento. Exige la compra de las siete variedades, disparos de los cinco tipos ofensivos y victoria. La protección de Aqua y el bloqueo Terra en la rama eléctrica se verifican por separado en `tests/test_sprint_finale.gd`.
 
 ## Ejecución
 

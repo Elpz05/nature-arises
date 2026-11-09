@@ -50,7 +50,7 @@ func _run():
 		_check(level.inicializado and level.numero_nivel == index and level.clima == climates[index], "Every registered campaign scene has the correct stage and climate")
 		_check(level.hud.SEMILLAS_ACTIVAS == plants[index] and level.hud.ATAQUES_ACTIVOS == spells[index], "Actual HUD exposes exactly the earned tools before each stage")
 		_check(not level.titulo_nivel.is_empty() and not level.consejo_nivel.is_empty() and level.hud.label_mision.text.contains("%d/8" % (index + 1)), "Every stage explains its objective in the HUD")
-		_check(level.gotas == [3, 3, 8, 10, 12, 14, 16, 18][index] and level.rondas.size() == 5, "Initial economy and five-wave structure match the campaign pacing")
+		_check(level.gotas == [3, 3, 8, 10, 12, 14, 16, 29][index] and level.rondas.size() == 5, "Initial economy and five-wave structure match the campaign pacing")
 		for id in 7:
 			if not plants[index].has(id):
 				level._on_semilla_pulsada(id, false)

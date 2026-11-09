@@ -8,7 +8,7 @@ signal pala_pulsada(arrastre: bool)
 const SEMILLAS := [
 	{"nombre": "Natura", "costo": 1, "costos": [1, 2, 3], "rol": "Disparo rápido a un objetivo."},
 	{"nombre": "Flamma", "costo": 3, "costos": [3, 4, 5], "rol": "40 de daño de área. 1 disparo/s. Área: 1 / 1.5 / 2 celdas."},
-	{"nombre": "Aqua", "costo": 6, "costos": [6, 8, 10], "rol": "Produce +0.1 / 0.2 / 0.3 gotas/s. Solo en caminos inundados con lluvia o tormenta."},
+	{"nombre": "Aqua", "costo": 6, "costos": [6, 8, 10], "rol": "Aporta +0.1 / 0.2 / 0.3 gotas/s al pozo. Se planta en casillas inundadas."},
 	{"nombre": "Terra", "costo": 3, "costos": [3, 6, 9], "rol": "Bloquea caminos secos y empuja 0.5 / 0.7 / 1 casilla. 1000 / 2000 / 3000 HP. Aqua lo atraviesa."},
 	{"nombre": "Electricitas", "costo": 2, "costos": [2, 4, 8], "rol": "Descargas de 10 de daño, 3/s. Encadena 3 / 5 / 7 bestias en rango; salta hasta 2 casillas."},
 	{"nombre": "Glacies", "costo": 3, "costos": [3, 5, 8], "rol": "Carámbanos penetrantes: 2 de daño, hasta 3 / 4 / 5 bestias y congelación de 2 s. 1 disparo/s."},
@@ -28,17 +28,20 @@ const ATAQUES := [
 @onready var barra: PanelContainer = $Barra
 @onready var fila_semillas: HBoxContainer = $Barra/Margen/Fila/Semillas
 @onready var fila_ataques: HBoxContainer = $Barra/Margen/Fila/Ataques
-@onready var label_gotas: Label = $Barra/Margen/Fila/Info/LabelGotas
-@onready var label_ronda: Label = $Barra/Margen/Fila/Info/LabelRonda
-@onready var label_vida: Label = $Barra/Margen/Fila/Info/LabelVida
+@onready var label_gotas: Label = $PanelCombate/Columnas/Info/LabelGotas
+@onready var label_ronda: Label = $PanelCombate/Columnas/Info/LabelRonda
+@onready var label_vida: Label = $PanelCombate/Columnas/Info/LabelVida
 @onready var panel_combate: PanelContainer = $PanelCombate
-@onready var label_estado_combate: Label = $PanelCombate/Datos/LabelEstado
-@onready var label_restantes: Label = $PanelCombate/Datos/LabelRestantes
-@onready var label_entrantes: Label = $PanelCombate/Datos/LabelEntrantes
+@onready var label_estado_combate: Label = $PanelCombate/Columnas/Datos/LabelEstado
+@onready var label_restantes: Label = $PanelCombate/Columnas/Datos/LabelRestantes
+@onready var label_entrantes: Label = $PanelCombate/Columnas/Datos/LabelEntrantes
+@onready var detalles: VBoxContainer = $PanelCombate/Columnas/Detalles
+@onready var acciones: VBoxContainer = $Barra/Margen/Fila/Acciones
 var ultimo_resumen: Dictionary = {}
-var produccion_agua := 0.5
+var produccion_agua := 0.2
 var clima_actual := "despejado"
 var label_produccion: Label
+var label_pozo: Label
 var label_evento_clima: Label
 var label_mision: Label
 var label_consejo: Label
@@ -49,18 +52,25 @@ func actualizar_produccion(produccion: float, clima: String):
 	produccion_agua = produccion
 	clima_actual = clima
 	var nombre: String = preload("res://scripts/nivel/clima.gd").NOMBRES.get(clima, clima.capitalize())
-	label_gotas.tooltip_text = "Producción pasiva: %.2f gotas/s | %s" % [produccion, nombre]
 	if is_instance_valid(label_produccion):
-		label_produccion.text = "+%.2f gotas/s · %s" % [produccion, nombre]
+		label_produccion.text = "%s · Pozo +%.2f/s en ronda" % [nombre, produccion]
+
+func actualizar_pozo(cantidad: int):
+	label_pozo.text = "Pozo %d/5 · Recoger en el mapa" % cantidad
 
 func actualizar_evento_clima(texto: String):
 	if is_instance_valid(label_evento_clima):
 		label_evento_clima.text = texto
+		label_evento_clima.tooltip_text = texto
 
 func mostrar_mision(titulo: String, consejo: String):
 	label_mision.text = titulo
-	label_consejo.text = consejo
 	label_mision.visible = not titulo.is_empty()
+	mostrar_consejo(consejo)
+
+func mostrar_consejo(consejo: String):
+	label_consejo.text = consejo
+	label_consejo.tooltip_text = consejo
 	label_consejo.visible = not consejo.is_empty()
 var cargas_mostradas: Array[float] = []
 var barras_recarga: Array[ProgressBar] = []
@@ -78,29 +88,20 @@ var SEMILLAS_ACTIVAS := [0]
 var ATAQUES_ACTIVOS := [0]
 
 func _ready():
-	label_mision = Label.new()
-	label_mision.add_theme_font_size_override("font_size", 20)
-	label_mision.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	$PanelCombate/Datos.add_child(label_mision)
-	$PanelCombate/Datos.move_child(label_mision, 0)
+	label_mision = _crear_detalle(19, 1)
 	label_mision.hide()
-	label_consejo = Label.new()
-	label_consejo.add_theme_font_size_override("font_size", 16)
-	label_consejo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	$PanelCombate/Datos.add_child(label_consejo)
-	$PanelCombate/Datos.move_child(label_consejo, 1)
+	label_consejo = _crear_detalle(16, 2)
 	label_consejo.hide()
-	label_evento_clima = Label.new()
-	label_evento_clima.add_theme_font_size_override("font_size", 16)
-	label_evento_clima.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label_evento_clima.custom_minimum_size.x = 440.0
-	$PanelCombate/Datos.add_child(label_evento_clima)
+	label_evento_clima = _crear_detalle(16, 1)
 	label_produccion = Label.new()
 	label_produccion.add_theme_font_size_override("font_size", 16)
 	label_gotas.get_parent().add_child(label_produccion)
-	actualizar_produccion(0.5, "despejado")
+	label_pozo = Label.new()
+	label_pozo.add_theme_font_size_override("font_size", 16)
+	label_gotas.get_parent().add_child(label_pozo)
+	actualizar_produccion(0.2, "despejado")
 	for l in [label_gotas, label_ronda, label_vida]:
-		l.add_theme_font_size_override("font_size", 26)
+		l.add_theme_font_size_override("font_size", 18)
 
 	if Guardado.slot_actual >= 0:
 		SEMILLAS_ACTIVAS = Guardado.plantas_activas()
@@ -137,22 +138,38 @@ func _ready():
 		actualizar_ataque(i, ATAQUES[i].capacidad, ATAQUES[i].capacidad)
 
 	boton_ronda = Button.new()
-	boton_ronda.custom_minimum_size = Vector2(0, 44)
+	boton_ronda.custom_minimum_size = Vector2(0, 32)
 	boton_ronda.focus_mode = Control.FOCUS_NONE
-	boton_ronda.add_theme_font_size_override("font_size", 20)
+	boton_ronda.clip_text = true
+	boton_ronda.add_theme_font_size_override("font_size", 16)
 	boton_ronda.pressed.connect(func(): ronda_solicitada.emit())
-	label_ronda.get_parent().add_child(boton_ronda)
+	acciones.add_child(boton_ronda)
 	ControlesManager.controles_cambiados.connect(actualizar_textos_controles)
 	actualizar_textos_controles()
 
 func _crear_boton(texto: String) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(92, 88)
+	b.custom_minimum_size = Vector2(88, 68)
 	b.focus_mode = Control.FOCUS_NONE
 	b.clip_text = true
 	b.add_theme_font_size_override("font_size", 14)
 	b.text = texto
 	return b
+
+func _crear_detalle(tamano: int, lineas: int) -> Label:
+	var etiqueta := Label.new()
+	etiqueta.add_theme_font_size_override("font_size", tamano)
+	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	etiqueta.max_lines_visible = lineas
+	etiqueta.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	etiqueta.mouse_filter = Control.MOUSE_FILTER_PASS
+	detalles.add_child(etiqueta)
+	return etiqueta
+
+func mostrar_inspeccion(activa: bool):
+	label_mision.visible = not activa and not label_mision.text.is_empty()
+	label_consejo.visible = not activa and not label_consejo.text.is_empty()
+	label_evento_clima.visible = not activa
 
 # --- API para nivel.gd ---
 func actualizar_gotas(n: int):
@@ -192,14 +209,14 @@ func resaltar(tipo: String, indice: int):
 	boton_pala.modulate = Color(1.4, 1.4, 0.8) if tipo == "pala" else Color.WHITE
 
 func punto_sobre_hud(p: Vector2) -> bool:
-	return barra.get_global_rect().has_point(p) or panel_combate.get_global_rect().has_point(p) or (is_instance_valid(panel_laboratorio) and panel_laboratorio.get_global_rect().has_point(p))
+	return barra.get_global_rect().has_point(p) or panel_combate.get_global_rect().has_point(p)
 
 func actualizar_combate(resumen: Dictionary):
 	if resumen == ultimo_resumen:
 		return
 	ultimo_resumen = resumen.duplicate(true)
 	label_estado_combate.text = resumen.estado
-	label_restantes.text = "Restantes: %d\nEn camino: %d | Por aparecer: %d" % [resumen.restantes, resumen.activos, resumen.por_aparecer]
+	label_restantes.text = "Restantes: %d | En camino: %d | Por aparecer: %d" % [resumen.restantes, resumen.activos, resumen.por_aparecer]
 	var grupos: PackedStringArray = []
 	var claves: Array = resumen.entrantes.keys()
 	claves.sort()
@@ -207,7 +224,8 @@ func actualizar_combate(resumen: Dictionary):
 		var partes := String(clave).split(":")
 		var tamano: String = {"pequeno": "pequeño", "mediano": "mediano", "grande": "grande"}.get(partes[1], partes[1])
 		grupos.append("%s %s: %d" % [partes[0].capitalize(), tamano, resumen.entrantes[clave]])
-	label_entrantes.text = "Entrantes:\n" + "\n".join(grupos) if not grupos.is_empty() else "Entrantes: ninguno"
+	label_entrantes.text = "Entrantes: " + " · ".join(grupos) if not grupos.is_empty() else "Entrantes: ninguno"
+	label_entrantes.tooltip_text = "\n".join(grupos)
 
 # El nivel despacha estas acciones antes de confirmar una acción de tablero.
 func manejar_accion(event: InputEvent) -> bool:

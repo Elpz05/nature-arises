@@ -2,7 +2,8 @@ extends Node2D
 
 const NOMBRES := {"despejado": "Despejado", "lluvia": "Lluvia", "tormenta": "Tormenta", "volcan": "Volcán", "ventisca": "Ventisca", "derrumbe": "Derrumbe", "radiacion": "Radiación"}
 const RAYOS := {"pequeno": {"intervalo": 5.0, "probabilidad": 0.1}, "mediano": {"intervalo": 3.0, "probabilidad": 0.5}, "grande": {"intervalo": 1.0, "probabilidad": 0.9}}
-const INTOXICACION := {"pequeno": 0.05, "mediano": 0.1, "grande": 0.15}
+const INTERVALO_RADIACION := 8.0
+const DANO_RADIACION := 6
 
 var nivel
 var tiempo := 0.0
@@ -36,7 +37,6 @@ static func factor_vida_bestia(clima: String, tipo: String) -> float:
 	if tipo == "flamma" and clima in ["lluvia", "tormenta"]: return 0.5
 	if tipo == "glacies" and clima == "volcan": return 0.5
 	if tipo == "flamma" and clima == "ventisca": return 1.2
-	if tipo == "venenum" and clima == "radiacion": return 1.3
 	return 1.0
 
 static func factor_velocidad_bestia(clima: String, tipo: String) -> float:
@@ -49,9 +49,9 @@ func _ready():
 		"volcan": intervalos = {"geiser": 10.0, "erupcion": 25.0}
 		"ventisca": intervalos = {"calor": 20.0, "ventisca": 10.0}
 		"derrumbe": intervalos = {"derrumbe": 15.0}
-		"radiacion": intervalos = {"radiacion": 1.0}
+		"radiacion": intervalos = {"radiacion": INTERVALO_RADIACION}
 	proximos = intervalos.duplicate()
-	ultimo_evento = {"tormenta": "Rayos: intensidad " + nivel.intensidad_tormenta, "volcan": "Géiser: 10 s | Erupción: 25 s", "ventisca": "Ventisca: 10 s | Calor: 20 s", "derrumbe": "Caída de roca cada 15 s", "radiacion": "Radiación: 5 HP/s e intoxicación"}.get(nivel.clima, "Sin peligros climáticos")
+	ultimo_evento = {"tormenta": "Rayos: intensidad " + nivel.intensidad_tormenta, "volcan": "Géiser: 10 s | Erupción: 25 s", "ventisca": "Ventisca: 10 s | Calor: 20 s", "derrumbe": "Caída de roca cada 15 s", "radiacion": "Radiación: -6 HP cada 8 s en ronda. Aqua protege sus vecinas; Venenum es inmune."}.get(nivel.clima, "Sin peligros climáticos")
 	nivel.hud.actualizar_evento_clima(ultimo_evento)
 	queue_redraw()
 
@@ -72,6 +72,11 @@ func _indice_aleatorio(cantidad: int) -> int:
 
 func actualizar(delta: float):
 	if not nivel._puede_jugar() or delta < 0.0:
+		return
+	if nivel.clima == "radiacion" and not nivel.ronda_activa:
+		if not visuales.is_empty():
+			_avanzar(delta)
+			queue_redraw()
 		return
 	actualizar_proteccion()
 	var destino := tiempo + delta
@@ -193,13 +198,18 @@ func derrumbe_en(columna: int):
 	_registrar("Derrumbe en columna %d%s" % [columna, " · Terra bloqueó la roca" if fila_tope < nivel.ALTO else ""], "derrumbe", Vector2i(columna, fila_tope))
 
 func radiacion():
-	for arbol in _arboles():
-		if arbol.elemento == "venenum":
+	var protegidas := {}
+	for celda in nivel.arboles_plantados:
+		var aqua = nivel.arboles_plantados[celda]
+		if is_instance_valid(aqua) and not aqua.is_queued_for_deletion() and aqua.vida > 0 and aqua.elemento == "aqua":
+			for direccion in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
+				protegidas[celda + direccion] = true
+	for celda in nivel.arboles_plantados.keys():
+		var arbol = nivel.arboles_plantados.get(celda)
+		if not is_instance_valid(arbol) or arbol.is_queued_for_deletion() or arbol.vida <= 0 or arbol.elemento == "venenum":
 			continue
-		arbol.recibir_dano(5)
-		if arbol.vida > 0 and _azar() < INTOXICACION[arbol.tamano]:
-			arbol.recibir_dano(arbol.vida)
-	_registrar("Radiación: -5 HP; intoxicación 5/10/15% según tamaño", "radiacion")
+		arbol.recibir_dano(DANO_RADIACION / 2 if protegidas.has(celda) else DANO_RADIACION)
+	_registrar("Pulso radiactivo: -6 HP · Junto a Aqua: -3 HP · Venenum inmune", "radiacion")
 
 func _punto(celda: Vector2i) -> Vector2:
 	return to_local(nivel.suelo.to_global(nivel.suelo.map_to_local(celda)))

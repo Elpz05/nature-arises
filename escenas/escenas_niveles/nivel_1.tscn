@@ -31,12 +31,10 @@
 [ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_glacies.tscn" id="glacies"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_terra.tscn" id="terra"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_venenum.tscn" id="venenum"]
-
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_o21pq"]
-load_path = "res://.godot/imported/tiles_fuego.png-fbf8db2854cd1b9411f353fb99ff143b.ctex"
+[ext_resource type="Texture2D" uid="uid://boq2h2vde2qf3" path="res://tiles_niveles/tiles_nivel_2/tiles_2.png" id="suelo"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qeiqq"]
-texture = SubResource("CompressedTexture2D_o21pq")
+texture = ExtResource("suelo")
 texture_region_size = Vector2i(64, 64)
 0:0/0 = 0
 1:0/0 = 0

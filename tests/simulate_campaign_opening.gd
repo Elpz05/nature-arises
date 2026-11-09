@@ -23,8 +23,7 @@ func _run():
 				cells.append(Vector2i(x, 3))
 		var elapsed := 0.0
 		while not level.terminado and elapsed < 900.0:
-			for drop in level.pozo.gotas.get_children():
-				drop.intentar_recoger()
+			level._recoger_en_objetivo(level.suelo.map_to_local(level.celda_pozo))
 			for cell in cells:
 				if level.gotas < 1:
 					break

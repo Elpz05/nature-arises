@@ -171,23 +171,23 @@ func _run():
 		_check(level.cargas[0] == charges - 1, "Usar Elemento must cast at the cursor")
 		root.push_input(_key(KEY_B), true)
 		_check(level.ronda_activa, "Remapped wave action must start the wave")
-		level.pozo._generar_gota()
-		var drop = level.pozo.gotas.get_child(0)
+		level._actualizar_recursos(10.0)
+		var well_point: Vector2 = level.pozo.get_global_transform_with_canvas().origin
+		var stored: int = level.pozo.reserva
 		var money: int = level.gotas
 		root.push_input(_key(KEY_H), true)
 		charges = level.cargas[0]
-		_click(MOUSE_BUTTON_LEFT, drop.get_global_transform_with_canvas().origin)
-		_check(level.gotas == money, "Removed mouse binding must not collect drops")
-		_click(MOUSE_BUTTON_RIGHT, drop.get_global_transform_with_canvas().origin)
-		_check(level.gotas == money + 1 and level.cargas[0] == charges, "Remapped pickup must not also cast an ability")
-		level.pozo._generar_gota()
-		for item in level.pozo.gotas.get_children():
-			if not item.procesada:
-				level.cursor_tablero = level.suelo.local_to_map(level.suelo.to_local(item.global_position))
-				break
+		_click(MOUSE_BUTTON_LEFT, well_point)
+		_check(level.gotas == money, "Removed mouse binding must not empty the well")
+		_click(MOUSE_BUTTON_RIGHT, well_point)
+		_check(level.gotas == money + stored and level.pozo.reserva == 0 and level.cargas[0] == charges, "Remapped pickup must collect the entire reserve without also casting")
+		level._actualizar_recursos(10.0)
+		money = level.gotas
+		stored = level.pozo.reserva
+		level.cursor_tablero = level.celda_pozo
 		level.usar_cursor_tablero = true
 		root.push_input(_key(KEY_K), true)
-		_check(level.gotas == money + 2, "Grid-cursor confirmation must collect off-center drops in the target cell")
+		_check(level.gotas == money + stored and level.pozo.reserva == 0, "Grid-cursor confirmation must collect the entire reserve")
 		root.push_input(_key(KEY_T), true)
 		root.push_input(_key(KEY_P), true)
 		_check(paused and is_instance_valid(level.pausa), "Pausa must open even when a tool is selected")

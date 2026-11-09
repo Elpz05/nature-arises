@@ -11,7 +11,9 @@ const RUTA_HORIZONTAL := [
 	Vector2i(0, 4), Vector2i(26, 4), Vector2i(26, 7), Vector2i(3, 7), Vector2i(3, 10),
 	Vector2i(26, 10), Vector2i(26, 13), Vector2i(3, 13), Vector2i(3, 15), Vector2i(2, 15),
 ]
-const RUTA_FUEGO := [Vector2i(0, 4), Vector2i(26, 4), Vector2i(26, 13), Vector2i(3, 13), Vector2i(3, 15), Vector2i(2, 15)]
+const ATAJO_FLAMMA := {"tipo": "flamma", "tramo": [Vector2i(26, 7), Vector2i(26, 13)], "salidas": [Vector2i(26, 10)], "color": Color(1.0, 0.55, 0.23)}
+const ATAJO_ELECTRICITAS := {"tipo": "electricitas", "tramo": [Vector2i(18, 7), Vector2i(18, 10)], "color": Color(1.0, 0.92, 0.42)}
+const POZAS_RADIACION := [Vector2i(7, 5), Vector2i(8, 5), Vector2i(19, 9), Vector2i(20, 9)]
 const RUTA_VERTICAL := [
 	Vector2i(4, 3), Vector2i(4, 15), Vector2i(8, 15), Vector2i(8, 3), Vector2i(12, 3),
 	Vector2i(12, 15), Vector2i(16, 15), Vector2i(16, 3), Vector2i(20, 3), Vector2i(20, 15),
@@ -62,10 +64,23 @@ const ETAPAS := [
 		"rondas": [{"terra:pequeno": 3, "natura:mediano": 2}, {"electricitas:mediano": 2, "aqua:mediano": 3}, {"terra:mediano": 2, "glacies:mediano": 2, "venenum:pequeno": 2}, {"flamma:grande": 1, "terra:grande": 1, "venenum:mediano": 2}, {"terra:grande": 2, "electricitas:grande": 1, "glacies:grande": 1, "aqua:grande": 1}],
 	},
 	{
-		"nombre": "El último brote", "clima": "radiacion", "agua": 18, "atajo": true,
-		"consejo": "Venenum resiste la radiación. Distribuye tus defensas y combina los siete ataques para proteger al Árbol Madre.",
-		"plantas": [], "ataques": [], "intervalos": [2.5, 2.3, 2.1, 1.9, 1.7],
-		"rondas": [{"venenum:pequeno": 3, "natura:mediano": 3}, {"venenum:mediano": 2, "electricitas:mediano": 2, "aqua:mediano": 2}, {"terra:grande": 1, "glacies:grande": 1, "flamma:mediano": 2}, {"venenum:grande": 2, "electricitas:grande": 1, "natura:grande": 2}, {"venenum:grande": 2, "terra:grande": 1, "glacies:grande": 1, "flamma:grande": 1, "aqua:grande": 1}],
+		"nombre": "El último brote", "clima": "radiacion", "agua": 29, "atajo": true,
+		"consejo": "Aqua abastece el pozo desde las pozas azules. Bloquea los atajos con Terra y combina Flamma y Electricitas contra grupos, Glacies y Venenum para frenarlos y Natura para cubrir huecos.",
+		"consejos_ronda": [
+			"Aqua produce agua y protege a sus vecinos del pulso. Natura cubre el primer tramo con poca inversión.",
+			"Flamma golpea a grupos y protege del aura gélida. Glacies frena a las bestias que sobreviven.",
+			"Terra puede bloquear el atajo eléctrico. Coloca Venenum detrás para ralentizar a las bestias blindadas.",
+			"Aqua atraviesa las barreras de Terra. Congélalas con Glacies y encadena al grupo con Electricitas.",
+			"Venenum resiste la radiación y cubre varios carriles. Refuerza el atajo de Flamma antes de que lleguen los grandes.",
+		],
+		"plantas": [], "ataques": [], "intervalos": [1.25, 1.1, 1.6, 1.0, 1.4],
+		"rondas": [
+			{"natura:pequeno": 8, "aqua:pequeno": 3},
+			{"flamma:pequeno": 4, "glacies:pequeno": 4, "natura:mediano": 2},
+			{"terra:mediano": 2, "venenum:mediano": 2, "electricitas:mediano": 3},
+			{"aqua:mediano": 5, "electricitas:mediano": 4, "glacies:mediano": 2},
+			{"flamma:grande": 1, "terra:grande": 1, "venenum:grande": 1, "glacies:mediano": 2, "electricitas:mediano": 2, "aqua:mediano": 2},
+		],
 	},
 ]
 
@@ -85,6 +100,7 @@ static func configurar_progreso(nivel, numero: int):
 	var datos: Dictionary = ETAPAS[numero]
 	nivel.titulo_nivel = datos.nombre
 	nivel.consejo_nivel = datos.consejo
+	nivel.consejos_ronda.assign(datos.get("consejos_ronda", []))
 	nivel.gotas_iniciales = datos.agua
 	nivel.desbloqueos.assign(datos.plantas)
 	nivel.desbloqueos_ataques.assign(datos.ataques)

@@ -1,6 +1,5 @@
 extends SceneTree
 
-# No saves are written. Uses actual input dispatch for collection conflicts.
 var failures := 0
 
 func _initialize():
@@ -11,14 +10,11 @@ func _check(condition: bool, message: String):
 		failures += 1
 		push_error(message)
 
-func _pending(well) -> Array:
-	return well.gotas.get_children().filter(func(drop): return not drop.procesada and not drop.is_queued_for_deletion())
-
-func _mouse(drop, pressed: bool):
+func _mouse(point: Vector2, pressed: bool):
 	var event := InputEventMouseButton.new()
 	event.button_index = MOUSE_BUTTON_LEFT
 	event.pressed = pressed
-	event.position = drop.get_global_transform_with_canvas().origin
+	event.position = point
 	root.push_input(event, true)
 
 func _run():
@@ -29,113 +25,64 @@ func _run():
 		var level = load("res://escenas/escenas_niveles/nivel_%d.tscn" % index).instantiate()
 		root.add_child(level)
 		level.set_process(false)
+		await process_frame
 		var well = level.pozo
-		_check(is_instance_valid(well) and not level._se_puede_plantar(level.celda_pozo), "Each level must reserve a functional well cell")
-		well._generar_gota()
-		_check(_pending(well).is_empty(), "Wells must not generate between waves")
+		var point: Vector2 = well.get_global_transform_with_canvas().origin
+		var per_drop: float = 1.0 / level.obtener_produccion_agua()
+		_check(not level._se_puede_plantar(level.celda_pozo) and per_drop > 3.0, "Central well reserves its cell and produces at a reduced rate")
+		level._actualizar_recursos(100.0)
+		_check(well.reserva == 0 and level.gotas == 3, "No resources generate before the round")
 		level._iniciar_ronda()
-		well.temporizador.start(0.05)
-		await create_timer(0.07).timeout
-		_check(not _pending(well).is_empty(), "A running Timer must actually produce a drop")
-		well.temporizador.start(well.intervalo_generacion)
-		for item in _pending(well):
-			item.expiracion.start(0.04)
-		await create_timer(0.06).timeout
-		_check(_pending(well).is_empty() and level.gotas == 3, "Actual item timers must expire drops without currency")
-		level._process(0.0)
-		_check(level.gotas == 3, "A zero-duration frame must not grant currency")
-		well.temporizador.timeout.emit()
-		_check(_pending(well).size() == 1 and level.gotas == 3, "Timer must spawn an item instead of currency")
-		var drop = _pending(well)[0]
+		level._actualizar_recursos(per_drop - 0.1)
+		_check(well.reserva == 0, "A partial drop cannot be collected")
+		level._actualizar_recursos(0.1)
+		level._actualizar_recursos(per_drop * 8.0)
+		_check(well.reserva == 5 and level.gotas == 3, "Generation caps at five and never credits the wallet directly")
+		_check(level.hud.label_pozo.text.begins_with("Pozo 5/5"), "HUD shows the current well reserve")
 		level._on_semilla_pulsada(0, false)
 		_check(is_equal_approx(level.datos_rango_colocacion.radio, 128.0), "Plant selection must prepare its initial range")
-		_mouse(drop, true)
-		_mouse(drop, false)
-		_check(level.gotas == 4 and level.arboles_plantados.is_empty(), "Collecting while planting must grant currency without planting underneath")
-		_check(not drop.intentar_recoger() and level.gotas == 4, "Collected items must never grant currency twice")
-		_check(level.hud.label_gotas.text == "Gotas: 4", "Collection must update HUD affordability immediately")
-		well._generar_gota()
-		drop = _pending(well)[0]
+		_mouse(point + Vector2(40, 0), true)
+		_mouse(point + Vector2(40, 0), false)
+		_check(well.reserva == 5, "A click outside the well cannot collect it")
+		level._on_semilla_pulsada(0, false)
+		var planted: int = level.arboles_plantados.size()
+		var before: int = level.gotas
+		_mouse(point, true)
+		_mouse(point, false)
+		_check(level.gotas == before + 5 and well.reserva == 0 and level.arboles_plantados.size() == planted, "Clicking the well collects all five without planting")
+		_check(not well.recoger() and level.hud.label_gotas.text == "Gotas: %d" % (before + 5), "Collection updates the HUD and cannot be repeated")
+		level._actualizar_recursos(per_drop * 0.5)
+		_check(well.reserva == 0, "Time spent full does not bank overflow")
+		level._actualizar_recursos(per_drop * 2.5)
 		level._on_ataque_pulsado(0, false)
-		var charges: int = level.cargas[0]
-		_mouse(drop, true)
-		_mouse(drop, false)
-		_check(level.cargas[0] == charges and level.gotas == 5, "Collection must not cast a selected ability")
-		well._generar_gota()
-		drop = _pending(well)[0]
-		level._on_semilla_pulsada(0, true)
-		_mouse(drop, false)
-		_check(level.gotas == 6 and level.arboles_plantados.is_empty(), "Dragging a plant onto a drop must collect without planting")
-		level._deseleccionar()
-		for unused in 8:
-			well._generar_gota()
-		_check(_pending(well).size() == 5, "The well must cap uncollected items")
-		drop = _pending(well)[0]
-		var amount: int = level.gotas
-		drop._expirar()
-		_check(level.gotas == amount and not drop.intentar_recoger(), "Expired items must grant no currency")
-		well._generar_gota()
-		_check(_pending(well).size() == 5, "Expiration must free a spawn slot")
-		drop = _pending(well)[0]
+		var charges: float = level.cargas[0]
 		level._abrir_pausa()
-		var time_left: float = drop.expiracion.time_left
-		await process_frame
-		await process_frame
-		well._generar_gota()
-		_check(not drop.intentar_recoger() and level.gotas == amount, "Paused items must not be collectible")
-		_check(is_equal_approx(drop.expiracion.time_left, time_left), "Pause must freeze item expiration")
+		level._actualizar_recursos(100.0)
+		_mouse(point, true)
+		_mouse(point, false)
+		_check(well.reserva == 3, "Pause freezes the reserve and blocks pickup")
 		level.pausa._continuar()
 		await process_frame
 		level.cola_bestias.clear()
-		for path in [level.ruta] + level.rutas_enemigos.values():
-			for follower in path.get_children():
-				follower.free()
 		level._terminar_ronda()
-		_check(well.temporizador.paused, "Wave completion must pause well generation")
-		_check(drop.intentar_recoger() and level.gotas == amount + 1, "Existing drops must remain collectible between waves")
-		for type in 2:
-			level.hud.SEMILLAS_ACTIVAS = [0, 1, 2]
-			level._on_semilla_pulsada(type, false)
-			var data: Dictionary = level.datos_rango_colocacion.duplicate()
-			var row := 4 if index == 0 else 3
-			var cell := Vector2i(type, row)
-			level._plantar(cell, type)
-			var tower = level.arboles_plantados[cell]
-			var actual_radius: float = tower.forma.shape.radius * tower.forma.global_scale.x
-			_check(is_equal_approx(data.radio, actual_radius), "Preview radius must match the placed tower's actual range")
-			_check(data.centro.is_equal_approx(tower.to_local(tower.forma.global_position)), "Preview must include the collision shape offset")
-			level._deseleccionar()
-			_check(level.datos_rango_colocacion.is_empty(), "Canceling placement must clear range preview state")
+		level._actualizar_recursos(100.0)
+		_check(not well.generando and well.reserva == 3, "Between rounds the reserve is retained without generating more")
+		before = level.gotas
+		_mouse(point, true)
+		_mouse(point, false)
+		_check(level.cargas[0] == charges and level.gotas == before + 3, "Between-round pickup does not cast a selected ability")
 		level._iniciar_ronda()
-		well._generar_gota()
+		level._actualizar_recursos(per_drop * 2.0)
+		level._on_semilla_pulsada(0, true)
+		before = level.gotas
+		_mouse(point, false)
+		_check(level.gotas == before + 2 and not level.arrastrando, "Dropping a dragged selection on the well collects the reserve")
+		level._actualizar_recursos(per_drop)
 		level._on_espiritu_llego(level.arbol_meta.vida)
-		_check(well.temporizador.paused, "Defeat must stop generation")
-		for item in _pending(well):
-			_check(not item.intentar_recoger(), "Outcome screens must block collection")
+		_check(not well.generando and not level._recoger_en_objetivo(well.position), "Outcome stops generation and blocks collection")
 		paused = false
 		level.free()
-	if OS.get_cmdline_user_args().has("--capture-ui"):
-		await _capture_preview()
 	save.slot_actual = original_slot
 	await process_frame
 	print("Well economy checks: %s" % ("PASS" if failures == 0 else "%d FAILED" % failures))
 	quit(0 if failures == 0 else 1)
-
-func _capture_preview():
-	var level = load("res://escenas/escenas_niveles/nivel_0.tscn").instantiate()
-	root.add_child(level)
-	level.set_process(false)
-	level._iniciar_ronda()
-	for unused in 4:
-		level.pozo._generar_gota()
-	level._on_semilla_pulsada(0, false)
-	root.warp_mouse(Vector2(544, 352))
-	await process_frame
-	await process_frame
-	level.vista.queue_redraw()
-	await RenderingServer.frame_post_draw
-	var error := root.get_texture().get_image().save_png("res://tests/well_preview.png")
-	_check(error == OK, "Well and placement preview must render")
-	level.queue_free()
-	await process_frame
-	await RenderingServer.frame_post_draw

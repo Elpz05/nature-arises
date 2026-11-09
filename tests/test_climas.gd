@@ -80,7 +80,7 @@ func _run():
 	var phoenix = _enemy(storm, "flamma")
 	weather.rayo_en(Vector2i(4, 4))
 	_check(electric.vida == 500.0 and phoenix.muerto and not phoenix.renacio, "Lightning spares Electricitas beasts and environmental destruction bypasses resurrection")
-	_check(is_equal_approx(storm.obtener_produccion_agua(), 1.0), "Storm produces one base drop/s")
+	_check(is_equal_approx(storm.obtener_produccion_agua(), 0.4), "Storm adds 0.4 drops/s to the well")
 	storm.free()
 	# Geyser's seven-second bonus has an independent timer and does not stack.
 	var volcano = _level("volcan")
@@ -90,7 +90,7 @@ func _run():
 	var flame = _plant(volcano, Vector2i(7, 5), 1)
 	var ice = _plant(volcano, Vector2i(8, 5), 5)
 	_check(is_equal_approx(nature.obtener_estadisticas().disparos_segundo, 2.2) and flame.obtener_estadisticas().disparos_segundo == 1.0 and ice.obtener_estadisticas().disparos_segundo == 1.0, "Volcano cadence bonus applies only to the other elements")
-	_check(flame.modificador_dano == 0.2 and ice.modificador_dano == -0.2 and volcano.obtener_produccion_agua() == 0.25, "Volcano configures damage and reduced water production")
+	_check(flame.modificador_dano == 0.2 and ice.modificador_dano == -0.2 and volcano.obtener_produccion_agua() == 0.15, "Volcano configures damage and reduced water production")
 	var ice_beast = _enemy(volcano, "glacies")
 	_check(ice_beast.vida_maxima == 275.0, "Volcano halves base Glacies beast HP")
 	weather.actualizar(9.0)
@@ -165,28 +165,23 @@ func _run():
 	_check(behind.muerto and above.vida == 100, "Subsequent rocks continue down the column; adjacent columns remain safe")
 	_check(not collapse._se_puede_plantar(Vector2i(4, 8), 0), "Destroyed road Terra leaves the road reserved")
 	collapse.free()
-	# Radiation applies once per elapsed second, with size-specific probability.
+	# Radiation only pulses during a wave and has no instant-death roll.
 	var radioactive = _level("radiacion")
 	weather = radioactive.gestor_clima
 	var vulnerable = _plant(radioactive, Vector2i(0, 3), 0)
 	var poison = _plant(radioactive, Vector2i(1, 3), 6)
 	_check(is_equal_approx(vulnerable.obtener_estadisticas().disparos_segundo, 2.1) and is_equal_approx(poison.obtener_estadisticas().disparos_segundo, 0.3), "Radiation boosts cadence except Venenum")
-	_check(_enemy(radioactive, "venenum").vida_maxima == 780.0, "Radiation increases Venenum beast HP thirty percent")
-	weather.actualizar(3.5)
-	_check(vulnerable.vida == 85 and poison.vida == 500 and weather.conteos.radiacion == 3, "Radiation ticks once per second and never damages immune Venenum")
-	for i in 3:
-		var victim = _plant(radioactive, Vector2i(3 + i, 3), 0)
-		victim._aplicar_tamano(radioactive.TAMANOS[i])
-		victim.temporizador.stop()
-		weather.tirada = [0.05, 0.1, 0.15][i]
-		weather.radiacion()
-		_check(not victim.is_queued_for_deletion(), "Intoxication threshold is exclusive for each size")
-		weather.tirada -= 0.0001
-		weather.radiacion()
-		_check(victim.is_queued_for_deletion(), "Intoxication can instantly kill each size at its configured probability")
+	_check(_enemy(radioactive, "venenum").vida_maxima == 600.0, "Radiation no longer buffs Venenum beast HP")
+	weather.actualizar(30.0)
+	_check(weather.tiempo == 0.0 and vulnerable.vida == 100, "Radiation does not punish setup time")
+	radioactive._iniciar_ronda()
+	weather.actualizar(7.99)
+	_check(vulnerable.vida == 100, "Radiation waits eight seconds before the first pulse")
 	weather.tirada = 0.0
-	weather.radiacion()
-	_check(poison.vida == 500 and not poison.is_queued_for_deletion(), "Venenum is immune even when the intoxication roll always succeeds")
+	weather.actualizar(0.01)
+	_check(vulnerable.vida == 94 and poison.vida == 500 and weather.conteos.radiacion == 1, "Radiation chips six HP per pulse and never damages Venenum")
+	weather.actualizar(16.0)
+	_check(vulnerable.vida == 82 and weather.conteos.radiacion == 3, "Even the lowest random roll never causes instant death")
 	var clock: float = weather.tiempo
 	paused = true
 	weather.actualizar(100.0)
@@ -210,10 +205,12 @@ func _run():
 		lab.free()
 	var live = _level("radiacion")
 	var live_tree = _plant(live, Vector2i(6, 3), 0)
+	live._iniciar_ronda()
+	live.gestor_clima.tiempo = 7.0
 	live.set_physics_process(true)
 	for i in Engine.physics_ticks_per_second + 3:
 		await physics_frame
-	_check(live_tree.vida == 95 and live.gestor_clima.conteos.radiacion == 1, "Actual level physics advances weather hazards")
+	_check(live_tree.vida == 94 and live.gestor_clima.conteos.radiacion == 1, "Actual level physics advances weather hazards")
 	live.free()
 	var navigation = load("res://demo/mecanicas_despejado.tscn").instantiate()
 	root.add_child(navigation)

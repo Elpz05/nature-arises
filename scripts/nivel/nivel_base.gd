@@ -18,7 +18,7 @@ extends Node2D
 @export var sonidos_ataque: Array[AudioStream] = []
 @export var sonido_dano_arbol: AudioStream
 @export var pozo_escena: PackedScene = preload("res://escenas/escenas_economia/pozo.tscn")
-@export var celda_pozo := Vector2i(28, 5)
+@export var celda_pozo := Vector2i(14, 8)
 @export_enum("despejado", "lluvia", "tormenta", "volcan", "ventisca", "derrumbe", "radiacion") var clima := "despejado"
 @export_enum("pequeno", "mediano", "grande") var intensidad_tormenta := "mediano"
 @export var celdas_inundadas: Array[Vector2i] = []
@@ -27,6 +27,7 @@ var gestor_clima: Node2D
 
 @onready var suelo: TileMapLayer = $Suelo
 @onready var camino: TileMapLayer = $Camino
+@onready var capa_atajo := get_node_or_null("Atajo") as TileMapLayer
 @onready var ruta: Path2D = $RutaEspiritu
 @onready var arboles: Node2D = $Arboles
 
@@ -40,6 +41,7 @@ const GOTAS_INICIALES := 3
 @export var gotas_iniciales := GOTAS_INICIALES
 @export var titulo_nivel := ""
 @export_multiline var consejo_nivel := ""
+var consejos_ronda: Array[String] = []
 const RECARGA_ATAQUE := 3.0
 const FILAS_BLOQUEADAS := 3
 const TIPOS_BESTIA := ["natura", "flamma", "aqua", "terra", "electricitas", "glacies", "venenum"]
@@ -59,11 +61,11 @@ var celdas_ocupadas := {}
 var arbol_meta
 
 var gotas := GOTAS_INICIALES
-var _agua_acumulada := 0.0
 var _tiempo_ventus := 0.0
 var _contactos_aqua: Dictionary = {}
 var _dano_aura_acumulado: Dictionary = {}
-var _conexiones_ruta_principal: Dictionary = {}
+var _atajos: Dictionary = {}
+var _distancias_por_ruta: Dictionary = {}
 var pozo: Node2D
 var _clic_gota_consumido := false
 var datos_rango_colocacion: Dictionary = {}
@@ -135,22 +137,32 @@ func _validar_configuracion() -> bool:
 				push_error("Falta la escena de la bestia de la ronda: %s" % partes[0])
 				return false
 	var recorridos: Array = [puntos_ruta]
-	for datos in rutas_adicionales:
-		var capa := get_node_or_null(NodePath(datos.capa)) as TileMapLayer
-		if capa == null or capa.tile_set == null or capa.tile_set.get_source_count() == 0:
-			push_error("Falta la capa del camino adicional: %s" % datos.capa)
+	if not rutas_adicionales.is_empty():
+		if capa_atajo == null or capa_atajo.tile_set == null or capa_atajo.tile_set.get_source_count() == 0:
+			push_error("Falta la capa Atajo o su TileSet.")
 			return false
-		recorridos.append(datos.puntos)
+		for datos in rutas_adicionales:
+			recorridos.append(datos.tramo)
 	for puntos in recorridos:
 		if puntos.size() < 2:
 			push_error("Cada ruta necesita al menos dos puntos.")
 			return false
+		for celda: Vector2i in puntos:
+			if celda.x < 0 or celda.x >= ANCHO or celda.y < FILAS_BLOQUEADAS or celda.y >= ALTO:
+				push_error("Las rutas deben permanecer en las filas jugables.")
+				return false
 		for i in range(puntos.size() - 1):
 			var desde: Vector2i = puntos[i]
 			var hasta: Vector2i = puntos[i + 1]
-			if desde.x != hasta.x and desde.y != hasta.y:
-				push_error("Las rutas del tablero deben usar tramos horizontales o verticales.")
+			if desde == hasta or (desde.x != hasta.x and desde.y != hasta.y):
+				push_error("Las rutas del tablero deben usar tramos horizontales o verticales de longitud positiva.")
 				return false
+		var celdas := _celdas_de(puntos)
+		if _distancias_de(celdas).size() != celdas.size():
+			push_error("Un recorrido no puede repetir casillas.")
+			return false
+	if not _preparar_atajos():
+		return false
 	if pozo_escena == null or not _se_puede_plantar(celda_pozo) or celda_pozo == celda_arbol_madre or celdas_bloqueadas.has(celda_pozo):
 		push_error("El pozo necesita una escena y una celda libre dentro del tablero.")
 		return false
@@ -204,7 +216,7 @@ func _ready():
 		hud.actualizar_ataque(i, cargas[i], hud.ATAQUES[i].capacidad)
 
 	hud.actualizar_gotas(gotas)
-	hud.actualizar_ronda(ronda, rondas.size())
+	_actualizar_ronda_hud()
 	hud.mostrar_boton_ronda("Iniciar ronda %d" % ronda, true)
 
 	sfx_ataque = AudioStreamPlayer.new()
@@ -245,10 +257,10 @@ func _crear_pozo():
 		return
 	pozo = pozo_escena.instantiate()
 	pozo.position = suelo.map_to_local(celda_pozo)
-	pozo.puede_generar = func(): return _puede_jugar() and ronda_activa
-	pozo.puede_recoger = _puede_jugar
-	pozo.gota_recogida.connect(_recoger_gotas)
+	pozo.agua_recogida.connect(_recoger_gotas)
+	pozo.reserva_cambiada.connect(hud.actualizar_pozo)
 	add_child(pozo)
+	hud.actualizar_pozo(0)
 	celdas_ocupadas[celda_pozo] = true
 
 func _recoger_gotas(cantidad: int):
@@ -258,15 +270,11 @@ func _recoger_gotas(cantidad: int):
 	hud.actualizar_gotas(gotas)
 
 func _recoger_en_objetivo(pos: Vector2) -> bool:
-	if not is_instance_valid(pozo):
+	if not _puede_jugar() or not is_instance_valid(pozo):
 		return false
 	if usar_cursor_tablero:
-		for gota in pozo.gotas.get_children():
-			var celda := suelo.local_to_map(suelo.to_local(gota.global_position))
-			if celda == cursor_tablero and gota.intentar_recoger():
-				return true
-		return false
-	return pozo.recoger_en_punto(to_global(pos))
+		return cursor_tablero == celda_pozo and pozo.recoger()
+	return pozo.contiene_punto(to_global(pos)) and pozo.recoger()
 
 func _punto_objetivo() -> Vector2:
 	if usar_cursor_tablero:
@@ -303,13 +311,14 @@ func _generar_tablero():
 func _generar_camino():
 	for celda in _celdas_de(puntos_ruta):
 		_pintar_camino(celda)
-	for datos in rutas_adicionales:
-		var capa := get_node(NodePath(datos.capa)) as TileMapLayer
-		var source := capa.tile_set.get_source_id(0)
-		for celda in _celdas_de(datos.puntos):
-			if not celdas_ocupadas.has(celda):
-				capa.set_cell(celda, source, Vector2i.ZERO)
-			celdas_ocupadas[celda] = true
+	if not _atajos.is_empty():
+		var source := capa_atajo.tile_set.get_source_id(0)
+		for datos in _atajos.values():
+			for celda in datos.tramo:
+				if not celdas_ocupadas.has(celda):
+					capa_atajo.set_cell(celda, source, Vector2i.ZERO)
+				celdas_ocupadas[celda] = true
+		_marcar_atajos()
 	for celda in celdas_bloqueadas:
 		celdas_ocupadas[celda] = true
 
@@ -331,15 +340,10 @@ func _pintar_camino(celda: Vector2i):
 	celdas_ocupadas[celda] = true
 
 func _es_camino(celda: Vector2i) -> bool:
-	if camino.get_cell_source_id(celda) != -1:
-		return true
-	for datos in rutas_adicionales:
-		if (get_node(NodePath(datos.capa)) as TileMapLayer).get_cell_source_id(celda) != -1:
-			return true
-	return false
+	return camino.get_cell_source_id(celda) != -1 or (capa_atajo != null and capa_atajo.get_cell_source_id(celda) != -1)
 
 func _esta_inundada(celda: Vector2i) -> bool:
-	return clima in ["lluvia", "tormenta"] and celdas_inundadas.has(celda) and _es_camino(celda)
+	return celdas_inundadas.has(celda) and (clima == "radiacion" or (clima in ["lluvia", "tormenta"] and _es_camino(celda)))
 
 func _marcar_inundaciones():
 	var agua := Node2D.new()
@@ -355,12 +359,75 @@ func _marcar_inundaciones():
 
 func _generar_curva():
 	ruta.curve = _curva_de(puntos_ruta, ruta)
-	for datos in rutas_adicionales:
+	_distancias_por_ruta[ruta] = _distancias_de(_celdas_de(puntos_ruta))
+	for tipo in _atajos:
+		var datos: Dictionary = _atajos[tipo]
 		var adicional := Path2D.new()
-		adicional.name = "Ruta_" + datos.tipo
+		adicional.name = "Ruta_" + tipo
 		add_child(adicional)
 		adicional.curve = _curva_de(datos.puntos, adicional)
-		rutas_enemigos[datos.tipo] = adicional
+		rutas_enemigos[tipo] = adicional
+		_distancias_por_ruta[adicional] = _distancias_de(datos.puntos)
+
+func _distancias_de(celdas: Array) -> Dictionary:
+	var distancias := {}
+	for i in celdas.size():
+		distancias[celdas[i]] = float(i * TAM_CELDA)
+	return distancias
+
+func _preparar_atajos() -> bool:
+	var principal := _celdas_de(puntos_ruta)
+	for datos in rutas_adicionales:
+		var tramo := _celdas_de(datos.tramo)
+		var entrada := principal.find(tramo[0])
+		var salida := principal.find(tramo[-1])
+		if not TIPOS_BESTIA.has(datos.tipo) or _atajos.has(datos.tipo) or entrada < 0 or salida <= entrada or tramo.size() - 1 >= salida - entrada:
+			push_error("El atajo %s debe acortar el camino entre dos casillas en orden de marcha." % datos.tipo)
+			return false
+		var enlaces: Array[Vector2] = []
+		var anterior := entrada
+		for celda in datos.get("salidas", []):
+			var en_tramo := tramo.find(celda)
+			var en_principal := principal.find(celda)
+			var desordenado := not enlaces.is_empty() and (entrada + en_tramo) * TAM_CELDA <= enlaces[-1].x
+			if en_tramo <= 0 or en_tramo >= tramo.size() - 1 or en_principal <= anterior or en_principal >= salida or desordenado:
+				push_error("Salida intermedia inválida en el atajo %s." % datos.tipo)
+				return false
+			enlaces.append(Vector2((entrada + en_tramo) * TAM_CELDA, en_principal * TAM_CELDA))
+			anterior = en_principal
+		var puntos := principal.slice(0, entrada)
+		puntos.append_array(tramo)
+		puntos.append_array(principal.slice(salida + 1))
+		if _distancias_de(puntos).size() != puntos.size():
+			push_error("El atajo %s repite una casilla de su recorrido." % datos.tipo)
+			return false
+		_atajos[datos.tipo] = {
+			"puntos": puntos, "tramo": tramo, "color": datos.color, "enlaces": enlaces,
+			"bifurcacion": float(entrada * TAM_CELDA),
+			"union": Vector2((entrada + tramo.size() - 1) * TAM_CELDA, salida * TAM_CELDA),
+		}
+	return true
+
+func _marcar_atajos():
+	var marcas := Node2D.new()
+	marcas.name = "MarcasAtajos"
+	marcas.z_index = 2
+	marcas.draw.connect(func():
+		for tipo in _atajos:
+			var datos: Dictionary = _atajos[tipo]
+			var color: Color = datos.color
+			for i in range(1, datos.tramo.size() - 1):
+				var centro := marcas.to_local(suelo.to_global(suelo.map_to_local(datos.tramo[i])))
+				var direccion := Vector2(datos.tramo[i + 1] - datos.tramo[i])
+				var lado := direccion.orthogonal() * 8.0
+				var flecha := PackedVector2Array([centro - lado - direccion * 6.0, centro + direccion * 6.0, centro + lado - direccion * 6.0])
+				marcas.draw_polyline(flecha, Color(0.12, 0.10, 0.09), 7.0, true)
+				marcas.draw_polyline(flecha, color, 3.0, true)
+			var entrada := marcas.to_local(suelo.to_global(suelo.map_to_local(datos.tramo[0]))) + Vector2(-18, -9)
+			marcas.draw_string_outline(ThemeDB.fallback_font, entrada, tipo.left(1).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color.BLACK)
+			marcas.draw_string(ThemeDB.fallback_font, entrada, tipo.left(1).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, color)
+	)
+	add_child(marcas)
 
 func _curva_de(puntos: Array, destino: Path2D) -> Curve2D:
 	var curva := Curve2D.new()
@@ -394,7 +461,7 @@ func _crear_arbol_madre():
 	arbol_meta.murio.connect(_perder_nivel)
 	_on_vida_arbol_cambiada(arbol_meta.vida, arbol_meta.vida_maxima)
 
-func _crear_espiritu(tipo: String = "natura", tamano: String = "pequeno", progreso: float = 0.0):
+func _crear_espiritu(tipo: String = "natura", tamano: String = "pequeno", progreso: float = 0.0, recorrido: Path2D = null):
 	if not _puede_jugar():
 		return
 	var escena := _escena_para_tipo(tipo)
@@ -404,7 +471,9 @@ func _crear_espiritu(tipo: String = "natura", tamano: String = "pequeno", progre
 	var seguidor := PathFollow2D.new()
 	seguidor.loop = false
 	seguidor.rotates = false
-	_ruta_para_tipo(tipo).add_child(seguidor)
+	seguidor.cubic_interp = false
+	var destino := _ruta_para_tipo(tipo) if recorrido == null else recorrido
+	destino.add_child(seguidor)
 	seguidor.progress = progreso
 	var espiritu = escena.instantiate()
 	espiritu.tipo = tipo
@@ -414,7 +483,9 @@ func _crear_espiritu(tipo: String = "natura", tamano: String = "pequeno", progre
 	espiritu.cambiar_ruta = _ignorar_atajos
 	espiritu.clima = clima
 	espiritu.llego_a_meta.connect(_on_espiritu_llego)
-	espiritu.invocar_copia.connect(_crear_espiritu)
+	espiritu.invocar_copia.connect(func(tipo_copia: String, talla: String, avance: float):
+		_crear_espiritu(tipo_copia, talla, avance, seguidor.get_parent() as Path2D)
+	)
 	seguidor.add_child(espiritu)
 	_actualizar_combate_hud()
 
@@ -483,9 +554,14 @@ func _terminar_ronda():
 		_ganar_nivel()
 		return
 	ronda += 1
-	hud.actualizar_ronda(ronda, rondas.size())
+	_actualizar_ronda_hud()
 	hud.mostrar_boton_ronda("Iniciar ronda %d" % ronda, true)
 	_actualizar_combate_hud()
+
+func _actualizar_ronda_hud():
+	hud.actualizar_ronda(ronda, rondas.size())
+	if ronda <= consejos_ronda.size():
+		hud.mostrar_consejo(consejos_ronda[ronda - 1])
 
 func _physics_process(delta: float):
 	_actualizar_auras_bestias(delta)
@@ -563,22 +639,15 @@ func _process(delta):
 		vista.queue_redraw()
 
 func obtener_produccion_agua() -> float:
-	var produccion: float = 0.5 + {"lluvia": 0.25, "tormenta": 0.5}.get(clima, 0.0)
-	if clima == "volcan":
-		produccion = 0.25
+	var produccion: float = {"lluvia": 0.3, "tormenta": 0.4, "volcan": 0.15}.get(clima, 0.2)
 	for arbol in arboles_plantados.values():
 		if is_instance_valid(arbol) and not arbol.is_queued_for_deletion() and arbol.vida > 0:
 			produccion += arbol.obtener_produccion()
 	return produccion
 
 func _actualizar_recursos(delta: float):
-	_agua_acumulada += obtener_produccion_agua() * delta
-	var completas := floori(_agua_acumulada + 0.000001)
-	if completas > 0:
-		_agua_acumulada = maxf(0.0, _agua_acumulada - completas)
-		gotas += completas
-		hud.actualizar_gotas(gotas)
-	hud.actualizar_produccion(obtener_produccion_agua(), clima)
+	if _puede_jugar() and ronda_activa:
+		pozo.acumular(delta, obtener_produccion_agua())
 
 func _bestias_vivas() -> Array:
 	var bestias: Array = []
@@ -604,26 +673,40 @@ func _resolver_avance_terra(bestia, desde: float, hasta: float) -> float:
 		return desde
 	if bestia.efecto_elemental.elemento == "electricitas" and hasta <= desde:
 		return hasta
-	if bestia.efecto_elemental.elemento == "aqua":
-		var cambio := _resolver_confusion(bestia, desde, hasta, minf(hasta, bestia.limite_confusion))
-		desde = cambio.x
-		hasta = cambio.y
-	if bestia.tipo == "aqua" or hasta < desde:
+	if hasta < desde:
 		return hasta
 	var seguidor := bestia.get_parent() as PathFollow2D
+	if seguidor.get_parent() != ruta:
+		var limite := minf(hasta, bestia.limite_confusion) if bestia.efecto_elemental.elemento == "aqua" else -INF
+		var cambio := _resolver_atajo(bestia, desde, hasta, limite)
+		desde = cambio.x
+		hasta = cambio.y
+	if bestia.tipo == "aqua":
+		return hasta
 	var recorrido := seguidor.get_parent() as Path2D
+	var barrera := _primera_barrera(recorrido, desde, hasta)
+	if barrera.is_empty():
+		return hasta
+	var entrada: float = barrera.entrada
+	if bestia.recarga_contacto > 0.0:
+		return entrada
+	bestia.recarga_contacto = bestia.INTERVALO_CONTACTO
+	var bloqueo: Arbol = barrera.arbol
+	var empuje := bloqueo.obtener_empuje() * TAM_CELDA
+	bloqueo.recibir_dano(bestia.DANO_CONTACTO.get(bestia.tipo, 0))
+	return maxf(0.0, entrada - empuje)
+
+func _primera_barrera(recorrido: Path2D, desde: float, hasta: float) -> Dictionary:
+	var distancias: Dictionary = _distancias_por_ruta[recorrido]
 	var primera_entrada := INF
 	var bloqueo: Arbol = null
 	for celda in arboles_plantados:
 		var arbol = arboles_plantados[celda]
 		if not is_instance_valid(arbol) or arbol.is_queued_for_deletion() or arbol.vida <= 0 or arbol.elemento != "terra":
 			continue
-		# Solo bloquea rutas que atraviesan el centro de su casilla.
-		# La posición sobre la curva permite empujar también en giros y atajos.
-		var centro := recorrido.to_local(arbol.global_position)
-		var offset := recorrido.curve.get_closest_offset(centro)
-		if recorrido.curve.sample_baked(offset).distance_squared_to(centro) > 1.0:
+		if not distancias.has(celda):
 			continue
+		var offset: float = distancias[celda]
 		var entrada := maxf(0.0, offset - TAM_CELDA * 0.5)
 		var salida := offset + TAM_CELDA * 0.5
 		# Comprueba todo el tramo, para no atravesar Terra con un delta grande.
@@ -632,55 +715,35 @@ func _resolver_avance_terra(bestia, desde: float, hasta: float) -> float:
 		if entrada < primera_entrada:
 			primera_entrada = entrada
 			bloqueo = arbol
-	if bloqueo == null:
-		return hasta
-	if bestia.recarga_contacto > 0.0:
-		return primera_entrada
-	bestia.recarga_contacto = bestia.INTERVALO_CONTACTO
-	var empuje := bloqueo.obtener_empuje() * TAM_CELDA
-	bloqueo.recibir_dano(bestia.DANO_CONTACTO.get(bestia.tipo, 0))
-	return maxf(0.0, primera_entrada - empuje)
+	return {} if bloqueo == null else {"entrada": primera_entrada, "arbol": bloqueo}
 
 func _ignorar_atajos(bestia):
 	var seguidor := bestia.get_parent() as PathFollow2D
-	_resolver_confusion(bestia, seguidor.progress, seguidor.progress, seguidor.progress)
+	_resolver_atajo(bestia, seguidor.progress, seguidor.progress, seguidor.progress)
 
-func _resolver_confusion(bestia, desde: float, hasta: float, limite: float) -> Vector2:
+func _resolver_atajo(bestia, desde: float, hasta: float, limite_confusion: float) -> Vector2:
 	var seguidor := bestia.get_parent() as PathFollow2D
 	var actual := seguidor.get_parent() as Path2D
-	if actual == ruta or hasta < desde:
+	if actual == ruta or not _atajos.has(bestia.tipo):
 		return Vector2(desde, hasta)
-	var posicion := actual.to_global(actual.curve.sample_baked(desde))
-	var offset := ruta.curve.get_closest_offset(ruta.to_local(posicion))
-	var punto := ruta.to_global(ruta.curve.sample_baked(offset))
-	var enlace := Vector2(INF, INF)
-	if posicion.distance_squared_to(punto) <= 1.0:
-		enlace = Vector2(desde, offset)
-	else:
-		var id := actual.get_instance_id()
-		if not _conexiones_ruta_principal.has(id):
-			var conexiones: Array[Vector2] = []
-			for celda in _celdas_de(puntos_ruta):
-				var mundo := suelo.to_global(suelo.map_to_local(celda))
-				var progreso := actual.curve.get_closest_offset(actual.to_local(mundo))
-				if actual.to_global(actual.curve.sample_baked(progreso)).distance_squared_to(mundo) <= 1.0:
-					conexiones.append(Vector2(progreso, ruta.curve.get_closest_offset(ruta.to_local(mundo))))
-			_conexiones_ruta_principal[id] = conexiones
-		for conexion in _conexiones_ruta_principal[id]:
-			if conexion.x >= desde and conexion.x <= limite and conexion.x < enlace.x:
-				enlace = conexion
-	if is_inf(enlace.x):
+	var datos: Dictionary = _atajos[bestia.tipo]
+	var enlace: Vector2 = datos.union
+	if desde >= enlace.x:
+		enlace += Vector2.ONE * (desde - enlace.x)
+	elif limite_confusion >= desde:
+		if desde <= datos.bifurcacion:
+			enlace = Vector2(desde, desde)
+		else:
+			for salida: Vector2 in datos.enlaces:
+				if salida.x >= desde and salida.x <= limite_confusion:
+					enlace = salida
+					break
+	if enlace.x > hasta:
 		return Vector2(desde, hasta)
 	# Antes de cambiar de ruta debe respetar los bloqueos del tramo antiguo.
-	if bestia.tipo != "aqua":
-		for arbol in arboles_plantados.values():
-			if not is_instance_valid(arbol) or arbol.is_queued_for_deletion() or arbol.vida <= 0 or arbol.elemento != "terra":
-				continue
-			var centro := actual.to_local(arbol.global_position)
-			var obstaculo := actual.curve.get_closest_offset(centro)
-			if actual.curve.sample_baked(obstaculo).distance_squared_to(centro) <= 1.0 and desde <= obstaculo + TAM_CELDA * 0.5 and maxf(0.0, obstaculo - TAM_CELDA * 0.5) <= enlace.x:
-				return Vector2(desde, hasta)
-	seguidor.reparent(ruta)
+	if enlace.x > desde and bestia.tipo != "aqua" and not _primera_barrera(actual, desde, enlace.x).is_empty():
+		return Vector2(desde, hasta)
+	seguidor.reparent(ruta, false)
 	seguidor.progress = enlace.y
 	# Se conserva el recorrido restante del fotograma sobre el camino normal.
 	return Vector2(enlace.y, enlace.y + hasta - enlace.x)
@@ -852,8 +915,6 @@ func _input(event: InputEvent):
 		else:
 			arrastrando = false
 		return
-	if not usar_cursor_tablero and panel_torre.visible and panel_torre.get_global_rect().has_point(pantalla):
-		return
 	if _recoger_en_objetivo(pos):
 		_clic_gota_consumido = event.is_action_pressed("Clic Izquierdo", false, true)
 		arrastrando = false
@@ -900,8 +961,10 @@ func _se_puede_plantar(celda: Vector2i, tipo: int = -1) -> bool:
 		return false
 	if tipo == 2:
 		return _esta_inundada(celda)
+	if _esta_inundada(celda):
+		return false
 	if tipo == 3:
-		return not _esta_inundada(celda) and (_es_camino(celda) or not celdas_ocupadas.has(celda))
+		return _es_camino(celda) or not celdas_ocupadas.has(celda)
 	return not celdas_ocupadas.has(celda)
 
 func _plantar(celda: Vector2i, tipo: int) -> bool:
@@ -1065,21 +1128,15 @@ func _mejorar_arbol(celda: Vector2i):
 	hud.actualizar_produccion(obtener_produccion_agua(), clima)
 
 func _crear_tooltip():
-	var capa := CanvasLayer.new()
-	capa.layer = 5
-	add_child(capa)
 	panel_torre = PanelContainer.new()
 	panel_torre.name = "InfoTorre"
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.04, 0.08, 0.06, 0.94)
-	estilo.set_content_margin_all(12.0)
-	panel_torre.add_theme_stylebox_override("panel", estilo)
-	capa.add_child(panel_torre)
+	hud.detalles.add_child(panel_torre)
 	tooltip = Label.new()
-	tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tooltip.add_theme_font_size_override("font_size", 22)
-	tooltip.add_theme_constant_override("outline_size", 8)
-	tooltip.add_theme_color_override("font_outline_color", Color.BLACK)
+	tooltip.mouse_filter = Control.MOUSE_FILTER_PASS
+	tooltip.add_theme_font_size_override("font_size", 17)
+	tooltip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tooltip.max_lines_visible = 4
+	tooltip.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	panel_torre.add_child(tooltip)
 	panel_torre.hide()
 
@@ -1088,6 +1145,7 @@ func _ocultar_info_torre():
 		torre_informada.mostrar_rango(false)
 	torre_informada = null
 	panel_torre.hide()
+	hud.mostrar_inspeccion(false)
 
 func _limpiar_inspeccion():
 	celda_torre_seleccionada = Vector2i(-1, -1)
@@ -1106,7 +1164,20 @@ func _mostrar_info_torre(celda: Vector2i):
 	var t: int = tamanos_plantados[celda]
 	var datos: Dictionary = arbol.obtener_estadisticas()
 	var texto := "%s | Nivel %d/%d (%s)" % [hud.SEMILLAS[tipo].nombre, t + 1, TAMANOS.size(), NOMBRES_TAMANO[t]]
-	texto += "\nVida: %d" % arbol.vida
+	texto += " · Vida: %d" % arbol.vida
+	if t >= TAMANOS.size() - 1:
+		texto += " · Tamaño máximo"
+	else:
+		var costo := _costo_mejora(celda)
+		texto += " · Mejorar: %d gotas" % costo
+		texto += " [%s]" % ControlesManager.etiqueta_accion("Confirmar") if gotas >= costo else " (sin agua)"
+	texto += "\n"
+	if datos.produccion > 0.0:
+		texto += "Pozo: +%.1f gotas/s" % datos.produccion
+	elif datos.empuje > 0.0:
+		texto += "Bloqueo | Empuje: %.1f celdas · Aqua lo atraviesa." % datos.empuje
+	else:
+		texto += "Daño: %d | Disparos/s: %.2f | Alcance: %.1f celdas" % [datos.dano, datos.disparos_segundo, datos.radio / TAM_CELDA]
 	if datos.nivel_congelacion > 0 or clima == "ventisca":
 		texto += "\nCongelación climática: %d/3%s" % [datos.nivel_congelacion, " | Protegido por Flamma" if datos.protegido_ventisca else ""]
 	if clima == "derrumbe" and arbol.elemento == "terra":
@@ -1117,14 +1188,6 @@ func _mostrar_info_torre(celda: Vector2i):
 		texto += "\nCongelado por aura gélida: no dispara"
 	if datos.intoxicado_por_aura:
 		texto += "\nAura tóxica: cadencia -30% | Fallo 30%"
-	if datos.produccion > 0.0:
-		texto += "\nProducción: +%.1f gotas/s" % datos.produccion
-	elif datos.empuje > 0.0:
-		texto += "\nBloqueo | Empuje: %.1f celdas" % datos.empuje
-		texto += "\nAqua lo atraviesa. Plantar en camino seco para bloquear."
-	else:
-		texto += "\nDaño: %d | Disparos/s: %.2f" % [datos.dano, datos.disparos_segundo]
-		texto += "\nAlcance: %.1f celdas" % (datos.radio / TAM_CELDA)
 	if datos.radio_explosion > 0.0:
 		texto += "\nExplosión: %.1f celdas" % (datos.radio_explosion / TAM_CELDA)
 	if datos.congelacion > 0.0:
@@ -1136,16 +1199,9 @@ func _mostrar_info_torre(celda: Vector2i):
 		texto += "\nLentitud: %d%% mientras dure el veneno" % roundi((1.0 - datos.factor_lentitud) * 100)
 	if datos.duracion_lentitud > 0.0:
 		texto += "\nLentitud: %d%% durante %.1f s" % [roundi((1.0 - datos.factor_lentitud) * 100), datos.duracion_lentitud]
-	if t >= TAMANOS.size() - 1:
-		texto += "\nTamaño máximo"
-	else:
-		var costo := _costo_mejora(celda)
-		texto += "\nMejorar a %s: %d gotas" % [NOMBRES_TAMANO[t + 1], costo]
-		texto += "\n[%s] Mejorar" % ControlesManager.etiqueta_accion("Confirmar") if gotas >= costo else "\nNo te alcanzan las gotas"
-	tooltip.text = texto
-	tooltip.show()
-	panel_torre.size = panel_torre.get_combined_minimum_size()
-	panel_torre.position = Vector2(16, maxf(16, get_viewport_rect().size.y - panel_torre.size.y - 16))
+	tooltip.text = texto.replace("\n", " · ")
+	tooltip.tooltip_text = texto
+	hud.mostrar_inspeccion(true)
 	panel_torre.show()
 
 func _actualizar_tooltip():

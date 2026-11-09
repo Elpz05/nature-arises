@@ -69,7 +69,7 @@ func _run():
 		var child_count: int = level.arboles.get_child_count()
 		water._disparar()
 		_check(level.arboles.get_child_count() == child_count, "Aqua must not create projectiles")
-		_check(is_equal_approx(level.obtener_produccion_agua(), 0.85), "Small Aqua must add 0.1 water/s to rain income")
+		_check(is_equal_approx(level.obtener_produccion_agua(), 0.4), "Small Aqua must add 0.1 water/s to the well in rain")
 		for cell in [fire_cell, water_cell]:
 			level._mejorar_arbol(cell)
 			level._mejorar_arbol(cell)
