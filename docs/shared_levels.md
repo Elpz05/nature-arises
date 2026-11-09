@@ -1,6 +1,6 @@
 > Actualización: la campaña tiene ahora ocho niveles y guardado v2. Véase [campana.md](campana.md) para progresión, migración y validación actuales.
 
-> Actualización: las reglas de economía, pala, Flamma y Aqua de este documento han sido sustituidas por [el primer bloque de mecánicas](mecanicas_implementacion.md).
+> Para la economía actual, véase [Pozo y vista previa de plantado](well_economy.md).
 
 # Shared level structure
 
@@ -64,19 +64,16 @@ positive delay per wave when adding waves.
 
 ## Alternate routes and obstacles
 
-Level 1 supplies only this additional route description:
+For each shortcut, supply the enemy type, entry and exit waypoints, and a marker color. Intermediate exits are optional.
 
 ```gdscript
 rutas_adicionales = [
-    {"tipo": "flamma", "puntos": RUTA_FUEGO, "capa": "Atajo"},
+    {"tipo": "flamma", "tramo": [Vector2i(26, 7), Vector2i(26, 13)],
+        "salidas": [Vector2i(26, 10)], "color": Color.ORANGE},
 ]
 ```
 
-The parent paints cells unique to this route on the child's `Atajo` TileMapLayer,
-blocks planting on every route cell, creates its Path2D, and selects it for
-Flamma spawns. Natura and Aqua use the main path. `_bestias_en_camino()` counts
-followers across all paths, so a shortcut enemy prevents early wave completion.
-`_ruta_para_tipo("flamma")` replaces the old level-specific `ruta_fuego` field.
+The parent builds the route from the main path's prefix and suffix, paints the branch on the child's `Atajo` TileMapLayer, and adds directional markers. Fork and merge cells must be on the main path in travel order, and the branch must shorten it. Grass towers cannot occupy the branch, while Terra can block it. Enemies transfer back at the merge, preserving their remaining movement. The Aqua spell can use a declared intermediate exit while confusion is active. Crossings alone do not create exits. Enemy counts include every route.
 
 For non-road obstacles, set the inherited `celdas_bloqueadas` array on the child
 scene root. The parent reserves these cells without creating art or geometry.
@@ -98,16 +95,15 @@ Existing costs, tower roles, manual wave starts, ability recharge,
 unlock IDs and wave compositions are preserved. This refactor does not change
 the tower definitions or consolidate HUD/scene costs; that can be a later pass.
 
-The later well economy replaces automatic income; see `well_economy.md` for its
-production and collection rules.
+See [the well economy](well_economy.md) for production and collection. The HUD uses the top three reserved grid rows for combat information, actions, and tower inspection.
 
 ## Adding a level
 
 1. Create a scene inherited from `nivel_base.tscn`.
 2. Attach a script extending `nivel_base.gd`, implementing `_configurar_nivel()`
    with its route, base cell and recipes.
-3. Assign the map TileSets and inherited scene exports. Add any extra road layers
-   and describe them in `rutas_adicionales`; set obstacle cells as needed.
+3. Assign the map TileSets and inherited scene exports. Add the `Atajo` layer
+   for levels with `rutas_adicionales`. Set obstacle cells as needed.
 4. Set `numero_nivel`, unlocks and spawn intervals on the child scene root.
 5. Register the playable scene in `Guardado.NIVELES`.
 

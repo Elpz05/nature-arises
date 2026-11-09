@@ -4,14 +4,14 @@ La fuente de diseño es `mecanicas_especificacion.md`. Este bloque sustituye los
 
 ## Implementado
 
-- Producción automática base de 0.5 gotas/s, también entre rondas. Acumula fracciones, respeta pausa y se detiene al terminar el nivel. El pozo existente se conserva como fuente adicional de gotas recogibles durante rondas.
+- El [pozo central](well_economy.md) acumula hasta cinco gotas durante las rondas. La recogida transfiere toda la reserva al jugador.
 - Una planta por casilla; pala sin reembolso, incluyendo mejoras. Retirar o destruir Aqua conserva la reserva del camino.
 - Natura conserva exactamente sus estadísticas por tamaño y sus semillas teledirigidas. Natura y Flamma priorizan la bestia con menor distancia restante en su ruta.
 - Flamma: 250/500/800 HP, alcance 2/3/4, área 1/1.5/2 casillas, 40 de daño, un disparo/s en despejado. Modificadores contra Flamma (-25%), Glacies (+25%), Natura (+5%) y Aqua (inmunidad). Los modificadores de daño de clima y elemento se suman.
-- Aqua: no dispara, tiene 100 HP en todos los tamaños y produce +0.1/+0.2/+0.3 gotas/s. Solo admite caminos predefinidos en `celdas_inundadas` con `clima` lluvia o tormenta. La vista previa usa la misma validación que el plantado.
+- Aqua tiene 100 HP y aporta +0.1/+0.2/+0.3 gotas/s al pozo. Crece en caminos inundados de lluvia y tormenta, o en pozas del campo radiactivo. En radiación reduce a la mitad el daño del pulso a sus vecinos ortogonales.
 - Aqua ignora bestias Aqua; al pasar Flamma pierde 25 HP y la bestia pierde 100 HP. Otras bestias lo destruyen. Cada paso cuenta una vez, aunque la bestia permanezca varios fotogramas sobre la casilla.
 - Ventus: cada 20 s de juego se elige una bestia viva de las rutas del nivel y obtiene +0.5 casillas/s, mostrado sobre su barra. No acumula bonos repetidos; al no haber bestias ese evento no concede nada. El documento no especifica duración/acumulación, por lo que se conserva hasta morir, sin apilar.
-- Lluvia: +0.25 gotas/s, cadencia x0.75, Flamma -25% de daño, bestia Flamma con mitad de vida. Tormenta: +0.5 gotas/s, cadencia x0.5 y Flamma -50% de daño, bestia Flamma con mitad de vida. Renacer respeta esa vida máxima ajustada.
+- Lluvia: 0.30 gotas/s, cadencia x0.75, Flamma -25% de daño, bestia Flamma con mitad de vida. Tormenta: 0.40 gotas/s, cadencia x0.5 y Flamma -50% de daño, bestia Flamma con mitad de vida. Renacer respeta esa vida máxima ajustada.
 - HUD: producción y clima visibles, descripción de roles, vida de torres y aporte de Aqua en inspección.
 
 ## Probar

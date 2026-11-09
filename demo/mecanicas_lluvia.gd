@@ -22,12 +22,12 @@ func _ready():
 			indice = i
 			break
 	hud.panel_laboratorio = PanelContainer.new()
-	hud.add_child(hud.panel_laboratorio)
+	hud.acciones.add_child(hud.panel_laboratorio)
 	var fila := HBoxContainer.new()
 	hud.panel_laboratorio.add_child(fila)
 	var anterior := Button.new()
 	anterior.text = "<"
-	anterior.custom_minimum_size = Vector2(44, 44)
+	anterior.custom_minimum_size = Vector2(28, 28)
 	anterior.focus_mode = Control.FOCUS_NONE
 	anterior.tooltip_text = "Reiniciar con el clima anterior"
 	anterior.pressed.connect(_abrir_laboratorio.bind(posmod(indice - 1, LABORATORIOS.size())))
@@ -35,24 +35,19 @@ func _ready():
 	var titulo := Label.new()
 	titulo.text = "Laboratorio · " + LABORATORIOS[indice].nombre
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.custom_minimum_size.x = 340.0
-	titulo.add_theme_font_size_override("font_size", 18)
+	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titulo.clip_text = true
+	titulo.tooltip_text = titulo.text
+	titulo.add_theme_font_size_override("font_size", 13)
 	fila.add_child(titulo)
 	var siguiente := Button.new()
 	siguiente.text = ">"
-	siguiente.custom_minimum_size = Vector2(44, 44)
+	siguiente.custom_minimum_size = Vector2(28, 28)
 	siguiente.focus_mode = Control.FOCUS_NONE
 	siguiente.tooltip_text = "Reiniciar con el clima siguiente"
 	siguiente.pressed.connect(_abrir_laboratorio.bind(posmod(indice + 1, LABORATORIOS.size())))
 	fila.add_child(siguiente)
 	hud.botones_laboratorio.assign([anterior, siguiente])
-	get_viewport().size_changed.connect(_reposicionar_selector)
-	_reposicionar_selector.call_deferred()
-
-func _reposicionar_selector():
-	if is_instance_valid(hud.panel_laboratorio):
-		hud.panel_laboratorio.size = hud.panel_laboratorio.get_combined_minimum_size()
-		hud.panel_laboratorio.position = Vector2((get_viewport_rect().size.x - hud.panel_laboratorio.size.x) / 2.0, get_viewport_rect().size.y - hud.panel_laboratorio.size.y - 12.0)
 
 func _abrir_laboratorio(indice: int):
 	if not _puede_jugar():
@@ -62,6 +57,10 @@ func _abrir_laboratorio(indice: int):
 # Laboratorio F6: habilita las siete plantas sin tocar partidas guardadas.
 func _configurar_nivel():
 	super._configurar_nivel()
+	if clima == "radiacion":
+		var catalogo = preload("res://scripts/nivel/campana.gd")
+		rutas_adicionales.append(catalogo.ATAJO_ELECTRICITAS)
+		celdas_inundadas.assign(catalogo.POZAS_RADIACION)
 	rondas = rondas.duplicate(true)
 	rondas[0]["aqua:pequeno"] = 2
 	for tipo in ["terra", "electricitas", "glacies", "venenum"]:
@@ -73,7 +72,7 @@ func _crear_hud():
 	super._crear_hud()
 	hud.SEMILLAS_ACTIVAS = [0, 1, 2, 3, 4, 5, 6]
 	hud.ATAQUES_ACTIVOS = [0, 1, 2, 3, 4, 5, 6]
-	hud.mostrar_mision("Laboratorio de mecánicas", "Prueba los siete árboles y ataques; cambia de clima con las flechas inferiores.")
+	hud.mostrar_mision("Laboratorio de mecánicas", "Prueba los siete árboles y ataques; cambia de clima con las flechas superiores.")
 	hud.actualizar_gotas(gotas)
 
 func _ganar_nivel():

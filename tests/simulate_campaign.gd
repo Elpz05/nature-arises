@@ -27,10 +27,11 @@ func _plan(index: int) -> Array:
 			plan.append([Vector2i(3, y), 1 if y % 4 == 0 else 0])
 			plan.append([Vector2i(6, y), 5 if index >= 5 and y % 4 == 0 else 0])
 	elif index == 7:
-		# Radiation makes disposable Natura ineffective; use the immune long-range tree.
-		for x in [2, 8, 14, 20]:
-			plan.append([Vector2i(x, 5), 6])
-			plan.append([Vector2i(x, 11), 6])
+		# Aqua funds upgrades; Terra catches shortcut runners for the damage/control line.
+		plan = [[Vector2i(7, 5), 2], [Vector2i(18, 9), 3], [Vector2i(15, 6), 5],
+			[Vector2i(14, 5), 4], [Vector2i(13, 5), 1], [Vector2i(16, 5), 6],
+			[Vector2i(8, 6), 0], [Vector2i(26, 11), 3], [Vector2i(25, 11), 1],
+			[Vector2i(25, 9), 4], [Vector2i(23, 11), 0], [Vector2i(19, 9), 2]]
 	else:
 		if index == 1:
 			plan.append([Vector2i(7, 4), 2])
@@ -56,6 +57,8 @@ func _buy(level, plan: Array, metrics: Dictionary):
 			break
 		metrics.purchases += 1
 		metrics.spent += before - level.gotas
+		var name: String = level.hud.SEMILLAS[type].nombre
+		metrics.roster[name] = metrics.roster.get(name, 0) + 1
 	if level.arboles_plantados.size() < plan.size(): return
 	for entry in plan:
 		var cell: Vector2i = entry[0]
@@ -108,7 +111,13 @@ func _run():
 		seed(run_seed + index)
 		var level = load(CAMPAIGN.ESCENAS[index]).instantiate()
 		root.add_child(level)
-		var metrics := {"level": index + 1, "seed": run_seed + index, "purchases": 0, "upgrades": 0, "spent": 0, "casts": 0, "without_defense": without_defense}
+		var metrics := {"level": index + 1, "seed": run_seed + index, "purchases": 0, "upgrades": 0, "spent": 0, "casts": 0,
+			"without_defense": without_defense, "roster": {}, "shots": {}}
+		level.arboles.child_entered_tree.connect(func(node):
+			if "objetivo" in node and "elemento" in node:
+				var element: String = node.elemento
+				metrics.shots[element] = metrics.shots.get(element, 0) + 1
+		)
 		var elapsed := 0.0
 		var decision := 0.0
 		var plan: Array = [] if without_defense else _plan(index)
@@ -120,7 +129,7 @@ func _run():
 				valid_plan = false
 		while valid_plan and not level.terminado and elapsed < 900.0:
 			if decision <= 0.0:
-				for drop in level.pozo.gotas.get_children(): drop.intentar_recoger()
+				level._recoger_en_objetivo(level.suelo.map_to_local(level.celda_pozo))
 				if not without_defense:
 					_buy(level, plan, metrics)
 					_cast(level, metrics)
@@ -136,6 +145,8 @@ func _run():
 		metrics.trees = level.arboles_plantados.size()
 		metrics.weather_events = level.gestor_clima.conteos.duplicate()
 		var expected_result: bool = level.terminado and (not metrics.won if without_defense else metrics.won)
+		if index == 7 and not without_defense:
+			expected_result = expected_result and metrics.roster.size() == 7 and metrics.shots.size() == 5
 		if not expected_result: failures += 1
 		results.append(metrics)
 		print("Campaign combat: " + JSON.stringify(metrics))
