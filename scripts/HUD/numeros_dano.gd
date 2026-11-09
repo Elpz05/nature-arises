@@ -4,6 +4,8 @@ const DURACION := 0.72
 const INTERVALO_PERIODICO := 0.45
 const VENTANA_IMPACTOS := 0.13
 const LIMITE_IMPACTOS := 48
+const TAMANO_TEXTO := 26
+const FUENTE = preload("res://fuentes/PixelOperatorMono-Bold.ttf")
 
 var activo := true
 var tablero: Rect2
@@ -12,7 +14,7 @@ var _periodicos := {}
 var _secuencia := 0
 
 func _ready():
-	z_index = 16
+	z_index = 24
 	set_process(false)
 
 func establecer_activo(valor: bool):
@@ -55,7 +57,7 @@ func _mostrar(cantidad: float, punto: Vector2, id: int, aliada: bool):
 	impactos.append({
 		"id": id, "cantidad": cantidad, "texto": _formato(cantidad),
 		"punto": punto + Vector2(lateral, 11.0 if aliada else 4.0),
-		"subida": 12.0 if aliada else 36.0,
+		"subida": 24.0 if aliada else 32.0,
 		"color": Color("#ff9e86") if aliada else Color("#fff1ae"), "edad": 0.0,
 	})
 	queue_redraw()
@@ -79,17 +81,17 @@ func _process(delta: float):
 		set_process(false)
 
 func _draw():
-	var fuente := ThemeDB.fallback_font
+	var fuente := FUENTE
 	for impacto in impactos:
 		var fraccion := clampf(float(impacto.edad) / DURACION, 0.0, 1.0)
 		var alpha := 1.0 - smoothstep(0.4, 1.0, fraccion)
 		var punto: Vector2 = impacto.punto - Vector2(0, fraccion * impacto.subida)
 		var texto: String = impacto.texto
-		var ancho := fuente.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
+		var ancho := fuente.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAMANO_TEXTO).x
 		punto.x = clampf(punto.x - ancho / 2.0, tablero.position.x + 4.0, tablero.end.x - ancho - 4.0)
 		punto.y = maxf(punto.y, tablero.position.y + 25.0)
-		draw_string_outline(fuente, punto, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 5, Color(0.05, 0.04, 0.02, alpha))
-		draw_string(fuente, punto, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(impacto.color, alpha))
+		draw_string_outline(fuente, punto, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAMANO_TEXTO, 4, Color(0.05, 0.04, 0.02, alpha))
+		draw_string(fuente, punto, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAMANO_TEXTO, Color(impacto.color, alpha))
 
 func limpiar():
 	impactos.clear()

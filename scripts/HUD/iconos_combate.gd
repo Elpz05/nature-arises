@@ -2,6 +2,8 @@ extends RefCounted
 
 # Cada símbolo define color, nombre y trazos en un espacio de 16 × 16.
 const ICONOS := {
+	"candado": [Color("#cfceab"), "Bloqueado", [[-5,-1, 5,-1, 5,6, -5,6, -5,-1], [-3,-1, -3,-5, 0,-7, 3,-5, 3,-1], [0,2, 0,4]]],
+	"pala": [Color("#e4d4af"), "Pala", [[3,-7, 6,-4, 3,-1, 0,-4, 3,-7], [2,-2, -2,2], [-1,0, 2,3, -3,7, -6,6, -7,3, -3,-1, -1,0]]],
 	"escudo": [Color("#ffbd67"), "Escudo de Flamma", [[-5,-5, 5,-5, 5,0, 0,6, -5,0, -5,-5], [-2,0, 0,2, 3,-2]]],
 	"proteccion_aqua": [Color("#91d8ff"), "Escudo de Aqua", [[-5,-5, 5,-5, 5,0, 0,6, -5,0, -5,-5], [-3,-1, -1,1, 1,-1, 3,1]]],
 	"rayo": [Color("#ffe468"), "Aura eléctrica", [[1,-6, -4,1, 0,1, -1,6, 4,-1, 0,-1, 1,-6]]],
@@ -47,6 +49,14 @@ static func _puntos(trazo: Array, centro: Vector2, escala: float) -> PackedVecto
 	for i in range(0, trazo.size(), 2):
 		puntos.append(centro + Vector2(trazo[i], trazo[i + 1]) * escala)
 	return puntos
+
+static func dibujar_vida(lienzo: CanvasItem, centro: Vector2, ancho: float, vida: float):
+	var barra := Rect2(centro - Vector2(ancho / 2.0, 2.5), Vector2(ancho, 5.0))
+	lienzo.draw_rect(barra.grow(1.0), Color("#0b1614"))
+	lienzo.draw_rect(barra, Color("#53343a"))
+	var color := Color("#f18877") if vida <= 0.25 else (Color("#f2bb6d") if vida <= 0.5 else Color("#a7e87a"))
+	barra.size.x *= clampf(vida, 0.0, 1.0)
+	lienzo.draw_rect(barra, color)
 
 static func dibujar_fila(lienzo: CanvasItem, estados: Array[String], centro: Vector2, ancho: float, escarcha := 0):
 	if estados.is_empty():

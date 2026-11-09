@@ -69,9 +69,9 @@ func _run():
 	var actual = level.arboles.get_child(level.arboles.get_child_count() - 1)
 	actual.set_process(false)
 	_check(actual.objetivo == target and actual.dano_veneno == 3.0 and actual.duracion_veneno == 6.0, "Actual projectile carries size-specific poison")
-	actual._process(2.0)
+	actual._physics_process(2.0)
 	_check(target.vida == 400.0 and nearby.vida == 500.0 and target.veneno_por_segundo == 3.0, "Impact deals 100 and poisons a single target")
-	actual._process(2.0)
+	actual._physics_process(2.0)
 	_check(target.vida == 400.0, "Queued projectile cannot hit twice")
 	var start: float = target.get_parent().progress
 	target._physics_process(0.5)

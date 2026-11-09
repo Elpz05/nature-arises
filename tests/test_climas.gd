@@ -37,6 +37,15 @@ func _level(weather: String, intensity: String = "mediano"):
 	_check(level.inicializado, "Every weather laboratory must initialize")
 	return level
 
+func _advance(weather, delta: float):
+	var remaining := delta
+	while remaining > 0.000001:
+		var step := minf(0.01, remaining)
+		weather.actualizar(step)
+		weather.presentar_avisos(step)
+		weather.actualizar(0.0)
+		remaining -= step
+
 func _plant(level, cell: Vector2i, tipo: int):
 	_check(level._plantar(cell, tipo), "Weather test tree must plant on valid terrain")
 	var tree = level.arboles_plantados[cell]
@@ -59,27 +68,29 @@ func _run():
 		var level = _level("tormenta", data[0])
 		var weather = level.gestor_clima
 		weather.tirada = 0.0
+		level.ronda_activa = true
 		var aviso: float = weather.anticipaciones.rayo
-		weather.actualizar(data[1] - aviso - 0.01)
+		_advance(weather, data[1] - aviso - 0.01)
 		_check(weather.avisos.is_empty() and weather.conteos.get("rayo", 0) == 0, "Lightning stays quiet before the warning window")
-		weather.actualizar(0.01)
-		_check(weather.avisos.get("rayo") == weather.celda_fija and weather.conteos.get("rayo", 0) == 0, "Lightning marks the exact tile before damage")
-		weather.actualizar(aviso - 0.01)
-		_check(weather.conteos.get("rayo", 0) == 0, "The warning lasts its full intensity-specific duration")
-		weather.actualizar(0.01)
-		_check(weather.conteos.get("rayo", 0) == 1 and weather.avisos.is_empty(), "Lightning impacts at the original interval boundary")
+		_advance(weather, 0.01)
+		_check(weather.avisos.get("rayo", {}).get("celda") == weather.celda_fija and weather.conteos.get("rayo", 0) == 0, "Lightning marks the exact tile before damage")
+		_advance(weather, weather.MINIMO_VISIBLE.rayo - 0.01)
+		_check(weather.conteos.get("rayo", 0) == 0, "Lightning waits for the minimum visible warning")
+		_advance(weather, 0.01)
+		_check(weather.conteos.get("rayo", 0) == 1 and weather.avisos.is_empty(), "Lightning impacts after its scheduled and visible deadlines")
 		weather.tirada = data[2]
-		weather.actualizar(data[1])
+		_advance(weather, data[1])
 		_check(weather.conteos.rayo == 1 and weather.avisos.is_empty(), "A failed lightning roll creates neither a warning nor an impact")
 		level.free()
 	var response = _level("tormenta")
 	var warning = response.gestor_clima
+	response.ronda_activa = true
 	warning.tirada = 0.0
-	warning.actualizar(3.0 - warning.anticipaciones.rayo)
+	_advance(warning, 3.0 - warning.anticipaciones.rayo)
 	var immune = _plant(response, Vector2i(5, 3), 4)
 	var neighbor = _plant(response, Vector2i(4, 3), 0)
 	warning.celda_fija = Vector2i(4, 3)
-	warning.actualizar(warning.anticipaciones.rayo)
+	_advance(warning, warning.anticipaciones.rayo)
 	_check(immune.vida == 200 and neighbor.vida == 100 and warning.conteos.rayo == 1, "Electricitas can be planted in response and the scheduled tile is never rerolled")
 	response.free()
 	var storm = _level("tormenta")
@@ -108,14 +119,17 @@ func _run():
 	_check(flame.modificador_dano == 0.2 and ice.modificador_dano == -0.2 and volcano.obtener_produccion_agua() == 0.07, "Volcano configures damage and reduced water production")
 	var ice_beast = _enemy(volcano, "glacies")
 	_check(ice_beast.vida_maxima == 275.0, "Volcano halves base Glacies beast HP")
-	weather.actualizar(9.0)
+	_advance(weather, 20.0)
+	_check(weather.tiempo == 0.0 and nature.vida == 100, "Geysers are inert during preparation")
+	volcano._iniciar_ronda()
+	_advance(weather, 9.0)
 	_check(nature.vida == 100, "Geyser waits ten seconds")
-	weather.actualizar(1.0)
-	_check(nature.vida == 75 and is_equal_approx(nature.obtener_estadisticas().disparos_segundo, 2.75) and nature.bono_geiser_restante == 7.0, "Geyser deals 25 and boosts cadence by twenty-five percent")
+	_advance(weather, 1.0)
+	_check(nature.vida == 75 and is_equal_approx(nature.obtener_estadisticas().disparos_segundo, 2.75) and is_equal_approx(nature.bono_geiser_restante, 7.0), "Geyser deals 25 and boosts cadence by twenty-five percent")
 	_check(flame.vida == 250 and flame.bono_geiser_restante == 0.0 and ice.vida == 150, "Flamma is immune to both geyser effects; non-adjacent trees are unaffected")
-	weather.actualizar(7.0)
+	_advance(weather, 7.0)
 	_check(nature.bono_geiser_restante == 0.0 and is_equal_approx(nature.obtener_estadisticas().disparos_segundo, 2.2), "Geyser cadence returns to climate baseline after seven seconds")
-	weather.actualizar(8.0)
+	_advance(weather, 8.0)
 	_check(weather.conteos.get("geiser", 0) == 2 and weather.conteos.get("erupcion", 0) == 1 and nature.is_queued_for_deletion(), "Long updates apply geyser and eruption in chronological order")
 	weather.indice_fijo = 0
 	weather.erupcion()
@@ -138,20 +152,29 @@ func _run():
 	var immune_ice = _plant(snow, Vector2i(10, 3), 5)
 	_check(is_equal_approx(immune_ice.obtener_estadisticas().disparos_segundo, 1.2) and warm.modificador_dano == 0.1, "Blizzard configures Glacies cadence and Flamma damage")
 	_check(_enemy(snow, "glacies").velocidad == 0.3 * 64.0 * 1.2 and _enemy(snow, "flamma").vida_maxima == 540.0, "Blizzard modifies beast speed and HP")
-	weather.actualizar(10.0)
+	_advance(weather, 60.0)
+	_check(weather.tiempo == 0.0 and frozen.vida == 100 and frozen.nivel_congelacion == 0, "Blizzard does not advance or damage trees during setup")
+	snow._iniciar_ronda()
+	_advance(weather, 10.0)
 	_check(frozen.vida == 75 and frozen.nivel_congelacion == 1, "First sweep deals 25 HP and one freeze level")
 	_check(warm.vida == 250 and immune_ice.vida == 150, "Flamma and Glacies trees are immune to climate freezing damage")
-	weather.actualizar(20.0)
+	_advance(weather, 20.0)
 	_check(frozen.vida == 25 and frozen.nivel_congelacion == 3 and frozen.temporizador.paused and frozen.obtener_estadisticas().disparos_segundo == 0.0, "Third sweep fully disables the attack timer")
 	frozen._aplicar_tamano("mediano")
 	frozen.temporizador.stop()
 	_check(frozen.nivel_congelacion == 3 and frozen.temporizador.paused, "Upgrading cannot reset climate freeze levels")
 	var local_fire = _plant(snow, Vector2i(7, 3), 1)
-	weather.actualizar(10.0)
+	_advance(weather, 10.0)
 	_check(frozen.nivel_congelacion == 2 and frozen.protegido_ventisca and not frozen.temporizador.paused, "Warm pulse reduces one level and prevents the simultaneous new freeze")
 	var hp: int = frozen.vida
-	weather.actualizar(10.0)
+	_advance(weather, 10.0)
 	_check(frozen.nivel_congelacion == 2 and frozen.vida == hp - 25, "Warm protection blocks new levels but not blizzard HP damage")
+	snow.ronda_activa = false
+	var pausa_clima: float = weather.tiempo
+	hp = frozen.vida
+	_advance(weather, 60.0)
+	_check(weather.tiempo == pausa_clima and frozen.vida == hp, "Blizzard freezes its clock between waves")
+	snow._iniciar_ronda()
 	snow._quitar_arbol(Vector2i(7, 3))
 	weather.actualizar(0.0)
 	_check(not frozen.protegido_ventisca, "Removing Flamma immediately removes climate protection on update")
@@ -183,21 +206,22 @@ func _run():
 	var fall = _level("derrumbe")
 	weather = fall.gestor_clima
 	var protected = _plant(fall, Vector2i(4, 6), 0)
-	weather.actualizar(12.5)
-	_check(weather.avisos.get("derrumbe") == Vector2i(4, fall.FILAS_BLOQUEADAS) and protected.vida == 100, "Rockfall marks its column 2.5 seconds before impact")
+	fall.ronda_activa = true
+	_advance(weather, 12.5)
+	_check(weather.avisos.get("derrumbe", {}).get("celda") == Vector2i(4, fall.FILAS_BLOQUEADAS) and protected.vida == 100, "Rockfall marks its column 2.5 seconds before impact")
 	paused = true
-	weather.actualizar(8.0)
-	_check(weather.tiempo == 12.5 and weather.avisos.has("derrumbe"), "Pause freezes a pending warning")
+	_advance(weather, 8.0)
+	_check(is_equal_approx(weather.tiempo, 12.5) and weather.avisos.has("derrumbe"), "Pause freezes a pending warning")
 	paused = false
 	var response_terra = _plant(fall, Vector2i(4, 5), 3)
 	weather.columna_fija = 10
-	weather.actualizar(2.49)
+	_advance(weather, 2.49)
 	_check(response_terra.golpes_derrumbe == 0, "Rockfall waits until the full warning elapses")
-	weather.actualizar(0.01)
+	_advance(weather, 0.01)
 	_check(response_terra.golpes_derrumbe == 1 and protected.vida == 100 and weather.avisos.is_empty(), "A Terra planted during the warning shields the original column")
-	weather.actualizar(12.5)
+	_advance(weather, 12.5)
 	fall._on_espiritu_llego(fall.arbol_meta.vida)
-	weather.actualizar(100.0)
+	_advance(weather, 100.0)
 	_check(weather.avisos.is_empty() and weather.conteos.derrumbe == 1, "Defeat cancels pending warnings and their damage")
 	paused = false
 	fall.free()
@@ -208,23 +232,23 @@ func _run():
 	var poison = _plant(radioactive, Vector2i(1, 3), 6)
 	_check(is_equal_approx(vulnerable.obtener_estadisticas().disparos_segundo, 2.1) and is_equal_approx(poison.obtener_estadisticas().disparos_segundo, 0.3), "Radiation boosts cadence except Venenum")
 	_check(_enemy(radioactive, "venenum").vida_maxima == 600.0, "Radiation no longer buffs Venenum beast HP")
-	weather.actualizar(30.0)
+	_advance(weather, 30.0)
 	_check(weather.tiempo == 0.0 and vulnerable.vida == 100, "Radiation does not punish setup time")
 	radioactive._iniciar_ronda()
-	weather.actualizar(7.99)
+	_advance(weather, 7.99)
 	_check(vulnerable.vida == 100, "Radiation waits eight seconds before the first pulse")
 	weather.tirada = 0.0
-	weather.actualizar(0.01)
+	_advance(weather, 0.01)
 	_check(vulnerable.vida == 94 and poison.vida == 500 and weather.conteos.radiacion == 1, "Radiation chips six HP per pulse and never damages Venenum")
-	weather.actualizar(16.0)
+	_advance(weather, 16.0)
 	_check(vulnerable.vida == 82 and weather.conteos.radiacion == 3, "Even the lowest random roll never causes instant death")
 	var clock: float = weather.tiempo
 	paused = true
-	weather.actualizar(100.0)
+	_advance(weather, 100.0)
 	_check(weather.tiempo == clock and poison.vida == 500, "Pause freezes all weather timers and damage")
 	paused = false
 	radioactive.terminado = true
-	weather.actualizar(100.0)
+	_advance(weather, 100.0)
 	_check(weather.tiempo == clock, "Outcomes freeze climate hazards")
 	radioactive.free()
 	# Every selector destination is a loadable, initialized scene.
@@ -236,16 +260,18 @@ func _run():
 		lab.set_physics_process(false)
 		await process_frame
 		_check(lab.inicializado and lab.clima == entry.clima and lab.hud.botones_laboratorio.size() == 2, "Every climate selector destination initializes with navigation")
-		var rect: Rect2 = lab.hud.panel_laboratorio.get_global_rect()
+		var rect: Rect2 = lab.hud.botones_laboratorio[0].get_parent().get_global_rect()
 		_check(root.get_visible_rect().encloses(rect) and lab.hud.punto_sobre_hud(rect.get_center()), "Selector fits the viewport and blocks planting through it")
 		lab.free()
 	var live = _level("radiacion")
 	var live_tree = _plant(live, Vector2i(6, 3), 0)
 	live._iniciar_ronda()
-	live.gestor_clima.tiempo = 7.0
+	live.gestor_clima.proximos.radiacion = 0.01
+	live.gestor_clima.set_process(false)
 	live.set_physics_process(true)
-	for i in Engine.physics_ticks_per_second + 3:
+	for i in Engine.physics_ticks_per_second * 2:
 		await physics_frame
+		live.gestor_clima.presentar_avisos(1.0 / Engine.physics_ticks_per_second)
 	_check(live_tree.vida == 94 and live.gestor_clima.conteos.radiacion == 1, "Actual level physics advances weather hazards")
 	live.free()
 	var navigation = load("res://demo/mecanicas_despejado.tscn").instantiate()

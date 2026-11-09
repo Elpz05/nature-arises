@@ -2,7 +2,7 @@ extends SceneTree
 
 const CAMPANA = preload("res://scripts/nivel/campana.gd")
 const MENU := "res://escenas/escenas_menu/menu.tscn"
-const CAPITULOS := {"bestias": 7, "arboles": 7, "poderes": 7}
+const CAPITULOS := {"bestias": 7, "arboles": 8, "poderes": 7}
 var fallos := 0
 
 func _initialize():
@@ -43,9 +43,22 @@ func _texto(padre: Node) -> String:
 		salida += _texto(hijo)
 	return salida
 
+func _comprobar_desplazamiento(guia):
+	var barra: VScrollBar = guia.lectura.get_v_scroll_bar()
+	if barra.max_value <= barra.page + 1.0:
+		return
+	var gatillo := InputEventJoypadMotion.new()
+	gatillo.axis = JOY_AXIS_TRIGGER_RIGHT
+	gatillo.axis_value = 1.0
+	root.push_input(gatillo, true)
+	_comprobar(guia.lectura.scroll_vertical > 0, "El gatillo permite leer fichas largas")
+
 func _run():
 	var guardado = root.get_node("Guardado")
 	var slot: int = guardado.slot_actual
+	var codice: ConfigFile = guardado._codice
+	guardado._codice = ConfigFile.new()
+	guardado._codice.set_value("progreso", "completada", true)
 	guardado.slot_actual = -1
 	change_scene_to_file(MENU)
 	await scene_changed
@@ -66,10 +79,13 @@ func _run():
 	_comprobar(guia.ficha_actual == 1 and _texto(guia.detalle).contains("Renace una vez"), "El mando puede recorrer las fichas")
 	for id in CAPITULOS:
 		guia._botones_pestana[id].pressed.emit()
-		_comprobar(guia.indice.get_child_count() == CAPITULOS[id], "Siete fichas en " + id)
+		_comprobar(guia.indice.get_child_count() == CAPITULOS[id], "Cantidad de fichas de " + id)
 		for i in CAPITULOS[id]:
 			guia.indice.get_child(i).pressed.emit()
 			_comprobar(guia.ficha_actual == i and _texto(guia.detalle).length() > 100, "Se muestra la ficha %d de %s" % [i, id])
+			if id != "poderes":
+				var retrato := guia.detalle.get_child(0).get_child(0) as TextureRect
+				_comprobar(retrato != null and retrato.texture != null, "La ficha tiene un retrato")
 	guia._botones_pestana["arboles"].pressed.emit()
 	guia.indice.get_child(2).pressed.emit()
 	_comprobar(_texto(guia.detalle).contains("Plantar 6 · Mejora a nivel 2: 4 · Mejora a nivel 3: 6"), "La ficha Aqua usa los costes actuales")
@@ -85,8 +101,7 @@ func _run():
 		await process_frame
 		var primera_fila := guia.detalle.get_child(1) as HBoxContainer
 		_comprobar(primera_fila != null and primera_fila.get_child_count() == 2, "Cada leyenda incluye el símbolo junto a su descripción")
-		var barra: VScrollBar = guia.lectura.get_v_scroll_bar()
-		_comprobar(barra.max_value <= barra.page + 1.0, "La leyenda completa cabe en la ficha")
+		_comprobar_desplazamiento(guia)
 	_mando("Atras")
 	await process_frame
 	_comprobar(menu.visible and root.gui_get_focus_owner() == menu.boton_guia, "Atrás devuelve al menú y restaura el foco")
@@ -104,9 +119,8 @@ func _run():
 		var texto := _texto(guia.detalle)
 		_comprobar(guia.pestana_actual == "nivel" and texto.contains(CAMPANA.ETAPAS[i].nombre) and guia.detalle.get_child_count() >= 4,
 			"El nivel %d muestra información y consejos propios" % [i + 1])
-		var barra: VScrollBar = guia.lectura.get_v_scroll_bar()
-		_comprobar(barra.max_value <= barra.page + 1.0, "Se puede leer todo el briefing del nivel %d con mando" % [i + 1])
-		_comprobar(nivel.hud.label_estado_basico.text.contains(CAMPANA.ETAPAS[i].nombre), "El HUD normal identifica el nivel")
+		_comprobar_desplazamiento(guia)
+		_comprobar(nivel.hud.label_mision.text.contains(CAMPANA.ETAPAS[i].nombre), "El panel de detalles identifica el nivel")
 		if nivel.clima == "volcan":
 			for fragmento in ["Géiseres · cada 10 s", "25 HP", "25% durante 7 s", "incluidas las diagonales", "Erupción · cada 25 s", "Flamma"]:
 				_comprobar(texto.contains(fragmento), "La lección volcánica explica " + fragmento)
@@ -147,6 +161,7 @@ func _run():
 		_mando("Atras")
 		_comprobar(not paused and volcan.ronda_activa, "La siguiente pulsación vuelve al tablero")
 	guardado.slot_actual = slot
+	guardado._codice = codice
 	await process_frame
 	print("Field guide checks: %s" % ("PASS" if fallos == 0 else "%d FAILED" % fallos))
 	quit(0 if fallos == 0 else 1)

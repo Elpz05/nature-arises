@@ -1,5 +1,10 @@
 extends Control
 
+signal cerrada
+
+const ANCHO_ACCION := 350
+const ANCHO_CONTROL := 320
+
 @onready var container: VBoxContainer = %KeybindsContainer
 @onready var boton_volver: Button = %Volver
 @onready var boton_hud_debug: CheckButton = %HUDDebug
@@ -8,9 +13,13 @@ extends Control
 var accion_esperando: String = ""
 var tipo_esperando: ControlesManager.Tipo = ControlesManager.Tipo.TECLADO_MOUSE
 var boton_esperando: Button = null
+var en_partida := false
 
 func _ready() -> void:
 	set_process_input(false)
+	if en_partida:
+		$FondoSettings.hide()
+		$Particulas.hide()
 	boton_hud_debug.set_pressed_no_signal(Ajustes.hud_debug_activo())
 	boton_hud_debug.toggled.connect(Ajustes.establecer_hud_debug)
 	boton_numeros_dano.set_pressed_no_signal(Ajustes.numeros_dano_activos())
@@ -19,35 +28,35 @@ func _ready() -> void:
 	for accion in ControlesManager.acciones_configurables:
 		crear_fila(accion)
 	UIInputManager.inicializar(boton_volver)
-	
-	print("Mouse mode al entrar a Ajustes: ", Input.mouse_mode)
-	print("Mandos conectados: ", Input.get_connected_joypads())
 
 func _unhandled_input(event: InputEvent) -> void:
-	if accion_esperando == "" and event.is_action_pressed("Atras"):
+	if accion_esperando.is_empty() and (event.is_action_pressed("Atras", false, true) \
+			or (en_partida and event.is_action_pressed("Pausa", false, true))):
 		get_viewport().set_input_as_handled()
 		_on_volver_pressed()
 		return
-	if event is InputEventMouseMotion:
-		print("Mouse motion en _unhandled_input")
 	UIInputManager.manejar_input(event, get_viewport(), boton_volver)
 
 func crear_encabezado() -> void:
 	var fila := HBoxContainer.new()
 
 	var espacio := Label.new()
-	espacio.custom_minimum_size.x = 150
+	espacio.text = "Acción"
+	espacio.add_theme_color_override("font_color", Color("#19291e"))
+	espacio.custom_minimum_size.x = ANCHO_ACCION
 	fila.add_child(espacio)
 
 	var label_teclado := Label.new()
 	label_teclado.text = "Teclado"
-	label_teclado.custom_minimum_size.x = 140
+	label_teclado.custom_minimum_size.x = ANCHO_CONTROL
+	label_teclado.add_theme_color_override("font_color", Color("#19291e"))
 	label_teclado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	fila.add_child(label_teclado)
 
 	var label_mando := Label.new()
 	label_mando.text = "Mando"
-	label_mando.custom_minimum_size.x = 140
+	label_mando.custom_minimum_size.x = ANCHO_CONTROL
+	label_mando.add_theme_color_override("font_color", Color("#19291e"))
 	label_mando.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	fila.add_child(label_mando)
 
@@ -59,7 +68,8 @@ func crear_fila(accion: String) -> void:
 
 	var label := Label.new()
 	label.text = accion.capitalize()
-	label.custom_minimum_size.x = 150
+	label.custom_minimum_size.x = ANCHO_ACCION
+	label.add_theme_color_override("font_color", Color("#19291e"))
 	fila.add_child(label)
 
 	fila.add_child(crear_boton(accion, ControlesManager.Tipo.TECLADO_MOUSE))
@@ -69,8 +79,14 @@ func crear_fila(accion: String) -> void:
 
 func crear_boton(accion: String, tipo: ControlesManager.Tipo) -> Button:
 	var boton := Button.new()
-	boton.custom_minimum_size.x = 140
+	boton.custom_minimum_size = Vector2(ANCHO_CONTROL, 52)
+	boton.clip_text = true
+	boton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	boton.text = ControlesManager.texto_actual(accion, tipo)
+	if accion == "Iniciar Ronda" and tipo == ControlesManager.Tipo.TECLADO_MOUSE:
+		boton.text = "Espacio"
+		boton.disabled = true
+	boton.tooltip_text = boton.text
 	boton.pressed.connect(_on_boton_reasignar.bind(boton, accion, tipo))
 	return boton
 
@@ -82,7 +98,7 @@ func terminar_captura() -> void:
 
 func _on_boton_reasignar(boton: Button, accion: String, tipo: ControlesManager.Tipo) -> void:
 	boton.text = "Presiona..."
-	%LabelConflicto.text = ""
+	%LabelConflicto.hide()
 	accion_esperando = accion
 	tipo_esperando = tipo
 	boton_esperando = boton
@@ -90,15 +106,17 @@ func _on_boton_reasignar(boton: Button, accion: String, tipo: ControlesManager.T
 	set_process_input(true)
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion:
-		print("Mouse motion detectado en settings")
 	UIInputManager.manejar_input(event, get_viewport(), boton_volver)
 	
 	if accion_esperando == "":
 		return
 
-	if event is InputEventKey and event.pressed and event.keycode == KEY_BACKSPACE:
+	var cancelar: bool = event is InputEventKey and event.pressed and (event.keycode == KEY_BACKSPACE or event.physical_keycode == KEY_BACKSPACE)
+	cancelar = cancelar or (accion_esperando != "Atras" and event.is_action_pressed("Atras", false, true))
+	cancelar = cancelar or (accion_esperando != "Pausa" and event.is_action_pressed("Pausa", false, true))
+	if cancelar:
 		boton_esperando.text = ControlesManager.texto_actual(accion_esperando, tipo_esperando)
+		%LabelConflicto.hide()
 		terminar_captura()
 		return
 
@@ -121,12 +139,15 @@ func _input(event: InputEvent) -> void:
 	var conflicto := ControlesManager.buscar_conflicto(event, accion_esperando, tipo_esperando)
 	if conflicto != "":
 		%LabelConflicto.text = "Esa tecla ya está en uso en: " + conflicto.capitalize()
+		%LabelConflicto.show()
+		get_viewport().set_input_as_handled()
 		return  # no asignamos, seguimos esperando otra tecla
 
-	%LabelConflicto.text = ""
+	%LabelConflicto.hide()
 	ControlesManager.borrar_eventos_del_tipo(accion_esperando, tipo_esperando)
 	InputMap.action_add_event(accion_esperando, event)
 	boton_esperando.text = event.as_text()
+	boton_esperando.tooltip_text = boton_esperando.text
 	ControlesManager.guardar_controles()
 	terminar_captura()
 	UIInputManager.manejar_input(event, get_viewport(), boton_volver)
@@ -138,11 +159,11 @@ func actualizar_textos_botones() -> void:
 		var boton_teclado: Button = fila.get_child(1)
 		var boton_mando: Button = fila.get_child(2)
 		boton_teclado.text = ControlesManager.texto_actual(accion, ControlesManager.Tipo.TECLADO_MOUSE)
+		if accion == "Iniciar Ronda":
+			boton_teclado.text = "Espacio"
 		boton_mando.text = ControlesManager.texto_actual(accion, ControlesManager.Tipo.MANDO)
-
-#func _on_restablecer_pressed() -> void:
-	#ControlesManager.restablecer_todo()
-	#actualizar_textos_botones()
+		boton_teclado.tooltip_text = boton_teclado.text
+		boton_mando.tooltip_text = boton_mando.text
 
 func _on_restablecer_pressed() -> void:
 	ControlesManager.restablecer_todo()
@@ -150,4 +171,13 @@ func _on_restablecer_pressed() -> void:
 
 
 func _on_volver_pressed() -> void:
+	if en_partida:
+		if is_queued_for_deletion():
+			return
+		set_process_input(false)
+		set_process_unhandled_input(false)
+		hide()
+		queue_free()
+		cerrada.emit()
+		return
 	get_tree().change_scene_to_file("res://escenas/escenas_menu/menu.tscn")

@@ -35,9 +35,14 @@ func _run():
 	var singleton = root.get_node("Guardado")
 	var old_slot: int = singleton.slot_actual
 	var old_data: Dictionary = singleton.datos.duplicate(true)
+	var old_codice: ConfigFile = singleton._codice
+	var old_path: String = singleton._ruta_codice
+	var temp_path := OS.get_environment("TEMP").path_join("codice-campana-%d.cfg" % OS.get_process_id())
+	singleton._codice = ConfigFile.new()
+	singleton._ruta_codice = temp_path
 	var climates := ["despejado", "lluvia", "despejado", "tormenta", "volcan", "ventisca", "derrumbe", "radiacion"]
 	var plants := [[0], [0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6]]
-	var spells := [[0], [0, 1], [0, 1, 2, 3], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6]]
+	var spells := [[0], [0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6]]
 	var total_waves := 0
 	for index in 8:
 		_check(profile.datos.nivel_actual == index and not profile.datos.campana_completada, "Completing each stage advances to the next available stage")
@@ -59,8 +64,12 @@ func _run():
 				var wet: bool = level._se_puede_plantar(cell, 2)
 				var terra: bool = level._se_puede_plantar(cell, 3)
 				_check(dry == level.parcelas_secano.has(cell) and wet == level.celdas_inundadas.has(cell), "Dry and wet planting must match authored plots")
-				_check(terra == (dry or level.puestos_terra.has(cell)), "Terra may use plots and authored road posts")
-				if dry or wet or terra:
+				var junto_al_camino := false
+				for direccion in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+					junto_al_camino = junto_al_camino or level._es_camino(cell + direccion)
+				var camino_seco: bool = level._celda_valida_terreno(cell) and level._es_camino(cell) and not wet
+				_check(terra == (camino_seco or (dry and junto_al_camino)), "Terra can plant on dry roads or adjacent plots")
+				if dry or wet:
 					legal += 1
 		_check(level.limitar_plantado and legal >= 10 and legal <= 17, "Every campaign stage must have a small, finite number of build sites")
 		for id in 7:
@@ -82,6 +91,7 @@ func _run():
 				var parts := String(key).split(":")
 				level._crear_espiritu(parts[0], parts[1])
 				_check(level._bestias_vivas().size() > 0, "Every wave recipe resolves to a configured enemy scene")
+				_check(singleton.entrada_descubierta("bestias", parts[0]), "Spawning an enemy discovers its Codex entry")
 		_clear(level)
 		# Victory uses the real wave/outcome path. Saving is exercised separately
 		# with the in-memory harness so player files are never written.
@@ -91,11 +101,11 @@ func _run():
 			var count := 0
 			var expected: int = level._plan_de_ronda(wave + 1, false).size()
 			while not level.cola_bestias.is_empty():
-				level._process(level.intervalos_spawn[wave])
+				level._actualizar_spawn(level._intervalo_spawn())
 				count += level._bestias_vivas().size()
 				_clear(level)
 			_check(count == expected, "Real wave spawning preserves recipe counts")
-			level._process(0.0)
+			level._actualizar_spawn(0.0)
 			total_waves += 1
 		_check(level.terminado and paused, "Last wave opens a terminal victory overlay")
 		var victory = null
@@ -106,15 +116,26 @@ func _run():
 		if index < 7:
 			victory._mostrar_desbloqueo()
 			_check(victory.desbloqueos.size() == level.desbloqueos.size() and victory.desbloqueos_ataques.size() == level.desbloqueos_ataques.size(), "Victory announces the exact stage rewards")
+			if index == 1:
+				_check(victory.desbloqueos[0].nombre == "Terra" and victory.desbloqueos[0].retrato.textura != null and victory.desbloqueos_ataques == [3], "Level 2 awards Terra with its sprite and does not re-award Aqua")
 		paused = false
 		level.free()
 		profile.completar_nivel(index)
 	_check(total_waves == 40 and profile.datos.nivel_actual == 8 and profile.datos.campana_completada and profile.writes == 8, "All forty waves lead to persistent final completion")
+	var recargado := ConfigFile.new()
+	_check(recargado.load(temp_path) == OK and recargado.get_value("progreso", "completada", false), "A slotless Level 8 win persists global completion")
+	singleton._codice = recargado
+	singleton.slot_actual = -1
+	singleton.datos = singleton.datos_nuevos()
+	_check(singleton.plantas_activas() == range(7) and singleton.ataques_activos() == range(7), "A fresh save inherits all tools after campaign completion")
 	profile.completar_nivel(0)
 	_check(profile.datos.nivel_actual == 8 and profile.datos.plantas == [0, 1, 2, 3, 4, 5, 6] and profile.datos.ataques == [0, 1, 2, 3, 4, 5, 6], "Replay cannot regress progress or duplicate earned rewards")
 	_check(profile.escena_para_nivel(8) == profile.ESCENA_CAMPANA and profile.escena_para_nivel(2) == profile.NIVELES[2], "Resume routing reaches new content or the actual final outcome")
 	singleton.slot_actual = old_slot
 	singleton.datos = old_data
+	singleton._codice = old_codice
+	singleton._ruta_codice = old_path
+	DirAccess.remove_absolute(temp_path)
 	profile.free()
 	await process_frame
 	print("Expanded campaign checks: %s" % ("PASS" if failures == 0 else "%d FAILED" % failures))

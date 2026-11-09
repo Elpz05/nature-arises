@@ -14,7 +14,8 @@ var acciones_configurables := ["Clic Izquierdo",
 "Casilla Planta 6", "Izquierda", "Derecha", "Arriba",
 "Abajo", "Confirmar", "Atras", "Usar Elemento", 
 "Cambiar Casilla Izquierda", "Cambiar Casilla Derecha",
-"Alternar Elemento o Planta", "Alternar Desafio", "Cambiar Prioridad", "Mejorar Arbol"]
+"Alternar Elemento o Planta", "Alternar Desafio", "Cambiar Prioridad", "Mejorar Arbol",
+"Detalles de Ronda", "Abrir Codice", "Cambiar Velocidad"]
 
 var valores_por_defecto: Dictionary = {}
 
@@ -24,6 +25,15 @@ func _ready() -> void:
 	_sincronizar_ui()
 
 func _sincronizar_ui():
+	var espacio := InputEventKey.new()
+	espacio.physical_keycode = KEY_SPACE
+	for accion in acciones_configurables:
+		if accion != "Iniciar Ronda":
+			for evento in InputMap.action_get_events(accion):
+				if evento is InputEventKey and evento.is_match(espacio, true):
+					InputMap.action_erase_event(accion, evento)
+	if not InputMap.event_is_action(espacio, "Iniciar Ronda", true):
+		InputMap.action_add_event("Iniciar Ronda", espacio)
 	var aliases := {"ui_accept": "Confirmar", "ui_cancel": "Atras", "ui_left": "Izquierda", "ui_right": "Derecha", "ui_up": "Arriba", "ui_down": "Abajo"}
 	for alias in aliases:
 		var accion: String = aliases[alias]
@@ -90,18 +100,22 @@ func cargar_controles() -> void:
 	var config := ConfigFile.new()
 	if config.load("user://controles.cfg") != OK:
 		return
+	_aplicar_perfil(config)
+
+func _aplicar_perfil(config: ConfigFile) -> void:
 	for accion in acciones_configurables:
-		# No introduzcas un atajo nuevo que choque con un perfil existente.
-		if accion in ["Elemento Electricitas", "Pala", "Iniciar Ronda"] and not config.has_section_key("controles", accion):
-			InputMap.action_erase_events(accion)
+		if not config.has_section_key("controles", accion):
+			if accion in ["Elemento Electricitas", "Pala"]:
+				InputMap.action_erase_events(accion)
 			continue
-		var eventos = config.get_value("controles", accion, null)
+		var eventos = config.get_value("controles", accion)
 		if eventos is Array:
 			InputMap.action_erase_events(accion)
 			for e in eventos:
 				if e is InputEvent:
 					InputMap.action_add_event(accion, e)
-	for accion in ["Alternar Desafio", "Cambiar Prioridad", "Mejorar Arbol"]:
+	# Los atajos nuevos solo heredan los valores que no chocan con el perfil.
+	for accion in ["Iniciar Ronda", "Alternar Desafio", "Cambiar Prioridad", "Mejorar Arbol", "Detalles de Ronda", "Abrir Codice", "Cambiar Velocidad"]:
 		if config.has_section_key("controles", accion):
 			continue
 		for evento in InputMap.action_get_events(accion):
@@ -110,6 +124,11 @@ func cargar_controles() -> void:
 				InputMap.action_erase_event(accion, evento)
 
 func buscar_conflicto(evento: InputEvent, accion_actual: String, tipo: Tipo) -> String:
+	if accion_actual != "Iniciar Ronda" and evento is InputEventKey:
+		var espacio := InputEventKey.new()
+		espacio.physical_keycode = KEY_SPACE
+		if evento.is_match(espacio, true):
+			return "Iniciar Ronda"
 	for accion in acciones_configurables:
 		if accion == accion_actual:
 			continue
@@ -122,7 +141,9 @@ func buscar_conflicto(evento: InputEvent, accion_actual: String, tipo: Tipo) -> 
 
 func eventos_equivalentes(a: InputEvent, b: InputEvent) -> bool:
 	if a is InputEventKey and b is InputEventKey:
-		var mismo_codigo: bool = a.physical_keycode == b.physical_keycode if a.physical_keycode != 0 and b.physical_keycode != 0 else a.keycode == b.keycode
+		var codigo_a: Key = a.physical_keycode if a.physical_keycode != 0 else a.keycode
+		var codigo_b: Key = b.physical_keycode if b.physical_keycode != 0 else b.keycode
+		var mismo_codigo := codigo_a == codigo_b
 		return mismo_codigo and a.shift_pressed == b.shift_pressed and a.ctrl_pressed == b.ctrl_pressed and a.alt_pressed == b.alt_pressed and a.meta_pressed == b.meta_pressed
 	if a is InputEventMouseButton and b is InputEventMouseButton:
 		return a.button_index == b.button_index

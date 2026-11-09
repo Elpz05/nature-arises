@@ -2,32 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/guia/guia_juego.gd" id="1_guia"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-content_margin_left = 32.0
-content_margin_top = 26.0
-content_margin_right = 32.0
-content_margin_bottom = 26.0
-bg_color = Color(0.055, 0.105, 0.085, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.31, 0.55, 0.36, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_detalle"]
-content_margin_left = 26.0
-content_margin_top = 24.0
-content_margin_right = 26.0
-content_margin_bottom = 24.0
-bg_color = Color(0.082, 0.155, 0.12, 1)
-corner_radius_top_left = 9
-corner_radius_top_right = 9
-corner_radius_bottom_right = 9
-corner_radius_bottom_left = 9
+[ext_resource type="Theme" path="res://fuentes/interfaz.tres" id="2_theme"]
 
 [node name="GuiaJuego" type="CanvasLayer"]
 process_mode = 3
@@ -50,9 +25,8 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Centro"]
-custom_minimum_size = Vector2(1260, 864)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+theme = ExtResource("2_theme")
 
 [node name="Contenido" type="VBoxContainer" parent="Centro/Panel"]
 layout_mode = 2
@@ -65,16 +39,15 @@ theme_override_constants/separation = 18
 [node name="Titulo" type="Label" parent="Centro/Panel/Contenido/Cabecera"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.9, 1, 0.91, 1)
-theme_override_font_sizes/font_size = 38
-text = "Guía de campo"
+theme_type_variation = &"TituloPixel"
+theme_override_font_sizes/font_size = 56
+text = "Códice de campo"
 
 [node name="Cerrar" type="Button" parent="Centro/Panel/Contenido/Cabecera"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(176, 48)
+custom_minimum_size = Vector2(220, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "Cerrar guía"
+text = "Cerrar códice"
 
 [node name="Pestanas" type="HBoxContainer" parent="Centro/Panel/Contenido"]
 unique_name_in_owner = true
@@ -86,16 +59,22 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 
-[node name="Indice" type="VBoxContainer" parent="Centro/Panel/Contenido/Cuerpo"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(244, 0)
+[node name="Navegacion" type="ScrollContainer" parent="Centro/Panel/Contenido/Cuerpo"]
+custom_minimum_size = Vector2(332, 0)
 layout_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="Indice" type="VBoxContainer" parent="Centro/Panel/Contenido/Cuerpo/Navegacion"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
 [node name="Ficha" type="PanelContainer" parent="Centro/Panel/Contenido/Cuerpo"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_detalle")
+theme_type_variation = &"PanelInterior"
 
 [node name="Lectura" type="ScrollContainer" parent="Centro/Panel/Contenido/Cuerpo/Ficha"]
 unique_name_in_owner = true
@@ -108,8 +87,15 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 15
 
-[node name="Pie" type="Label" parent="Centro/Panel/Contenido"]
+[node name="Pie" type="HBoxContainer" parent="Centro/Panel/Contenido"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EstadoPausa" type="Label" parent="Centro/Panel/Contenido/Pie"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.73, 0.85, 0.77, 1)
 theme_override_font_sizes/font_size = 19
+text = "Partida en pausa"

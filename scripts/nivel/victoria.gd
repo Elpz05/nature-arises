@@ -5,6 +5,10 @@ extends CanvasLayer
 @export var campana_finalizada := false
 
 const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"   # ajusta a tu ruta real
+const INTERFAZ = preload("res://fuentes/interfaz.tres")
+const RETRATOS = preload("res://scripts/HUD/retratos_unidad.gd")
+const HUD = preload("res://scripts/HUD/hud.gd")
+const ICONOS = preload("res://scripts/HUD/iconos_combate.gd")
 
 var numero_nivel := 0
 var desbloqueos: Array = []          # nombres de plantas, los asigna el nivel
@@ -29,14 +33,8 @@ func _ready() -> void:
 	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(420, 0)
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.1, 0.25, 0.1, 0.95)
-	estilo.border_color = Color(0.5, 0.8, 0.4)
-	estilo.set_border_width_all(3)
-	estilo.set_corner_radius_all(12)
-	estilo.set_content_margin_all(28)
-	panel.add_theme_stylebox_override("panel", estilo)
+	panel.custom_minimum_size = Vector2(500, 0)
+	panel.theme = INTERFAZ
 	centro.add_child(panel)
 
 	contenedor = VBoxContainer.new()
@@ -55,8 +53,9 @@ func _limpiar() -> void:
 		contenedor.remove_child(c)
 		c.queue_free()
 
-func _titulo(texto: String, tam := 36) -> Label:
+func _titulo(texto: String, tam := 42) -> Label:
 	var l := Label.new()
+	l.theme_type_variation = &"TituloPixel"
 	l.text = texto
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", tam)
@@ -66,8 +65,8 @@ func _titulo(texto: String, tam := 36) -> Label:
 func _boton(texto: String, accion: Callable) -> Button:
 	var b := Button.new()
 	b.text = texto
-	b.custom_minimum_size = Vector2(260, 56)
-	b.add_theme_font_size_override("font_size", 24)
+	b.custom_minimum_size = Vector2(300, 64)
+	b.add_theme_font_size_override("font_size", 30)
 	b.pressed.connect(accion)
 	b.mouse_entered.connect(_on_hover)
 	contenedor.add_child(b)
@@ -97,12 +96,21 @@ func _mostrar_desbloqueo() -> void:
 	_titulo("¡Nuevos desbloqueos!", 32)
 	if not desbloqueos.is_empty():
 		_titulo("Plantas", 22)
-		for nombre in desbloqueos:
-			_titulo("🌱 " + str(nombre), 28)
+		for planta: Dictionary in desbloqueos:
+			var fila := HBoxContainer.new()
+			fila.alignment = BoxContainer.ALIGNMENT_CENTER
+			fila.add_theme_constant_override("separation", 12)
+			contenedor.add_child(fila)
+			fila.add_child(RETRATOS.crear(planta.retrato, 52))
+			var nombre := Label.new()
+			nombre.text = planta.nombre
+			nombre.add_theme_font_size_override("font_size", 30)
+			fila.add_child(nombre)
 	if not desbloqueos_ataques.is_empty():
 		_titulo("Ataques elementales", 22)
-		for nombre in desbloqueos_ataques:
-			_titulo("✨ " + str(nombre), 28)
+		for indice: int in desbloqueos_ataques:
+			var nombre := _titulo(HUD.ATAQUES[indice].nombre, 28)
+			nombre.add_theme_color_override("font_color", ICONOS.ICONOS[ICONOS.ELEMENTOS[indice]][0])
 	_boton("Continuar", _ir_al_siguiente_nivel).grab_focus()
 
 func _ir_al_siguiente_nivel() -> void:

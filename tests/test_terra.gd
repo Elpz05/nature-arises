@@ -33,6 +33,9 @@ func _run():
 		var road := Vector2i(4, level.puntos_ruta[0].y)
 		level.puestos_terra.append(road)
 		level.parcelas_secano.append(Vector2i(4, 3 if index == 1 else 4))
+		var remota := Vector2i(29, 16)
+		level.parcelas_secano.append(remota)
+		_check(level._se_puede_plantar(remota, 0) and not level._se_puede_plantar(remota, 3), "Terra cannot use a dry plot far from the road")
 		if index == 1:
 			level.puestos_terra.append(Vector2i(26, 8))
 		var entry := 224.0
@@ -52,7 +55,7 @@ func _run():
 		_check(level.arboles.get_child_count() == count, "Terra emits no projectiles")
 		_check(not level._plantar(road, 3) and not level._plantar(road, 0), "Terra reserves one entire cell")
 		level._mostrar_info_torre(road)
-		_check(level.tooltip.text.contains("Empuje: 0.5") and level.tooltip.text.contains("1000"), "Inspection explains Terra health and knockback")
+		_check(level.hud.resumen_torre.text.contains("Empuje 0.5") and level.hud.resumen_torre.text.contains("1000"), "Inspection explains Terra health and knockback")
 		var nature = _enemy(level, "natura", entry - 1.0)
 		nature._physics_process(0.1)
 		_check(is_equal_approx(nature.get_parent().progress, entry - 32.0) and terra.vida == 950, "Natura deals 50 and is pushed back half a cell")
@@ -99,7 +102,7 @@ func _run():
 		level.clima = "lluvia"
 		level.celdas_inundadas.assign([road])
 		_check(not level._plantar(road, 3), "Terra cannot plant on flooded roads")
-		level._plantar(Vector2i(4, 3 if index == 1 else 4), 3)
+		_check(level._plantar(Vector2i(4, 3 if index == 1 else 4), 3), "Terra can use a marked dry plot adjacent to the road")
 		nature.get_parent().progress = entry - 1.0
 		nature.recarga_contacto = 0.0
 		nature._physics_process(3.0)

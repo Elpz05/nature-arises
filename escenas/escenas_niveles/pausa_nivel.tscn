@@ -3,8 +3,11 @@
 [ext_resource type="Script" uid="uid://ueathxfalfip" path="res://scripts/nivel/pausa.gd" id="1_8b2kj"]
 [ext_resource type="AudioStream" uid="uid://rewrq2ew7oc2" path="res://audios/sfx_menu/001_Hover_01.wav" id="2_wvt3l"]
 [ext_resource type="AudioStream" uid="uid://cn7wa1y38y5s3" path="res://audios/sfx_menu/013_Confirm_03.wav" id="3_3xstv"]
+[ext_resource type="Theme" path="res://fuentes/interfaz.tres" id="4_theme"]
 
 [node name="PausaNivel" type="CanvasLayer" unique_id=180869974]
+process_mode = 3
+layer = 100
 script = ExtResource("1_8b2kj")
 escena_salida = "uid://c8wmgn88bcsrt"
 sonido_hover = ExtResource("2_wvt3l")
@@ -16,6 +19,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0.025, 0.045, 0.03, 0.77)
 
 [node name="Centro" type="CenterContainer" parent="." unique_id=709366476]
 anchors_preset = 15
@@ -23,55 +27,54 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("4_theme")
 
 [node name="PanelPrincipal" type="PanelContainer" parent="Centro" unique_id=285997085]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(490, 0)
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Centro/PanelPrincipal" unique_id=776541494]
 layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Titulo" type="Label" parent="Centro/PanelPrincipal/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TituloPixel"
+theme_override_font_sizes/font_size = 52
+horizontal_alignment = 1
+text = "Pausa"
 
 [node name="Continuar" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=652412708]
 unique_name_in_owner = true
 layout_mode = 2
 focus_neighbor_bottom = NodePath("../Guia")
+custom_minimum_size = Vector2(0, 66)
+theme_override_font_sizes/font_size = 32
 text = "Continuar"
 
 [node name="Guia" type="Button" parent="Centro/PanelPrincipal/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 focus_neighbor_top = NodePath("../Continuar")
-text = "Guía de campo"
+focus_neighbor_bottom = NodePath("../Ajustes")
+custom_minimum_size = Vector2(0, 66)
+theme_override_font_sizes/font_size = 32
+text = "Códice de campo"
 
-[node name="Sonido" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=1992518810]
+[node name="Ajustes" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=1992518810]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Sonido"
+focus_neighbor_top = NodePath("../Guia")
+focus_neighbor_bottom = NodePath("../Salir")
+custom_minimum_size = Vector2(0, 66)
+theme_override_font_sizes/font_size = 32
+text = "Ajustes"
 
 [node name="Salir" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=1419013101]
 unique_name_in_owner = true
 layout_mode = 2
+focus_neighbor_top = NodePath("../Ajustes")
+custom_minimum_size = Vector2(0, 66)
+theme_override_font_sizes/font_size = 32
 text = "Salir"
-
-[node name="PanelSonido" type="PanelContainer" parent="Centro" unique_id=313959847]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Centro/PanelSonido" unique_id=531053305]
-layout_mode = 2
-
-[node name="CheckMusica" type="CheckBox" parent="Centro/PanelSonido/VBoxContainer" unique_id=1838499862]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Musica"
-
-[node name="CheckEfectos" type="CheckBox" parent="Centro/PanelSonido/VBoxContainer" unique_id=1486034827]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Efectos"
-
-[node name="Atras" type="Button" parent="Centro/PanelSonido/VBoxContainer" unique_id=791035342]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Atras"

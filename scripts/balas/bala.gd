@@ -20,7 +20,7 @@ func _ready():
 	$Sprite2D.modulate = color_bala
 	sonidoBala.play()
 
-func _process(delta):
+func _physics_process(delta):
 	if impacto or is_queued_for_deletion():
 		return
 	# Si el objetivo murió o desapareció, la semilla se destruye
@@ -29,7 +29,7 @@ func _process(delta):
 		queue_free()
 		return
 
-	# Teledirigida: recalcula la dirección en cada fotograma
+	# Teledirigida: recalcula la dirección en cada paso de física.
 	global_position = global_position.move_toward(objetivo.global_position, velocidad * delta)
 
 	# Impacto

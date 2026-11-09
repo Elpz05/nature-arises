@@ -75,13 +75,13 @@ func _run():
 		var shot = level.arboles.get_child(level.arboles.get_child_count() - 1)
 		shot.set_process(false)
 		_check(shot.objetivo == enemies[7], "Chain begins at the beast closest to the mother tree")
-		shot._process(0.01)
+		shot._physics_process(0.01)
 		var cap: int = tower.obtener_estadisticas().objetivos
 		_check(shot.golpeados.size() == cap, "Each size respects its 3/5/7 total target cap")
 		for i in 8:
 			_check(is_equal_approx(enemies[i].vida, 489.0 if i >= 8 - cap else 500.0), "Nearest-neighbor hops deal exactly 11 damage to Aqua, once per victim")
 		_check(distant.vida == 500.0, "The chain cannot hit a beast outside tower detection")
-		shot._process(0.5)
+		shot._physics_process(0.5)
 		_check(shot.is_queued_for_deletion() and is_equal_approx(enemies[7].vida, 489.0), "The visual expires without repeating damage")
 		for enemy in enemies + [distant]:
 			enemy.get_parent().queue_free()
@@ -91,7 +91,7 @@ func _run():
 	var b = _enemy(level, "aqua", 64.0)
 	var c = _enemy(level, "aqua", 256.0)
 	var gap_shot = _shot(level, a, [a, a, b, c, null])
-	gap_shot._process(0.0)
+	gap_shot._physics_process(0.0)
 	_check(gap_shot.golpeados == [a, b] and c.vida == 500.0, "A chain skips duplicates and stops at a gap larger than two cells")
 	var resistant = _enemy(level, "aqua", 400.0)
 	resistant.tipo = "electricitas"
@@ -107,12 +107,12 @@ func _run():
 	var dead = _enemy(level, "aqua", 20.0)
 	dead.get_parent().queue_free()
 	var invalid = _shot(level, dead, [a, b])
-	invalid._process(0.0)
+	invalid._physics_process(0.0)
 	_check(invalid.is_queued_for_deletion(), "A queued initial target cancels the shot safely")
 	var fire = _enemy(level, "flamma", 20.0)
 	fire.vida = 1.0
 	var revival = _shot(level, fire, [fire, fire], 7)
-	revival._process(0.0)
+	revival._physics_process(0.0)
 	_check(fire.renacio and fire.vida == fire.vida_maxima and revival.golpeados.size() == 1, "A revived beast is not hit twice by the same chain")
 	level._quitar_arbol(cell)
 	_check(level.gotas == 0, "Shovel does not refund Electricitas")

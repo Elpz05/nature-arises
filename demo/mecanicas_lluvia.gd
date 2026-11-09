@@ -21,11 +21,8 @@ func _ready():
 		if LABORATORIOS[i].clima == clima and (clima != "tormenta" or LABORATORIOS[i].intensidad == intensidad_tormenta):
 			indice = i
 			break
-	hud.panel_laboratorio = PanelContainer.new()
-	hud.panel_laboratorio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hud.fila_opciones.add_child(hud.panel_laboratorio)
 	var fila := HBoxContainer.new()
-	hud.panel_laboratorio.add_child(fila)
+	hud.acciones.add_child(fila)
 	var anterior := Button.new()
 	anterior.text = "<"
 	anterior.custom_minimum_size = Vector2(28, 28)
@@ -36,8 +33,6 @@ func _ready():
 	var titulo := Label.new()
 	titulo.text = "Laboratorio · " + LABORATORIOS[indice].nombre
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	titulo.clip_text = true
 	titulo.tooltip_text = titulo.text
 	titulo.add_theme_font_size_override("font_size", 13)
 	fila.add_child(titulo)
@@ -84,6 +79,7 @@ func _crear_hud():
 func _ganar_nivel():
 	# La prueba no escribe progreso de campaña.
 	terminado = true
+	_suspender_tiempo()
 	numeros_dano.limpiar()
 	gestor_clima.cancelar_avisos()
 	ronda_activa = false

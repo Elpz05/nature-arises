@@ -124,7 +124,7 @@ func _run():
 	_check(tutorial.hud.label_amenazas.text.contains("Natura divisor ×1"), "The normal briefing announces the authored splitter")
 	tutorial._iniciar_ronda()
 	for i in 5:
-		tutorial._process(tutorial.intervalos_spawn[1])
+		tutorial._actualizar_spawn(tutorial._intervalo_spawn())
 	var marked: Array = tutorial._bestias_vivas().filter(func(enemy): return enemy.es_divisor)
 	_check(marked.size() == 1 and marked[0].tamano == "mediano", "The campaign recipe spawns exactly the marked Natura")
 	tutorial.free()

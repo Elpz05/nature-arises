@@ -9,10 +9,66 @@ const MAX_BYTES := 1048576
 const NIVELES = preload("res://scripts/nivel/campana.gd").ESCENAS
 const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"
 const ESCENA_CAMPANA := "res://escenas/escenas_niveles/campana_completada.tscn"
+const RUTA_CODEX := "user://codice.cfg"
 
 var slot_actual := -1
 var datos := {}
 var _slots_reparados: Dictionary = {}
+var _codice := ConfigFile.new()
+var _ruta_codice := RUTA_CODEX
+
+func _ready():
+	_codice.load(_ruta_codice)
+	for i in TOTAL_SLOTS:
+		if existe(i):
+			_registrar_descubrimientos(leer(i))
+
+func todo_desbloqueado() -> bool:
+	return _codice.get_value("progreso", "completada", false) == true
+
+func descubrir_bestia(tipo: String):
+	var vistas := _entradas_codice("bestias")
+	if not todo_desbloqueado() and not vistas.has(tipo):
+		vistas.append(tipo)
+		_codice.set_value("progreso", "bestias", vistas)
+		_guardar_codice()
+
+func entrada_descubierta(categoria: String, especie: Variant) -> bool:
+	if todo_desbloqueado():
+		return true
+	return _entradas_codice(categoria).has(especie)
+
+func _entradas_codice(categoria: String) -> Array:
+	var iniciales := [] if categoria == "bestias" else [0]
+	var entradas: Variant = _codice.get_value("progreso", categoria, iniciales)
+	return entradas if entradas is Array else iniciales
+
+func _guardar_codice():
+	var temporal := _ruta_codice + ".tmp"
+	if _codice.save(temporal) != OK or DirAccess.rename_absolute(temporal, _ruta_codice) != OK:
+		push_warning("No se pudo guardar el progreso del Códice.")
+
+func _registrar_descubrimientos(progreso: Dictionary):
+	var cambio := false
+	if progreso.campana_completada and not todo_desbloqueado():
+		_codice.set_value("progreso", "completada", true)
+		cambio = true
+	for categoria in ["plantas", "ataques"]:
+		var descubiertos := _entradas_codice(categoria)
+		var limite := TOTAL_PLANTAS if categoria == "plantas" else TOTAL_ATAQUES
+		var unidos := _lista_ids(descubiertos + progreso[categoria], limite, true)
+		if unidos != descubiertos:
+			_codice.set_value("progreso", categoria, unidos)
+			cambio = true
+	if cambio:
+		_guardar_codice()
+
+func registrar_victoria(n: int):
+	if n < 0 or n >= NIVELES.size():
+		return
+	_registrar_descubrimientos(validar_datos({"version": VERSION_GUARDADO, "nivel_actual": n + 1}))
+	if _slot_valido(slot_actual):
+		completar_nivel(n)
 
 func _ruta(i: int) -> String:
 	return "user://partida_%d.json" % (i + 1)
@@ -176,6 +232,8 @@ func escena_para_nivel(n: int) -> String:
 	return ESCENA_SLOTS
 
 func plantas_activas() -> Array:
+	if todo_desbloqueado():
+		return range(TOTAL_PLANTAS)
 	datos = validar_datos(datos)
 	return datos.plantas.duplicate()
 
@@ -185,6 +243,8 @@ func desbloquear(indices: Array) -> void:
 	guardar()
 
 func ataques_activos() -> Array:
+	if todo_desbloqueado():
+		return range(TOTAL_ATAQUES)
 	datos = validar_datos(datos)
 	return datos.ataques.duplicate()
 

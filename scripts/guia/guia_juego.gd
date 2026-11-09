@@ -4,10 +4,14 @@ signal cerrada
 
 const CONTENIDO = preload("res://scripts/guia/contenido_guia.gd")
 const ICONOS = preload("res://scripts/HUD/iconos_combate.gd")
+const RETRATOS = preload("res://scripts/HUD/retratos_unidad.gd")
+const INDICACIONES = preload("res://scripts/HUD/indicaciones_control.gd")
 const COLOR_ENCABEZADO := Color(0.68, 0.92, 0.65)
 
 # Se asigna antes de agregar la guía al árbol. Vacío en el menú.
 var fichas_nivel: Array = []
+var plantas_visibles: Array = []
+var ataques_visibles: Array = []
 var pestana_actual := ""
 var ficha_actual := 0
 var _capitulos := {}
@@ -21,21 +25,44 @@ var _botones_ficha: Array[Button] = []
 @onready var detalle: VBoxContainer = %Detalle
 
 func _ready():
+	var panel: PanelContainer = $Centro/Panel
+	var tema := panel.theme.duplicate() as Theme
+	tema.default_font = _fuente_nitida(tema.default_font)
+	tema.set_font("font", "Button", _fuente_nitida(tema.get_font("font", "Button")))
+	tema.set_font("font", "TituloPixel", _fuente_nitida(tema.get_font("font", "TituloPixel")))
+	panel.theme = tema
+	get_viewport().size_changed.connect(_ajustar_panel)
+	_ajustar_panel()
 	cerrar.pressed.connect(_cerrar)
-	var navegacion := "Dirección para navegar · Confirmar para abrir · Atrás para cerrar"
-	%Pie.text = navegacion if fichas_nivel.is_empty() else "Partida en pausa · " + navegacion
+	var pie: HBoxContainer = %Pie
+	%EstadoPausa.visible = not fichas_nivel.is_empty()
+	INDICACIONES.pista(pie, "Izquierda", "", 24)
+	INDICACIONES.pista(pie, "Derecha", "Navegar", 24)
+	INDICACIONES.pista(pie, "Confirmar", "Abrir", 24)
+	INDICACIONES.pista(pie, "Atras", "Cerrar", 24)
+	INDICACIONES.pista(pie, "Alternar Desafio", "", 24)
+	INDICACIONES.pista(pie, "Mejorar Arbol", "Desplazar", 24)
 	if not fichas_nivel.is_empty():
 		_agregar_capitulo("nivel", "Nivel actual", fichas_nivel)
 	_agregar_capitulo("jugar", "Cómo jugar", CONTENIDO.como_jugar())
-	_agregar_capitulo("bestias", "Bestias", CONTENIDO.bestias())
+	_agregar_capitulo("bestias", "Bestiario", CONTENIDO.bestias())
 	_agregar_capitulo("arboles", "Árboles", CONTENIDO.arboles())
 	_agregar_capitulo("poderes", "Poderes", CONTENIDO.poderes())
 	_mostrar_capitulo("jugar" if fichas_nivel.is_empty() else "nivel")
 	_botones_pestana[pestana_actual].grab_focus()
 
+func _fuente_nitida(original: FontFile) -> FontFile:
+	var fuente := original.duplicate() as FontFile
+	fuente.antialiasing = TextServer.FONT_ANTIALIASING_NONE
+	fuente.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+	return fuente
+
+func _ajustar_panel():
+	$Centro/Panel.custom_minimum_size = get_viewport().get_visible_rect().size - Vector2(64, 48)
+
 func _agregar_capitulo(id: String, texto: String, fichas: Array):
 	_capitulos[id] = fichas
-	var boton := _boton(texto, 50, 22)
+	var boton := _boton(texto, 60, 34)
 	pestanas.add_child(boton)
 	_botones_pestana[id] = boton
 	boton.pressed.connect(_mostrar_capitulo.bind(id))
@@ -51,7 +78,7 @@ func _mostrar_capitulo(id: String):
 	var fichas: Array = _capitulos[id]
 	for i in fichas.size():
 		var texto: String = fichas[i].get("indice", fichas[i].titulo)
-		var boton := _boton(texto, 48, 21)
+		var boton := _boton(texto if _descubierta(i) else "Bloqueado", 56, 34)
 		indice.add_child(boton)
 		_botones_ficha.append(boton)
 		boton.focus_entered.connect(_mostrar_ficha.bind(i))
@@ -65,7 +92,20 @@ func _mostrar_ficha(i: int):
 		_destacar(_botones_ficha[j], j == i)
 	var ficha: Dictionary = _capitulos[pestana_actual][i]
 	_vaciar(detalle)
-	detalle.add_child(_etiqueta(ficha.titulo, 32, Color.WHITE))
+	if not _descubierta(i):
+		detalle.add_child(_etiqueta("Entrada bloqueada", 40, COLOR_ENCABEZADO))
+		detalle.add_child(_etiqueta("Encuentra esta bestia o consigue el desbloqueo en la campaña.", 28, Color.WHITE))
+		lectura.scroll_vertical = 0
+		return
+	var cabecera := HBoxContainer.new()
+	cabecera.add_theme_constant_override("separation", 14)
+	detalle.add_child(cabecera)
+	if ficha.has("especie"):
+		cabecera.add_child(RETRATOS.crear(_retrato(ficha.especie), 88))
+	var titulo := _etiqueta(ficha.titulo, 42, Color.WHITE)
+	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titulo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	cabecera.add_child(titulo)
 	for seccion in ficha.secciones:
 		var destino: Container = detalle
 		if seccion.size() > 2:
@@ -83,9 +123,27 @@ func _mostrar_ficha(i: int):
 		bloque.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bloque.add_theme_constant_override("separation", 4)
 		destino.add_child(bloque)
-		bloque.add_child(_etiqueta(seccion[0], 22, COLOR_ENCABEZADO))
-		bloque.add_child(_etiqueta(seccion[1], 22, Color(0.91, 0.95, 0.92)))
+		bloque.add_child(_etiqueta(seccion[0], 30, COLOR_ENCABEZADO))
+		bloque.add_child(_etiqueta(seccion[1], 30, Color(0.91, 0.95, 0.92)))
 	lectura.scroll_vertical = 0
+
+func _descubierta(i: int) -> bool:
+	match pestana_actual:
+		"bestias":
+			return Guardado.entrada_descubierta("bestias", _capitulos[pestana_actual][i].especie)
+		"arboles":
+			return _capitulos[pestana_actual][i].especie == "madre" or plantas_visibles.has(i) or Guardado.entrada_descubierta("plantas", i)
+		"poderes":
+			return ataques_visibles.has(i) or Guardado.entrada_descubierta("ataques", i)
+	return true
+
+func _retrato(especie: String) -> Dictionary:
+	if pestana_actual == "bestias":
+		var archivo := "prueba" if especie == "natura" else especie
+		return RETRATOS.bestia(load("res://escenas/escenas_espiritu/espiritu_%s.tscn" % archivo), "pequeno")
+	var archivo := "base" if especie == "natura" else especie
+	var animacion := &"idle" if especie == "madre" else &"idle_pequeno"
+	return RETRATOS.arbol(load("res://escenas/escenas_arboles/arbol_%s.tscn" % archivo), animacion, true)
 
 func _boton(texto: String, alto: float, tamano: int) -> Button:
 	var boton := Button.new()
@@ -134,9 +192,15 @@ func _actualizar_foco():
 func _input(event: InputEvent):
 	if event is InputEventMouseMotion:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	elif event.is_action_pressed("Atras", false, true) or event.is_action_pressed("Pausa", false, true):
+	elif not event.is_echo() and (event.is_action_pressed("Atras", false, true) or event.is_action_pressed("Pausa", false, true) or event.is_action_pressed("Abrir Codice", false, true)):
 		get_viewport().set_input_as_handled()
 		_cerrar()
+	elif event.is_action_pressed("Alternar Desafio", true, true):
+		lectura.scroll_vertical -= 180
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("Mejorar Arbol", true, true):
+		lectura.scroll_vertical += 180
+		get_viewport().set_input_as_handled()
 
 func _cerrar():
 	if is_queued_for_deletion():

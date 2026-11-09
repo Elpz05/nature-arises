@@ -81,7 +81,7 @@ const ETAPAS := [
 	{
 		"nombre": "Primeras raíces", "clima": "despejado", "agua": 3,
 		"consejo": "Planta Natura en los cuadros marcados. Elige los que cubren varios tramos y mejora tus árboles cuando se agote el espacio.",
-		"plantas": [1, 2], "ataques": [1], "intervalos": [3.0, 2.8, 2.6, 2.4, 2.2],
+		"plantas": [1, 2], "ataques": [1, 2], "intervalos": [3.0, 2.8, 2.6, 2.4, 2.2],
 		"rondas": [{"natura:pequeno": 4}, {"natura:pequeno": 4, "natura:mediano:divisor": 1},
 			{"natura:pequeno": 2, "natura:pequeno:divisor": 1, "natura:mediano": 2},
 			{"natura:mediano": 2, "natura:mediano:divisor": 1, "natura:grande": 1},
@@ -90,7 +90,7 @@ const ETAPAS := [
 	{
 		"nombre": "Agua y fuego", "clima": "lluvia", "agua": 3,
 		"consejo": "Aqua produce agua en casillas azules. Combina Natura y Flamma: las bestias Aqua son inmunes al fuego.",
-		"plantas": [3], "ataques": [2, 3], "intervalos": [3.0, 2.8, 2.5, 2.3, 2.1],
+		"plantas": [3], "ataques": [3], "intervalos": [3.0, 2.8, 2.5, 2.3, 2.1],
 		"rondas": [{"natura:pequeno": 4, "flamma:pequeno": 2},
 			[{"natura:pequeno": 3, "natura:pequeno:divisor": 1}, {"flamma:pequeno": 2}, {"aqua:pequeno": 2}],
 			[{"natura:mediano": 2}, {"flamma:pequeno": 2, "aqua:pequeno": 2}],

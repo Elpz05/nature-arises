@@ -3,6 +3,7 @@ extends CanvasLayer
 @export var musica_derrota: AudioStream
 
 const ESCENA_SLOTS := "res://escenas/escenas_menu/file_menu.tscn"   # ajusta a tu ruta real
+const INTERFAZ = preload("res://fuentes/interfaz.tres")
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -21,14 +22,8 @@ func _ready() -> void:
 	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(420, 0)
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.25, 0.1, 0.1, 0.95)
-	estilo.border_color = Color(0.8, 0.4, 0.4)
-	estilo.set_border_width_all(3)
-	estilo.set_corner_radius_all(12)
-	estilo.set_content_margin_all(28)
-	panel.add_theme_stylebox_override("panel", estilo)
+	panel.custom_minimum_size = Vector2(500, 0)
+	panel.theme = INTERFAZ
 	centro.add_child(panel)
 
 	var caja := VBoxContainer.new()
@@ -36,9 +31,11 @@ func _ready() -> void:
 	panel.add_child(caja)
 
 	var titulo := Label.new()
+	titulo.theme_type_variation = &"TituloPixel"
+	titulo.add_theme_color_override("font_color", Color("#ffa888"))
 	titulo.text = "¡Has perdido!"
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.add_theme_font_size_override("font_size", 36)
+	titulo.add_theme_font_size_override("font_size", 42)
 	caja.add_child(titulo)
 
 	var reiniciar := _boton("Reiniciar Nivel", _reiniciar)
@@ -49,8 +46,8 @@ func _ready() -> void:
 func _boton(texto: String, accion: Callable) -> Button:
 	var b := Button.new()
 	b.text = texto
-	b.custom_minimum_size = Vector2(260, 56)
-	b.add_theme_font_size_override("font_size", 24)
+	b.custom_minimum_size = Vector2(300, 64)
+	b.add_theme_font_size_override("font_size", 30)
 	b.pressed.connect(accion)
 	return b
 

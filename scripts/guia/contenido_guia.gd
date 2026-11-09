@@ -22,7 +22,7 @@ const LECCIONES := [
 		["Fuego y agua", "Flamma golpea a grupos, pero su fuego no daña a Aqua. Mantén Natura cubriendo la misma ruta. Las bestias Flamma pueden revivir y tomar el atajo naranja."],
 	],
 	[
-		["Puestos de Terra", "Las dos barras marcan puestos de Terra sobre el camino. Pon uno delante de los atacantes para mantener a las bestias dentro de su alcance."],
+		["Bloqueos de Terra", "Planta Terra directamente en un camino seco. Las dos barras señalan puestos recomendados. Pon uno delante de los atacantes para mantener a las bestias dentro de su alcance."],
 		["Armadura y paso libre", "Las bestias Terra pueden bloquear impactos. Prueba fuego concentrado y control. Aqua atraviesa los bloqueos, así que conserva árboles que puedan alcanzarla más adelante."],
 	],
 	[
@@ -31,7 +31,7 @@ const LECCIONES := [
 	],
 	LECCION_VOLCAN,
 	[
-		["Ventisca · cada 10 s", "El frío quita 25 HP y añade un nivel de congelación. Con tres niveles el árbol deja de disparar. Flamma y Glacies resisten la ventisca."],
+		["Ventisca · cada 10 s en ronda", "El frío quita 25 HP y añade un nivel de congelación. Con tres niveles el árbol deja de disparar. Flamma y Glacies resisten la ventisca."],
 		["Calor de Flamma", "Cada 20 s, Flamma reduce un nivel de congelación en sus ocho casillas vecinas y protege de nuevos niveles mientras siga allí. La ventisca aún quita vida. Contra el aura de una bestia Glacies, la protección de Flamma abarca su alcance de ataque."],
 		["Qué probar", "Pon un Flamma junto a un atacante. Mantén a otros árboles a distancia del camino para evitar el aura tóxica de las bestias Venenum."],
 	],
@@ -60,7 +60,7 @@ const USOS_ARBOLES := [
 	"Defensa barata de secano. Aprovecha parcelas que cubran dos tramos y mejora su alcance cuando se agote el espacio.",
 	"Úsalo contra grupos y para proteger a los atacantes del aura de Glacies. Su fuego no daña a Aqua. Resiste géiseres y erupciones.",
 	"Árbol de economía. Planta en casillas azules de lluvia, tormenta o radiación. Fuera del camino está a salvo del contacto. En radiación protege a los cuatro vecinos ortogonales.",
-	"Úsalo para mantener bestias dentro del alcance de otros árboles. En derrumbe, protege su casilla y las de abajo en la misma columna. Aqua pasa de largo.",
+	"Planta directamente en un camino seco para bloquear, o en una parcela seca que toque el camino por un lado. En derrumbe, protege su casilla y las de abajo. Aqua pasa de largo.",
 	"Aprovecha los grupos compactos y las parcelas expuestas a rayos. La lluvia y la tormenta mejoran su daño.",
 	"Colócalo al final de una recta para alcanzar a varias bestias en fila. Glacies resiste el frío y su proyectil puede detener grupos al congelarlos.",
 	"Cubre varios tramos desde lejos. Su coste compensa cuando puede mantener el veneno sobre bestias resistentes. Resiste la radiación.",
@@ -93,13 +93,13 @@ const SIMBOLOS_PODERES := {
 static func como_jugar() -> Array:
 	return [
 		{"titulo": "Primeros pasos", "secciones": [
-			["1. Planta", "Selecciona una semilla y confirma en una parcela válida. El círculo muestra el alcance y se vuelve verde si puedes plantar allí. El Árbol Madre debe sobrevivir hasta que terminen todas las rondas."],
-			["2. Defiende", "Lee la previsión y pulsa Iniciar ronda. Usa poderes contra grupos cuando pasen cerca. Recoge las gotas del pozo en el tablero para seguir plantando."],
-			["3. Refuerza", "Lee el nivel y la barra de vida bajo cada árbol. Selecciónalo para ver su ficha. Pulsa Mejorar junto al árbol o usa la acción Mejorar Árbol. La pala libera la parcela sin devolver el agua."],
+			["1. Planta", "Selecciona una semilla en la barra inferior y confirma en una parcela válida. El círculo muestra el alcance y se vuelve verde si puedes plantar allí. El Árbol Madre debe sobrevivir hasta que terminen todas las rondas."],
+			["2. Defiende", "Los retratos junto a la entrada muestran las bestias de la próxima ronda. Abre Detalles para leer sus amenazas y pulsa Iniciar ronda. Recoge las gotas del pozo para seguir plantando."],
+			["3. Refuerza", "La barra sobre cada árbol muestra su vida. Selecciónalo para ver su nivel y sus estadísticas. Pulsa Mejorar en la ficha o usa la acción Mejorar Árbol. La pala libera la parcela sin devolver el agua."],
 		]},
 		{"titulo": "Terreno y agua", "secciones": [
 			["Parcela seca", "El cuadrado marca una parcela para árboles de secano.", "parcela"],
-			["Puesto de Terra", "Las barras marcan los bloqueos disponibles en el camino.", "puesto_terra"],
+			["Puesto de Terra", "Las barras señalan lugares recomendados para bloquear el camino.", "puesto_terra"],
 			["Poza de Aqua", "Planta Aqua en las casillas con la gota azul.", "gota"],
 			["Pozo", "Guarda hasta cinco gotas durante la ronda. Confirma sobre la gota llena para recoger la reserva.", "gota", true],
 			["Entrada", "La puerta marca el inicio. Las flechas siguen el sentido del camino.", "entrada"],
@@ -108,7 +108,7 @@ static func como_jugar() -> Array:
 		{"titulo": "Combate y controles", "secciones": [
 			["Teclado y mando", "Mueve el cursor del tablero con las acciones de dirección. Usa Confirmar para plantar, seleccionar un árbol o recoger el pozo. Usa Alternar Elemento o Planta y Cambiar Casilla para recorrer la barra. Puedes consultar o reasignar todas las teclas y botones en Ajustes."],
 			["Poderes", "Selecciona un poder y confirma sobre el grupo objetivo. Cada uso gasta una carga aunque no alcance a nadie. Los efectos de daño y de movimiento pueden coexistir."],
-			["Prioridad", "Selecciona un árbol ofensivo. Usa la mira junto a Mejorar o la acción Cambiar Prioridad para alternar entre Cerca de meta y Mayor vida.", "prioridad"],
+			["Prioridad", "Selecciona un árbol ofensivo. Usa el botón Prioridad en su ficha o la acción Cambiar Prioridad para alternar entre Cerca de meta y Mayor vida.", "prioridad"],
 		]},
 		_leyenda("Símbolos de árboles", SIMBOLOS_ARBOLES),
 		_leyenda("Símbolos de bestias", SIMBOLOS_BESTIAS),
@@ -126,7 +126,7 @@ static func bestias() -> Array:
 	for i in ELEMENTOS.size():
 		var tipo: String = ELEMENTOS[i]
 		var datos: Dictionary = BESTIA.STATS[tipo]
-		fichas.append({"titulo": tipo.capitalize(), "secciones": [
+		fichas.append({"titulo": tipo.capitalize(), "especie": tipo, "secciones": [
 			["Qué hace", BESTIAS[i][0]],
 			["Cómo responder", BESTIAS[i][1]],
 			["Datos base · pequeño / mediano / grande", "%s HP · %s casillas/s\nDaño al Árbol Madre: %s\nDaño de contacto contra árboles: %d" % [
@@ -138,11 +138,15 @@ static func arboles() -> Array:
 	var fichas := []
 	for i in HUD.SEMILLAS.size():
 		var datos: Dictionary = HUD.SEMILLAS[i]
-		fichas.append({"titulo": datos.nombre, "secciones": [
+		fichas.append({"titulo": datos.nombre, "especie": ELEMENTOS[i], "secciones": [
 			["Qué hace", datos.rol],
 			["Dónde y cuándo usarlo", USOS_ARBOLES[i]],
 			["Coste en gotas", "Plantar %d · Mejora a nivel 2: %d · Mejora a nivel 3: %d" % datos.costos],
 		]})
+	fichas.append({"titulo": "Árbol Madre", "especie": "madre", "secciones": [
+		["Qué hace", "Es la meta al final del camino. Si pierde toda su vida, termina la partida."],
+		["Cómo protegerlo", "Cubre los últimos tramos con tus defensas y vigila su vida en el tablero y en el HUD."],
+	]})
 	return fichas
 
 static func poderes() -> Array:

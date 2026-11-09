@@ -50,16 +50,16 @@ The key selection loop in `hud.gd` now follows the action names:
 
 ```gdscript
 for i in SEMILLAS.size():
-    if event.is_action_pressed("Casilla Planta %d" % i, false, true):
-        if SEMILLAS_ACTIVAS.has(i) and plantas_disponibles.has(i):
-            semilla_pulsada.emit(i, false)
-        return true
+	if event.is_action_pressed("Casilla Planta %d" % i, false, true):
+		if SEMILLAS_ACTIVAS.has(i) and plantas_disponibles.has(i):
+			semilla_pulsada.emit(i, false)
+		return true
 
 for i in ATAQUES.size():
-    if event.is_action_pressed("Elemento " + ATAQUES[i].nombre, false, true):
-        if ATAQUES_ACTIVOS.has(i) and cargas_mostradas[i] > 0:
-            ataque_pulsado.emit(i, false)
-        return true
+	if event.is_action_pressed("Elemento " + ATAQUES[i].nombre, false, true):
+		if ATAQUES_ACTIVOS.has(i) and cargas_mostradas[i] > 0:
+			ataque_pulsado.emit(i, false)
+		return true
 ```
 
 Plant cycling skips locked and unimplemented scenes. Ability cycling skips locked

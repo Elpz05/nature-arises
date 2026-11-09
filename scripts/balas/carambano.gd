@@ -15,7 +15,7 @@ func _ready():
 func _draw():
 	draw_colored_polygon(PackedVector2Array([Vector2(17, 0), Vector2(-11, -5), Vector2(-6, 0), Vector2(-11, 5)]), color_bala)
 
-func _process(delta: float):
+func _physics_process(delta: float):
 	if impacto or is_queued_for_deletion() or delta <= 0.0:
 		return
 	if direccion == Vector2.ZERO:

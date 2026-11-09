@@ -6,6 +6,15 @@ const INTERVALO_RADIACION := 8.0
 const DANO_RADIACION := 6
 const AVISO_RAYO := 1.2
 const AVISO_DERRUMBE := 2.5
+const MINIMO_VISIBLE := {"geiser": 1.5, "erupcion": 2.0, "rayo": 1.2, "derrumbe": 2.5, "ventisca": 2.0, "radiacion": 1.5}
+const NOMBRES_AVISO := {"geiser": "Géiser", "erupcion": "Erupción", "rayo": "Rayo", "derrumbe": "Derrumbe", "ventisca": "Ventisca", "radiacion": "Radiación"}
+const EFECTOS := {
+	"ventisca": preload("res://escenas/escenas_efectos/nieve.tscn"),
+	"geiser": preload("res://escenas/escenas_efectos/vapor.tscn"),
+	"erupcion": preload("res://escenas/escenas_efectos/brasas.tscn"),
+	"ceniza": preload("res://escenas/escenas_efectos/ceniza.tscn"),
+}
+const LIMITE_PARTICULAS := 256
 
 var nivel
 var tiempo := 0.0
@@ -13,6 +22,8 @@ var intervalos: Dictionary = {}
 var proximos: Dictionary = {}
 var anticipaciones: Dictionary = {}
 var avisos: Dictionary = {}
+var particulas: Array[CPUParticles2D] = []
+var _ultimo_reloj := -1.0
 var calor_activo := false
 var ultimo_evento := ""
 var conteos: Dictionary = {}
@@ -59,9 +70,12 @@ func _ready():
 			intervalos = {"aviso_derrumbe": 15.0}
 			anticipaciones["derrumbe"] = AVISO_DERRUMBE
 		"radiacion": intervalos = {"radiacion": INTERVALO_RADIACION}
-	proximos = intervalos.duplicate()
-	for tipo in anticipaciones:
-		proximos["aviso_" + tipo] -= anticipaciones[tipo]
+	for tipo in MINIMO_VISIBLE:
+		if not anticipaciones.has(tipo):
+			anticipaciones[tipo] = MINIMO_VISIBLE[tipo]
+	for evento in intervalos:
+		var tipo: String = evento.trim_prefix("aviso_")
+		proximos[evento] = intervalos[evento] - (anticipaciones[tipo] if MINIMO_VISIBLE.has(tipo) else 0.0)
 	ultimo_evento = {"tormenta": "Rayos: intensidad " + nivel.intensidad_tormenta, "volcan": "Géiser: 10 s | Erupción: 25 s", "ventisca": "Ventisca: 10 s | Calor: 20 s", "derrumbe": "Caída de roca cada 15 s", "radiacion": "Radiación: -6 HP cada 8 s en ronda. Aqua protege sus vecinas; Venenum es inmune."}.get(nivel.clima, "Sin peligros climáticos")
 	nivel.hud.actualizar_evento_clima(ultimo_evento)
 	queue_redraw()
@@ -82,12 +96,7 @@ func _indice_aleatorio(cantidad: int) -> int:
 	return randi_range(0, cantidad - 1)
 
 func actualizar(delta: float):
-	if not nivel._puede_jugar() or delta < 0.0:
-		return
-	if nivel.clima == "radiacion" and not nivel.ronda_activa:
-		if not visuales.is_empty():
-			_avanzar(delta)
-			queue_redraw()
+	if not nivel._puede_jugar() or not nivel.ronda_activa or delta < 0.0:
 		return
 	actualizar_proteccion()
 	var destino := tiempo + delta
@@ -102,48 +111,129 @@ func actualizar(delta: float):
 			break
 		_avanzar(maxf(0.0, siguiente - tiempo))
 		tiempo = siguiente
-		if intervalos.has(evento):
-			proximos[evento] += intervalos[evento]
+		proximos.erase(evento)
+		if evento == "calor":
+			proximos[evento] = tiempo + intervalos[evento]
+			calor_activo = true
+			actualizar_proteccion(true)
+			_registrar("Calor de Flamma: deshielo y protección", "calor")
 		else:
-			proximos.erase(evento)
-		match evento:
-			"aviso_rayo":
-				if _azar() < RAYOS[nivel.intensidad_tormenta].probabilidad:
-					_avisar("rayo", _celda_aleatoria())
-			"rayo":
-				var celda: Vector2i = avisos["rayo"]
-				avisos.erase("rayo")
-				rayo_en(celda)
-			"geiser": emitir_geiseres()
-			"erupcion": erupcion()
-			"calor":
-				calor_activo = true
-				actualizar_proteccion(true)
-				_registrar("Calor de Flamma: deshielo y protección", "calor")
-			"ventisca": barrer_ventisca()
-			"aviso_derrumbe":
-				_avisar("derrumbe", Vector2i(_columna_aleatoria(), nivel.FILAS_BLOQUEADAS))
-			"derrumbe":
-				var celda: Vector2i = avisos["derrumbe"]
-				avisos.erase("derrumbe")
-				derrumbe_en(celda.x)
-			"radiacion": radiacion()
-		actualizar_proteccion()
+			_anunciar(evento)
 	_avanzar(maxf(0.0, destino - tiempo))
 	tiempo = destino
+	for tipo in avisos.keys():
+		var aviso: Dictionary = avisos[tipo]
+		if aviso.presentado and tiempo + 0.000001 >= aviso.impacto and aviso.visible + 0.000001 >= MINIMO_VISIBLE[tipo]:
+			_resolver_aviso(tipo, aviso)
 	queue_redraw()
 
-func _avisar(tipo: String, celda: Vector2i):
-	avisos[tipo] = celda
-	proximos[tipo] = tiempo + anticipaciones[tipo]
-	ultimo_evento = "Aviso de rayo · Electricitas resiste" if tipo == "rayo" else "Aviso de derrumbe · Terra protege lo que queda debajo"
-	nivel.hud.actualizar_evento_clima(ultimo_evento)
+func _anunciar(evento: String):
+	var tipo := evento.trim_prefix("aviso_")
+	var celda := Vector2i(-1, -1)
+	var objetivo := 0
+	match tipo:
+		"rayo":
+			if _azar() >= RAYOS[nivel.intensidad_tormenta].probabilidad:
+				proximos[evento] = tiempo + intervalos[evento]
+				return
+			celda = _celda_aleatoria()
+		"derrumbe":
+			celda = Vector2i(_columna_aleatoria(), nivel.FILAS_BLOQUEADAS)
+		"erupcion":
+			var arboles := _arboles()
+			if arboles.is_empty():
+				proximos[evento] = tiempo + intervalos[evento]
+				return
+			var arbol: Node2D = arboles[_indice_aleatorio(arboles.size())]
+			objetivo = arbol.get_instance_id()
+			celda = nivel.suelo.local_to_map(nivel.suelo.to_local(arbol.global_position))
+	avisos[tipo] = {"evento": evento, "celda": celda, "objetivo": objetivo, "impacto": tiempo + anticipaciones[tipo], "visible": 0.0, "presentado": false}
+
+func _resolver_aviso(tipo: String, aviso: Dictionary):
+	avisos.erase(tipo)
+	proximos[aviso.evento] = tiempo + intervalos[aviso.evento] - anticipaciones[tipo]
+	match tipo:
+		"rayo": rayo_en(aviso.celda)
+		"derrumbe": derrumbe_en(aviso.celda.x)
+		"geiser": emitir_geiseres()
+		"erupcion":
+			var arbol = nivel.arboles_plantados.get(aviso.celda)
+			if is_instance_valid(arbol) and not arbol.is_queued_for_deletion() and arbol.get_instance_id() == aviso.objetivo:
+				_impactar_erupcion(arbol, aviso.celda)
+				_emitir_particulas(tipo, aviso.celda)
+				_emitir_particulas("ceniza", aviso.celda)
+		"ventisca": barrer_ventisca()
+		"radiacion": radiacion()
+	if tipo != "erupcion":
+		_emitir_particulas(tipo, aviso.celda)
+
+func _process(_delta: float):
+	var ahora := Time.get_ticks_usec() / 1000000.0
+	var real := 0.0 if _ultimo_reloj < 0.0 else ahora - _ultimo_reloj
+	_ultimo_reloj = ahora
+	presentar_avisos(real)
+
+func presentar_avisos(delta_real: float):
+	if not nivel._puede_jugar() or not nivel.ronda_activa:
+		return
+	var textos := PackedStringArray()
+	for tipo in avisos:
+		var aviso: Dictionary = avisos[tipo]
+		if aviso.presentado:
+			aviso.visible += delta_real
+		else:
+			aviso.presentado = true
+			_emitir_particulas("ceniza" if tipo == "erupcion" else tipo, aviso.celda)
+		textos.append("%s %.1f s" % [NOMBRES_AVISO[tipo], _restante(tipo, aviso)])
+	for emisor in particulas:
+		emisor.speed_scale = 1.0 / Engine.time_scale
+	nivel.hud.mostrar_avisos_clima("  ·  ".join(textos))
+
+func _restante(tipo: String, aviso: Dictionary) -> float:
+	return maxf(0.0, maxf(MINIMO_VISIBLE[tipo] - aviso.visible, (aviso.impacto - tiempo) / Engine.time_scale))
+
+func ocultar_avisos(reiniciar: bool):
+	_ultimo_reloj = -1.0
+	if reiniciar:
+		for aviso in avisos.values():
+			aviso.visible = 0.0
+			aviso.presentado = false
+	for emisor in particulas:
+		emisor.queue_free()
+	particulas.clear()
+	visuales.clear()
+	nivel.hud.mostrar_avisos_clima("")
+	queue_redraw()
 
 func cancelar_avisos():
-	for tipo in avisos:
-		proximos.erase(tipo)
 	avisos.clear()
-	queue_redraw()
+	ocultar_avisos(false)
+
+func _emitir_particulas(tipo: String, celda: Vector2i):
+	if not EFECTOS.has(tipo) or DisplayServer.get_name() == "headless":
+		return
+	var centros: Array = nivel.celdas_geiser if tipo == "geiser" else [celda]
+	for centro: Vector2i in centros:
+		var emisor := (EFECTOS[tipo] as PackedScene).instantiate() as CPUParticles2D
+		var usadas := 0
+		for activo in particulas:
+			usadas += activo.amount
+		if usadas + emisor.amount > LIMITE_PARTICULAS:
+			emisor.free()
+			break
+		if tipo == "ventisca":
+			emisor.emission_rect_extents = Vector2(nivel.ANCHO, nivel.ALTO - nivel.FILAS_BLOQUEADAS) * 32.0
+			emisor.position = _punto(Vector2i(0, nivel.FILAS_BLOQUEADAS)) - Vector2.ONE * 32.0 + emisor.emission_rect_extents
+		else:
+			emisor.position = _punto(centro)
+		emisor.speed_scale = 1.0 / Engine.time_scale
+		particulas.append(emisor)
+		emisor.finished.connect(func():
+			particulas.erase(emisor)
+			emisor.queue_free()
+		)
+		add_child(emisor)
+		emisor.emitting = true
 
 func _avanzar(delta: float):
 	for arbol in _arboles():
@@ -184,6 +274,9 @@ func erupcion():
 		return
 	var arbol = arboles[_indice_aleatorio(arboles.size())]
 	var celda: Vector2i = nivel.suelo.local_to_map(nivel.suelo.to_local(arbol.global_position))
+	_impactar_erupcion(arbol, celda)
+
+func _impactar_erupcion(arbol, celda: Vector2i):
 	if arbol.elemento != "flamma":
 		arbol.recibir_dano(arbol.vida)
 	_registrar("Erupción: Flamma resistió" if arbol.elemento == "flamma" else "Erupción: árbol destruido", "erupcion", celda)
@@ -290,8 +383,9 @@ func _draw():
 				var fin_y: float = minf(tablero.end.y, punto.y)
 				draw_rect(Rect2(Vector2(punto.x - 30.0, tablero.position.y), Vector2(60.0, maxf(0.0, fin_y - tablero.position.y))), Color(0.6, 0.5, 0.35, alpha * 0.4))
 				draw_circle(Vector2(punto.x, fin_y - 25.0), 25.0, Color(0.45, 0.4, 0.3, alpha))
-	for tipo in avisos:
-		_dibujar_aviso(tipo, avisos[tipo], tablero)
+	if nivel.ronda_activa and nivel._puede_jugar():
+		for tipo in avisos:
+			_dibujar_aviso(tipo, avisos[tipo], tablero)
 
 func _area_geiser(punto: Vector2, tablero: Rect2) -> Rect2:
 	var lado: Vector2 = Vector2.ONE * nivel.TAM_CELDA * 3.0
@@ -304,28 +398,26 @@ func _dibujar_geiser(punto: Vector2, tablero: Rect2):
 	draw_rect(area, Color(naranja, 0.7), false, 3.0)
 	draw_circle(punto, 23.0, Color(0.3, 0.16, 0.08))
 	draw_circle(punto, 13.0, Color(1, 0.4, 0.1))
-	var texto := "Géiser · %d s" % ceili(maxf(0.0, proximos["geiser"] - tiempo))
-	var fuente := ThemeDB.fallback_font
-	var ancho := fuente.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-	var x := clampf(punto.x - ancho / 2.0, tablero.position.x + 6.0, tablero.end.x - ancho - 6.0)
-	var posicion := Vector2(x, punto.y + 43.0)
-	draw_string_outline(fuente, posicion, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 4, Color.BLACK)
-	draw_string(fuente, posicion, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, naranja)
+func _dibujar_aviso(tipo: String, aviso: Dictionary, tablero: Rect2):
+	var color := Color("#ffdb62")
+	if tipo == "ventisca":
+		color = Color("#a8ebff")
+	elif tipo == "radiacion":
+		color = Color("#adf488")
+	elif tipo in ["geiser", "erupcion", "derrumbe"]:
+		color = Color("#ffa464")
+	if tipo == "geiser":
+		for celda in nivel.celdas_geiser:
+			_marcar_aviso(_area_geiser(_punto(celda), tablero), color)
+		return
+	var area := tablero
+	if tipo not in ["ventisca", "radiacion"]:
+		var centro := _punto(aviso.celda)
+		area = Rect2(centro - Vector2.ONE * 32.0, Vector2.ONE * 64.0)
+		if tipo == "derrumbe":
+			area.size.y = tablero.size.y
+	_marcar_aviso(area, color)
 
-func _dibujar_aviso(tipo: String, celda: Vector2i, tablero: Rect2):
-	var centro := _punto(celda)
-	var es_rayo := tipo == "rayo"
-	var area := Rect2(centro - Vector2.ONE * 32.0, Vector2.ONE * 64.0)
-	if not es_rayo:
-		area.size.y = tablero.size.y
-	var color := Color(1.0, 0.86, 0.3) if es_rayo else Color(1.0, 0.54, 0.27)
-	var restante := maxf(0.0, proximos[tipo] - tiempo)
-	draw_rect(area.grow(-2.0), Color(color, 0.26))
-	draw_rect(area.grow(-2.0), color, false, 4.0)
-	var texto := ("RAYO %.1f s · Electricitas resiste" if es_rayo else "ROCA %.1f s · Terra protege") % restante
-	var fuente := ThemeDB.fallback_font
-	var ancho := fuente.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-	var x := clampf(centro.x - ancho / 2.0, tablero.position.x + 10.0, tablero.end.x - ancho - 10.0)
-	var y := minf(area.end.y + 22.0, tablero.end.y - 10.0) if es_rayo else tablero.position.y + 24.0
-	draw_string_outline(fuente, Vector2(x, y), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color.BLACK)
-	draw_string(fuente, Vector2(x, y), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, color)
+func _marcar_aviso(area: Rect2, color: Color):
+	draw_rect(area.grow(-2.0), Color(color, 0.18))
+	draw_rect(area.grow(-2.0), color, false, 5.0)

@@ -63,7 +63,7 @@ func _run():
 		for progress in [160.0, 144.0, 128.0, 112.0, 96.0, 80.0]:
 			enemies.append(_enemy(level, "aqua", progress))
 		var bullet = _icicle(level, enemies, cap)
-		bullet._process(1.0)
+		bullet._physics_process(1.0)
 		var hit := 0
 		for enemy in enemies:
 			if enemy.congelacion_restante > 0.0:
@@ -71,7 +71,7 @@ func _run():
 				_check(is_equal_approx(enemy.vida, 497.8), "Aqua receives exactly 2.2 fractional damage")
 		_check(hit == cap and bullet.is_queued_for_deletion(), "A long frame hits at most the size-specific limit")
 		_check(enemies[5].congelacion_restante == 2.0 and enemies[0].congelacion_restante == 0.0, "The nearest intersections are hit first")
-		bullet._process(1.0)
+		bullet._physics_process(1.0)
 		_check(is_equal_approx(enemies[5].vida, 497.8), "Queued icicles cannot hit twice")
 		for enemy in enemies:
 			enemy.get_parent().queue_free()
@@ -81,11 +81,11 @@ func _run():
 	var off_line = _enemy(level, "aqua", 80.0)
 	off_line.position.y += 40.0
 	var shot = _icicle(level, [near], 3)
-	shot._process(0.21)
+	shot._physics_process(0.21)
 	_check(is_equal_approx(near.vida, 497.8) and off_line.vida == 500.0, "Icicles penetrate a line rather than an explosion")
-	shot._process(0.01)
+	shot._physics_process(0.01)
 	_check(is_equal_approx(near.vida, 497.8), "One icicle never hits the same enemy in consecutive segments")
-	shot._process(5.0)
+	shot._physics_process(5.0)
 	_check(shot.is_queued_for_deletion(), "Icicles expire at their maximum travel range")
 	var before: float = near.get_parent().progress
 	near._physics_process(1.0)
@@ -132,7 +132,7 @@ func _run():
 	var actual = level.arboles.get_child(level.arboles.get_child_count() - 1)
 	actual.set_process(false)
 	_check(actual.objetivo == target and actual.maximo_objetivos == 5 and actual.duracion_congelacion == 2.0, "Tower emits a size-configured icicle")
-	actual._process(1.0)
+	actual._physics_process(1.0)
 	_check(target.congelacion_restante == 2.0, "A tower-fired icicle freezes its target on impact")
 	level._quitar_arbol(cell)
 	_check(level.gotas == 0 and not level.arboles_plantados.has(cell), "Glacies shovel does not refund water")

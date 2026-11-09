@@ -61,7 +61,7 @@ func _run():
 			_check(level._ruta_para_tipo("flamma") != level.ruta, "Flamma must use its level-specific shortcut")
 			_check(level._bestias_en_camino() == 1 and level.ruta.get_child_count() == 0, "Enemy count must include alternate paths")
 			level.ronda_activa = true
-			level._process(0.0)
+			level._actualizar_spawn(0.0)
 			_check(level.ronda == 1 and level.ronda_activa, "A shortcut enemy must prevent premature wave completion")
 			level.ronda_activa = false
 			_clear_enemies(level)
@@ -97,13 +97,13 @@ func _run():
 			var expected: int = level._plan_de_ronda(wave, false).size()
 			var spawned := 0
 			while not level.cola_bestias.is_empty():
-				level._process(3.0)
+				level._actualizar_spawn(level._intervalo_spawn())
 				spawned += level._bestias_en_camino()
 				_check(level.ronda == wave and not level.terminado, "Wave must wait for spawned enemies")
 				_clear_enemies(level)
 			_check(spawned == expected, "Wave recipes must preserve enemy counts in level %d wave %d" % [index, wave])
 			var saldo: int = level.gotas
-			level._process(0.0)
+			level._actualizar_spawn(0.0)
 			_check(level.gotas == saldo + (2 if wave < 5 else 0), "A non-final clear credits two drops directly, and the final wave ends the level")
 			if wave < 5:
 				_check(level.ronda == wave + 1 and not level.ronda_activa, "Cleared waves must advance and wait for the next trigger")

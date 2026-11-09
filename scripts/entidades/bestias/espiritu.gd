@@ -47,6 +47,8 @@ var muerto := false
 var detenido := 0.0
 var renacio := false
 var clima := "despejado"
+var factor_vida_ronda := 1.0
+var factor_velocidad_ronda := 1.0
 var bono_ventus := 0.0
 var escala_sprite_base := Vector2.ONE
 var factor_lentitud := 1.0
@@ -136,9 +138,9 @@ func _ready():
 	add_to_group("bestias")
 	var datos: Dictionary = STATS[tipo]
 	var entorno = preload("res://scripts/nivel/clima.gd")
-	vida = roundi(datos["vida"][tamano] * entorno.factor_vida_bestia(clima, tipo))
+	vida = roundi(datos["vida"][tamano] * entorno.factor_vida_bestia(clima, tipo) * factor_vida_ronda)
 	vida_maxima = vida
-	velocidad = datos["vel"] * TAMANO_CELDA * entorno.factor_velocidad_bestia(clima, tipo)
+	velocidad = datos["vel"] * TAMANO_CELDA * entorno.factor_velocidad_bestia(clima, tipo) * factor_velocidad_ronda
 	escala_sprite_base = sprite.scale
 	rotacion_sprite_base = sprite.rotation
 	_aplicar_sprite()
@@ -208,12 +210,9 @@ func _draw():
 		draw_arc(Vector2.ZERO, radio, 0.0, TAU, 32, EfectoElemental.COLORES[efecto_movimiento.elemento], 2.0, true)
 	if not efecto_dano.elemento.is_empty():
 		draw_arc(Vector2.ZERO, radio + 4.0, 0.0, TAU, 32, EfectoElemental.COLORES[efecto_dano.elemento], 2.0, true)
-	var y: float = -colision.shape.radius * colision.scale.y - 14.0
-	var fondo := Rect2(-24.0, y, 48.0, 7.0)
-	draw_rect(fondo.grow(1.0), Color(0.05, 0.05, 0.05, 0.95))
-	draw_rect(fondo, Color(0.45, 0.1, 0.1))
-	draw_rect(Rect2(fondo.position, Vector2(48.0 * obtener_porcentaje_vida(), 7.0)), Color(0.2, 0.9, 0.35))
-	ICONOS.dibujar_fila(self, obtener_iconos_combate(), Vector2(0, y - 11), 104.0)
+	var y: float = -colision.shape.radius * colision.scale.y - 11.0
+	ICONOS.dibujar_vida(self, Vector2(0, y), 38.0, obtener_porcentaje_vida())
+	ICONOS.dibujar_fila(self, obtener_iconos_combate(), Vector2(0, y - 13), 76.0)
 
 func _aplicar_sprite():
 	var texturas := {

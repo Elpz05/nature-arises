@@ -279,17 +279,9 @@ func obtener_iconos_combate() -> Array[String]:
 func _dibujar_indicadores():
 	if vida <= 0:
 		return
-	# Dentro de la casilla, también cuando el arte crece con el árbol.
-	var barra := Rect2(-11, 20, 39, 8)
-	var proporcion := clampf(float(vida) / vida_maxima, 0.0, 1.0)
-	indicadores.draw_rect(Rect2(-30, 15, 60, 19), Color("#102019"))
-	indicadores.draw_rect(barra, Color("#52363a"))
-	var color := Color("#94e76b") if proporcion > 0.5 else Color("#ffbb65")
-	if proporcion <= 0.25:
-		color = Color("#fa866e")
-	indicadores.draw_rect(Rect2(barra.position, Vector2(barra.size.x * proporcion, barra.size.y)), color)
-	indicadores.draw_string(ThemeDB.fallback_font, Vector2(-26, 30), str(obtener_nivel()), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color.WHITE)
-	ICONOS.dibujar_fila(indicadores, obtener_iconos_combate(), Vector2(0, -22), 62.0, nivel_congelacion)
+	var y: float = -34.0 * ESCALA[tamano]
+	ICONOS.dibujar_vida(indicadores, Vector2(0, y), 36.0, float(vida) / vida_maxima)
+	ICONOS.dibujar_fila(indicadores, obtener_iconos_combate(), Vector2(0, y - 14), 62.0, nivel_congelacion)
 
 func obtener_nivel() -> int:
 	return NIVEL_POR_TAMANO[tamano]
@@ -411,7 +403,9 @@ func _actualizar_sprite():
 		sprite.scale = escala_base
 		sprite.play(anim)
 	else:
-		# Respaldo: la animación "idle" agrandada
+		# Respaldo: el sprite pequeño a la escala de este tamaño
 		sprite.scale = escala_base * ESCALA[tamano]
-		if sprite.sprite_frames.has_animation("idle"):
+		if sprite.sprite_frames.has_animation("idle_pequeno"):
+			sprite.play("idle_pequeno")
+		elif sprite.sprite_frames.has_animation("idle"):
 			sprite.play("idle")

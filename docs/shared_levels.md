@@ -68,8 +68,8 @@ For each shortcut, supply the enemy type, entry and exit waypoints, and a marker
 
 ```gdscript
 rutas_adicionales = [
-    {"tipo": "flamma", "tramo": [Vector2i(26, 7), Vector2i(26, 13)],
-        "salidas": [Vector2i(26, 10)], "color": Color.ORANGE},
+	{"tipo": "flamma", "tramo": [Vector2i(26, 7), Vector2i(26, 13)],
+		"salidas": [Vector2i(26, 10)], "color": Color.ORANGE},
 ]
 ```
 

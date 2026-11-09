@@ -3,7 +3,7 @@ extends SceneTree
 # Real combat with legal purchases and earned tools. Comparison modes can omit
 # towers or restore the old three-second cooldown in a temporary HUD instance.
 const CAMPAIGN = preload("res://scripts/nivel/campana.gd")
-const STEP := 8.0 / 240.0
+const STEP := 1.0 / 60.0
 var failures := 0
 var results: Array = []
 var run_seed := 20261102
@@ -12,6 +12,9 @@ var accept_challenges := false
 var spells_only := false
 var towers_only := false
 var fast_recharge := false
+var baseline := false
+var speed := 1.0
+var report_tag := ""
 
 func _initialize():
 	call_deferred("_run")
@@ -122,17 +125,28 @@ func _run():
 		if argument == "--spells-only": spells_only = true
 		if argument == "--towers-only": towers_only = true
 		if argument == "--fast-recharge": fast_recharge = true
+		if argument == "--baseline": baseline = true
+		if argument.begins_with("--report-tag="): report_tag = argument.trim_prefix("--report-tag=").validate_filename()
+		if argument.begins_with("--speed="):
+			var requested := argument.trim_prefix("--speed=").to_float()
+			if requested in [1.0, 2.0, 4.0, 8.0]:
+				speed = requested
 	last = clampi(last, first, 7)
 	var save = root.get_node("Guardado")
 	var previous_slot: int = save.slot_actual
 	var previous_scale := Engine.time_scale
 	var previous_ticks := Engine.physics_ticks_per_second
+	var previous_steps := Engine.max_physics_steps_per_frame
+	var previous_codice: ConfigFile = save._codice
+	save._codice = ConfigFile.new()
+	save._codice.set_value("progreso", "bestias", ["natura", "flamma", "aqua", "terra", "electricitas", "glacies", "venenum"])
+	var previous_path: String = save._ruta_codice
+	save._ruta_codice = OS.get_environment("TEMP").path_join("nature-sim-%d.cfg" % OS.get_process_id())
 	save.slot_actual = -1
-	Engine.time_scale = 8.0
-	Engine.physics_ticks_per_second = 240
 	for index in range(first, last + 1):
 		seed(run_seed + index)
 		var level = load(CAMPAIGN.ESCENAS[index]).instantiate()
+		level.ajustes_campana_activos = not baseline
 		if fast_recharge:
 			level.hud_escena = _hud_con_recarga_rapida(level.hud_escena)
 			if level.hud_escena == null:
@@ -141,6 +155,8 @@ func _run():
 				quit(1)
 				return
 		root.add_child(level)
+		level._aplicar_tiempo(speed)
+		level.gestor_clima.set_process(false)
 		if not level.inicializado:
 			push_error("Campaign level %d failed to initialize" % (index + 1))
 			quit(1)
@@ -176,6 +192,7 @@ func _run():
 					level._iniciar_ronda()
 				decision = 0.5
 			await physics_frame
+			level.gestor_clima.presentar_avisos(STEP / speed)
 			elapsed += STEP
 			decision -= STEP
 		metrics.won = level.terminado and level.arbol_meta.vida > 0
@@ -195,8 +212,12 @@ func _run():
 		level.free()
 		await process_frame
 	save.slot_actual = previous_slot
+	DirAccess.remove_absolute(save._ruta_codice)
+	save._ruta_codice = previous_path
+	save._codice = previous_codice
 	Engine.time_scale = previous_scale
 	Engine.physics_ticks_per_second = previous_ticks
+	Engine.max_physics_steps_per_frame = previous_steps
 	var suffix := "_without_defense" if without_defense else ""
 	if spells_only:
 		suffix += "_spells_only"
@@ -206,6 +227,11 @@ func _run():
 		suffix += "_fast_recharge"
 	if accept_challenges:
 		suffix += "_challenge"
+	if baseline:
+		suffix += "_baseline"
+	suffix += "_%d-%d_%dx" % [first, last, int(speed)]
+	if not report_tag.is_empty():
+		suffix += "_" + report_tag
 	var report = FileAccess.open("res://.godot/campaign_combat_%d%s.json" % [run_seed, suffix], FileAccess.WRITE)
 	if report != null: report.store_string(JSON.stringify(results, "\t"))
 	print("Campaign combat simulation: %s" % ("PASS" if failures == 0 else "%d FAILED" % failures))

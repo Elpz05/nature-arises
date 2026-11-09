@@ -1,3 +1,4 @@
+
 extends "res://scripts/nivel/nivel_base.gd"
 
 const CELDA_ARBOL_MADRE := Vector2i(1, 15)

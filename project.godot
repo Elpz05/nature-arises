@@ -229,6 +229,18 @@ Pala={
 "events": [Object(InputEventKey,"device":-1,"physical_keycode":77), Object(InputEventJoypadMotion,"device":-1,"axis":5,"axis_value":1.0)
 ]
 }
+"Detalles de Ronda"={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"device":-1,"physical_keycode":4194306)]
+}
+"Abrir Codice"={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"device":-1,"physical_keycode":73)]
+}
+"Cambiar Velocidad"={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"device":-1,"physical_keycode":86)]
+}
 [physics]
 
 3d/physics_engine="Jolt Physics"

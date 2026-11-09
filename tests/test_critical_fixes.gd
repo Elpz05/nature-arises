@@ -71,7 +71,7 @@ func _run():
 		_check(copy.tipo == "natura" and copy.tamano == "mediano", "Copy must preserve type and size")
 		_check(is_equal_approx(copy.get_parent().progress, 128.0), "Copy must preserve path progress")
 		level._iniciar_ronda()
-		level._process(0.01)
+		level._actualizar_spawn(0.01)
 		_check(level._bestias_en_camino() == 3, "Wave spawning must use the standardized signature")
 		level.free()
 
@@ -82,7 +82,7 @@ func _run():
 	bullet.objetivo = target
 	bullet.dano = 20
 	root.add_child(bullet)
-	bullet._process(0.5)
+	bullet._physics_process(0.5)
 	_check(bullet.global_position == target.global_position, "Large movement steps must stop at the target")
 	_check(target.damage_taken == 20 and bullet.is_queued_for_deletion(), "Projectile must damage once and queue deletion")
 	await process_frame

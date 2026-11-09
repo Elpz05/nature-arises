@@ -13,3 +13,7 @@ texture_filter = 1
 [node name="RutaEspiritu" type="Path2D" parent="."]
 
 [node name="Arboles" type="Node2D" parent="."]
+
+[node name="CamaraTablero" type="Camera2D" parent="."]
+position = Vector2(960, 685)
+zoom = Vector2(0.9, 0.9)

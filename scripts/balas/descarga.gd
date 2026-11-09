@@ -16,7 +16,7 @@ func _valido(bestia) -> bool:
 		and not bestia.is_queued_for_deletion() and not bestia.muerto \
 		and not bestia.get_parent().is_queued_for_deletion()
 
-func _process(delta: float):
+func _physics_process(delta: float):
 	if is_queued_for_deletion():
 		return
 	if not impacto:

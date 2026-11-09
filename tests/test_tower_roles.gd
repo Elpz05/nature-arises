@@ -60,10 +60,10 @@ func _run():
 		fire.enemigos_en_rango = [target]
 		fire._disparar()
 		var fire_bullet = level.arboles.get_child(level.arboles.get_child_count() - 1)
-		fire_bullet._process(2.0)
+		fire_bullet._physics_process(2.0)
 		_check(target.vida == 468 and nearby.vida == 468, "Flamma must splash both nearby enemies exactly once")
 		_check(distant.vida == 500, "Flamma must not damage enemies outside its splash radius")
-		fire_bullet._process(2.0)
+		fire_bullet._physics_process(2.0)
 		_check(target.vida == 468, "Queued projectiles must not hit twice")
 		var child_count: int = level.arboles.get_child_count()
 		water._disparar()

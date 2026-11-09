@@ -31,6 +31,10 @@ func _on_guia_pressed() -> void:
 
 func _input(event: InputEvent) -> void:
 	if visible:
+		if event.is_action_pressed("Abrir Codice", false, true):
+			get_viewport().set_input_as_handled()
+			_on_guia_pressed()
+			return
 		UIInputManager.manejar_input(event, get_viewport(), boton_jugar)
 
 func _unhandled_input(event: InputEvent) -> void:

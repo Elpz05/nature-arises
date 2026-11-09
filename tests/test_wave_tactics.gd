@@ -45,11 +45,13 @@ func _check_challenge():
 	await process_frame
 	await process_frame
 	var hud = level.hud
-	_check(hud.panel_preparacion.visible and not hud.panel_combate.visible, "The briefing is visible in the normal HUD")
+	_check(hud.previa_ronda.visible and not hud.panel_ola.visible, "Enemy portraits are visible while wave details stay collapsed")
 	_check(hud.label_amenazas.text.contains("Aqua ×4: atraviesa Terra") and hud.label_amenazas.text.contains("Terra ×2"), "The briefing identifies the actual major threats")
 	_check(hud.label_preparacion.text.contains("6 bestias") and hud.label_preparacion.text.contains("+2 gotas al superar") and hud.label_preparacion.text.contains("+3 gotas extra") and hud.label_preparacion.text.contains("Aqua mediano ×1"), "The briefing previews the normal reward, extra reward and exact reinforcements")
-	_check(hud.panel_preparacion.get_global_rect().end.y <= 192.0 and hud.barra.get_global_rect().end.y <= hud.panel_estado.position.y, "The new UI fits in the reserved rows")
-	_check(hud.label_tipos_ola.visible and hud.label_tipos_ola.text.contains("Aqua ×4") and hud.label_tipos_ola.text.contains("Terra ×2"), "Type counts appear next to the start button")
+	var panel: Rect2 = hud.previa_ronda.get_global_rect()
+	_check(root.get_visible_rect().encloses(panel) and not panel.intersects(hud.barra.get_global_rect()), "The spawn preview fits without covering the hotbar")
+	var fichas: Array = hud._fila_retratos.get_children()
+	_check(fichas.size() == 2 and fichas[0].tooltip_text == "Aqua ×4" and fichas[1].tooltip_text == "Terra ×2", "Portrait badges use the real enemy counts")
 	_check(not level.desafio_elegido, "Each challenge defaults to off")
 	_click(hud.boton_desafio.get_global_rect().get_center())
 	_check(level.desafio_elegido and hud.label_preparacion.text.contains("8 bestias"), "The mouse button previews the selected challenge roster")
@@ -63,13 +65,13 @@ func _check_challenge():
 	_check(level.desafio_elegido, "A new controller trigger press toggles again")
 	var money: int = level.gotas
 	_click(hud.boton_ronda.get_global_rect().get_center())
-	_check(level.ronda_activa and not hud.panel_preparacion.visible and not hud.boton_desafio.visible, "Starting locks the variant and hides preparation")
+	_check(level.ronda_activa and not hud.previa_ronda.visible and not hud.boton_desafio.visible, "Starting locks the variant and hides preparation")
 	level._alternar_desafio()
 	level._terminar_ronda()
 	_check(level.desafio_elegido and level.gotas == money and level.ronda == 3, "A running challenge cannot change or pay out early")
 	var spawned := PackedStringArray()
 	while not level.cola_bestias.is_empty():
-		level._process(level.intervalos_spawn[2])
+		level._actualizar_spawn(0.0 if spawned.is_empty() else level._intervalo_spawn())
 		var enemies: Array = level._bestias_vivas()
 		var enemy = enemies[-1]
 		spawned.append(enemy.tipo + ":" + enemy.tamano)
@@ -79,7 +81,7 @@ func _check_challenge():
 	level._terminar_ronda()
 	_check(level.gotas == money, "The reward waits for the final live enemy")
 	level._bestias_vivas()[0].get_parent().free()
-	level._process(0.0)
+	level._actualizar_spawn(0.0)
 	level._terminar_ronda()
 	_check(level.ronda == 4 and level.gotas == money + 5 and not level.desafio_elegido and hud.label_preparacion.text.contains("Desafío superado"), "A cleared challenge credits two regular drops plus three bonus drops exactly once")
 	level.free()
@@ -121,7 +123,10 @@ func _check_priority():
 	if shot != tower:
 		shot.free()
 	var money: int = level.gotas
-	_pad(JOY_BUTTON_RIGHT_STICK)
+	var sin_torre := InputEventKey.new()
+	sin_torre.physical_keycode = KEY_R
+	sin_torre.pressed = true
+	root.push_input(sin_torre, true)
 	_check(tower.prioridad == Arbol.Prioridad.CERCA_META and level.seleccion_tipo.is_empty() and level.gotas == money, "Priority with no selected tree leaves play unchanged")
 	_click(level.suelo.get_global_transform_with_canvas() * level.suelo.map_to_local(cell))
 	await process_frame
