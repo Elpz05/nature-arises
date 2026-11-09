@@ -50,7 +50,19 @@ func _run():
 		_check(level.inicializado and level.numero_nivel == index and level.clima == climates[index], "Every registered campaign scene has the correct stage and climate")
 		_check(level.hud.SEMILLAS_ACTIVAS == plants[index] and level.hud.ATAQUES_ACTIVOS == spells[index], "Actual HUD exposes exactly the earned tools before each stage")
 		_check(not level.titulo_nivel.is_empty() and not level.consejo_nivel.is_empty() and level.hud.label_mision.text.contains("%d/8" % (index + 1)), "Every stage explains its objective in the HUD")
-		_check(level.gotas == [3, 3, 8, 10, 12, 14, 16, 29][index] and level.rondas.size() == 5, "Initial economy and five-wave structure match the campaign pacing")
+		_check(level.gotas == [3, 3, 8, 10, 12, 14, 16, 24][index] and level.rondas.size() == 5, "Initial economy and five-wave structure match the campaign pacing")
+		var legal := 0
+		for y in range(level.FILAS_BLOQUEADAS, level.ALTO):
+			for x in level.ANCHO:
+				var cell := Vector2i(x, y)
+				var dry: bool = level._se_puede_plantar(cell, 0)
+				var wet: bool = level._se_puede_plantar(cell, 2)
+				var terra: bool = level._se_puede_plantar(cell, 3)
+				_check(dry == level.parcelas_secano.has(cell) and wet == level.celdas_inundadas.has(cell), "Dry and wet planting must match authored plots")
+				_check(terra == (dry or level.puestos_terra.has(cell)), "Terra may use plots and authored road posts")
+				if dry or wet or terra:
+					legal += 1
+		_check(level.limitar_plantado and legal >= 10 and legal <= 17, "Every campaign stage must have a small, finite number of build sites")
 		for id in 7:
 			if not plants[index].has(id):
 				level._on_semilla_pulsada(id, false)
@@ -65,8 +77,8 @@ func _run():
 		if index == 6:
 			_check(level.rutas_adicionales.is_empty() and level.puntos_ruta[1].y - level.puntos_ruta[0].y == 12, "Collapse stage uses the intended vertical route")
 		# All recipes can instantiate their actual enemy scenes.
-		for recipe in level.rondas:
-			for key in recipe:
+		for number in range(1, level.rondas.size() + 1):
+			for key in level._contar_bestias(level._plan_de_ronda(number, true)):
 				var parts := String(key).split(":")
 				level._crear_espiritu(parts[0], parts[1])
 				_check(level._bestias_vivas().size() > 0, "Every wave recipe resolves to a configured enemy scene")
@@ -77,9 +89,7 @@ func _run():
 		for wave in 5:
 			level._iniciar_ronda()
 			var count := 0
-			var expected := 0
-			for amount in level.rondas[wave].values():
-				expected += int(amount)
+			var expected: int = level._plan_de_ronda(wave + 1, false).size()
 			while not level.cola_bestias.is_empty():
 				level._process(level.intervalos_spawn[wave])
 				count += level._bestias_vivas().size()

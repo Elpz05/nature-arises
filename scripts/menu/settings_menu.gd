@@ -2,6 +2,8 @@ extends Control
 
 @onready var container: VBoxContainer = %KeybindsContainer
 @onready var boton_volver: Button = %Volver
+@onready var boton_hud_debug: CheckButton = %HUDDebug
+@onready var boton_numeros_dano: CheckButton = %NumerosDano
 
 var accion_esperando: String = ""
 var tipo_esperando: ControlesManager.Tipo = ControlesManager.Tipo.TECLADO_MOUSE
@@ -9,6 +11,10 @@ var boton_esperando: Button = null
 
 func _ready() -> void:
 	set_process_input(false)
+	boton_hud_debug.set_pressed_no_signal(Ajustes.hud_debug_activo())
+	boton_hud_debug.toggled.connect(Ajustes.establecer_hud_debug)
+	boton_numeros_dano.set_pressed_no_signal(Ajustes.numeros_dano_activos())
+	boton_numeros_dano.toggled.connect(Ajustes.establecer_numeros_dano)
 	crear_encabezado()
 	for accion in ControlesManager.acciones_configurables:
 		crear_fila(accion)

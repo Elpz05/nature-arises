@@ -12,7 +12,9 @@ Las siete familias se asignan en ambos niveles en el orden `natura, flamma, aqua
 | Glacies | 350 / 550 / 1050 | 0.3 | 75 |
 | Venenum | 300 / 600 / 900 | 0.6 | 150 |
 
-Flamma usa su atajo cuando el mapa lo incluye. Electricitas también tiene una rama propia en el campo radiactivo. Ventus, vida fraccionaria, congelación, veneno, contacto con Aqua y bloqueo/empuje de Terra se aplican en todas las rutas. Se conservan la invocación al morir de Natura (30%), el único renacimiento de Flamma y el paso de Aqua a través de Terra y Aqua.
+Flamma usa su atajo cuando el mapa lo incluye. Electricitas también tiene una rama propia en el campo radiactivo. Flamma renace una vez y Aqua atraviesa Terra y Aqua.
+
+Las recetas pueden marcar a un Natura con `natura:<tamaño>:divisor`. El informe de ronda avisa de su llegada y la bestia muestra un rombo dorado y «Se divide». Al caer en combate genera una copia del mismo tamaño en su posición. La copia es un Natura normal. Las muertes por clima no activan la división.
 
 **Daño al Árbol Madre:** el contacto sigue separado de la llegada a meta. Para los cuatro tipos nuevos se usan provisionalmente 2/3/5 de daño al llegar, con el mismo patrón de Natura y los 20 HP actuales del Árbol Madre. No se modificaron los valores de llegada anteriores de Natura, Flamma o Aqua. El documento no fija vida inicial de la base ni daño separado de llegada; el balance permanece pendiente.
 

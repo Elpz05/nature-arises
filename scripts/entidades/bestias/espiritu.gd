@@ -2,9 +2,13 @@ extends CharacterBody2D
 
 signal llego_a_meta(dano: int)
 signal invocar_copia(tipo: String, tamano: String, progreso: float)
+signal dano_recibido(cantidad: float, periodico: bool)
 
 const TAMANO_CELDA := 64
-const PROBABILIDAD_INVOCAR := 0.3          # solo Natura
+const EfectoElemental = preload("res://scripts/entidades/bestias/efecto_elemental.gd")
+const ICONOS = preload("res://scripts/HUD/iconos_combate.gd")
+const ICONO_AURA := {"terra": "armadura", "electricitas": "rayo", "glacies": "hielo", "venenum": "veneno"}
+const ICONO_MOVIMIENTO := {"natura": "raiz", "aqua": "confusion", "terra": "mareo", "electricitas": "retroceso", "glacies": "hielo"}
 const DANO_CONTACTO := {"natura": 50, "flamma": 100, "aqua": 0, "terra": 100, "electricitas": 50, "glacies": 75, "venenum": 150}
 const INTERVALO_CONTACTO := 1.0
 
@@ -35,6 +39,7 @@ const ESCALA := {"pequeno": 1.0, "mediano": 1.3, "grande": 1.6}
 
 @export_enum("natura", "flamma", "aqua", "terra", "electricitas", "glacies", "venenum") var tipo := "natura"
 @export_enum("pequeno", "mediano", "grande") var tamano := "pequeno"
+@export var es_divisor := false
 var vida := 200.0
 var vida_maxima := 200.0
 var velocidad := 25.6
@@ -53,7 +58,8 @@ var congelacion_restante := 0.0
 var veneno_restante := 0.0
 var veneno_por_segundo := 0.0
 var factor_lentitud_veneno := 1.0
-var efecto_elemental = preload("res://scripts/entidades/bestias/efecto_elemental.gd").new()
+var efecto_movimiento := EfectoElemental.new()
+var efecto_dano := EfectoElemental.new()
 var cambiar_ruta: Callable
 var limite_confusion := INF
 var rotacion_sprite_base := 0.0
@@ -76,11 +82,14 @@ func _limpiar_veneno():
 	factor_lentitud_veneno = 1.0
 
 func _calcular_avance(delta: float) -> float:
-	if congelacion_restante <= 0.0 and lentitud_restante <= 0.0 and veneno_restante <= 0.0 and efecto_elemental.elemento.is_empty():
+	if congelacion_restante <= 0.0 and lentitud_restante <= 0.0 and veneno_restante <= 0.0 \
+			and efecto_movimiento.elemento.is_empty() and not efecto_dano.ralentizado:
 		return (velocidad + bono_ventus * TAMANO_CELDA) * delta
 	# Integra cada expiración sin multiplicar ralentizaciones simultáneas.
 	var cortes: Array[float] = [0.0, delta, minf(delta, congelacion_restante), minf(delta, lentitud_restante), minf(delta, veneno_restante)]
-	cortes.append_array(efecto_elemental.cortes(delta))
+	cortes.append_array(efecto_movimiento.cortes(delta))
+	if efecto_dano.ralentizado:
+		cortes.append(minf(delta, efecto_dano.restante))
 	cortes.sort()
 	var desplazamiento := 0.0
 	var rapidez := velocidad + bono_ventus * TAMANO_CELDA
@@ -92,7 +101,8 @@ func _calcular_avance(delta: float) -> float:
 		var factor := factor_lentitud if inicio < lentitud_restante else 1.0
 		if inicio < veneno_restante:
 			factor = minf(factor, factor_lentitud_veneno)
-		var elemental: float = efecto_elemental.factor_movimiento(inicio)
+		factor = minf(factor, efecto_dano.factor_movimiento(inicio))
+		var elemental: float = efecto_movimiento.factor_movimiento(inicio)
 		factor = -factor if elemental < 0.0 else minf(factor, elemental)
 		desplazamiento = maxf(-progreso, desplazamiento + (cortes[i + 1] - inicio) * factor * rapidez)
 	return desplazamiento
@@ -105,8 +115,8 @@ func aplicar_congelacion(duracion: float):
 
 func remover_congelacion():
 	congelacion_restante = 0.0
-	if efecto_elemental.elemento == "glacies":
-		efecto_elemental.limpiar()
+	if efecto_movimiento.elemento == "glacies":
+		efecto_movimiento.limpiar()
 	queue_redraw()
 
 # Los impactos renuevan el efecto sin multiplicar la reducción de velocidad.
@@ -139,8 +149,12 @@ func obtener_porcentaje_vida() -> float:
 
 func obtener_estado_combate() -> String:
 	var estados: PackedStringArray = []
-	if not efecto_elemental.elemento.is_empty():
-		estados.append(efecto_elemental.descripcion())
+	if es_divisor and tipo == "natura":
+		estados.append("Se divide")
+	if not efecto_movimiento.elemento.is_empty():
+		estados.append(efecto_movimiento.descripcion())
+	if not efecto_dano.elemento.is_empty():
+		estados.append(efecto_dano.descripcion())
 	if tipo in ["terra", "electricitas", "glacies", "venenum"]:
 		estados.append({"terra": "Terra | Bloqueo 10%", "electricitas": "Electricitas | Aura eléctrica", "glacies": "Glacies | Aura gélida", "venenum": "Venenum | Aura tóxica"}[tipo])
 	if bono_ventus > 0.0:
@@ -158,23 +172,48 @@ func obtener_estado_combate() -> String:
 		estados.append("Renaciendo" if tipo == "flamma" and renacio else "Detenido")
 	return " | ".join(estados)
 
+func obtener_iconos_combate() -> Array[String]:
+	var estados: Array[String] = []
+	if es_divisor and tipo == "natura":
+		estados.append("divisor")
+	if ICONO_AURA.has(tipo):
+		estados.append(ICONO_AURA[tipo])
+	if not efecto_movimiento.elemento.is_empty():
+		var icono: String = ICONO_MOVIMIENTO[efecto_movimiento.elemento]
+		if not estados.has(icono):
+			estados.append(icono)
+	if efecto_dano.elemento == "flamma":
+		estados.append("fuego")
+	elif efecto_dano.elemento == "venenum":
+		estados.append("marca")
+	if congelacion_restante > 0.0 and not estados.has("hielo"):
+		estados.append("hielo")
+	if veneno_restante > 0.0 and veneno_por_segundo > 0.0 and not estados.has("veneno"):
+		estados.append("veneno")
+	if lentitud_restante > 0.0 or veneno_restante > 0.0 or efecto_dano.ralentizado:
+		estados.append("lento")
+	if bono_ventus > 0.0:
+		estados.append("viento")
+	if detenido > 0.0:
+		var icono := "renace" if tipo == "flamma" and renacio else "raiz"
+		if not estados.has(icono):
+			estados.append(icono)
+	return estados
+
 func _draw():
 	if muerto or not is_instance_valid(colision) or colision.shape == null:
 		return
-	if not efecto_elemental.elemento.is_empty():
-		draw_arc(Vector2.ZERO, colision.shape.radius * colision.scale.x + 5.0, 0.0, TAU, 32, efecto_elemental.COLORES[efecto_elemental.elemento], 2.0, true)
+	var radio: float = colision.shape.radius * colision.scale.x + 5.0
+	if not efecto_movimiento.elemento.is_empty():
+		draw_arc(Vector2.ZERO, radio, 0.0, TAU, 32, EfectoElemental.COLORES[efecto_movimiento.elemento], 2.0, true)
+	if not efecto_dano.elemento.is_empty():
+		draw_arc(Vector2.ZERO, radio + 4.0, 0.0, TAU, 32, EfectoElemental.COLORES[efecto_dano.elemento], 2.0, true)
 	var y: float = -colision.shape.radius * colision.scale.y - 14.0
 	var fondo := Rect2(-24.0, y, 48.0, 7.0)
 	draw_rect(fondo.grow(1.0), Color(0.05, 0.05, 0.05, 0.95))
 	draw_rect(fondo, Color(0.45, 0.1, 0.1))
 	draw_rect(Rect2(fondo.position, Vector2(48.0 * obtener_porcentaje_vida(), 7.0)), Color(0.2, 0.9, 0.35))
-	var estado := obtener_estado_combate()
-	if not estado.is_empty():
-		var font := ThemeDB.fallback_font
-		var ancho := font.get_string_size(estado, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		var posicion := Vector2(-ancho / 2.0, y - 4.0)
-		draw_string_outline(font, posicion, estado, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color.BLACK)
-		draw_string(font, posicion, estado, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.6, 0.9, 1.0))
+	ICONOS.dibujar_fila(self, obtener_iconos_combate(), Vector2(0, y - 11), 104.0)
 
 func _aplicar_sprite():
 	var texturas := {
@@ -200,11 +239,11 @@ func _physics_process(delta: float):
 	if puede_avanzar.is_valid() and not puede_avanzar.call():
 		return
 	recarga_contacto = maxf(0.0, recarga_contacto - delta)
-	var estado_anterior := obtener_estado_combate()
+	var estado_anterior := obtener_iconos_combate()
 	var avance := _calcular_avance(delta)
-	limite_confusion = (get_parent() as PathFollow2D).progress + _calcular_avance(minf(delta, efecto_elemental.restante)) if efecto_elemental.elemento == "aqua" else INF
-	var interrumpido: bool = is_zero_approx(avance) and is_zero_approx(efecto_elemental.factor_movimiento(0.0))
-	var dano_periodico: float = efecto_elemental.dano_periodico(delta)
+	limite_confusion = (get_parent() as PathFollow2D).progress + _calcular_avance(minf(delta, efecto_movimiento.restante)) if efecto_movimiento.elemento == "aqua" else INF
+	var interrumpido: bool = is_zero_approx(avance) and is_zero_approx(efecto_movimiento.factor_movimiento(0.0))
+	var dano_periodico: float = efecto_dano.dano_periodico(delta)
 	if veneno_restante > 0.0:
 		dano_periodico += veneno_por_segundo * minf(delta, veneno_restante)
 		veneno_restante = maxf(0.0, veneno_restante - delta)
@@ -239,18 +278,20 @@ func _physics_process(delta: float):
 		llego_a_meta.emit(STATS[tipo]["dano"][tamano])
 		seguidor.queue_free()
 
-func _finalizar_efecto(delta: float, estado_anterior: String):
-	efecto_elemental.actualizar(delta)
+func _finalizar_efecto(delta: float, estado_anterior: Array[String]):
+	var movimiento_anterior: String = efecto_movimiento.elemento
+	efecto_movimiento.actualizar(delta)
+	efecto_dano.actualizar(delta)
 	_actualizar_visual_elemental()
-	if estado_anterior != obtener_estado_combate():
+	if movimiento_anterior != efecto_movimiento.elemento or estado_anterior != obtener_iconos_combate():
 		queue_redraw()
 
 func _actualizar_visual_elemental():
-	var nadando: bool = efecto_elemental.elemento == "aqua" and efecto_elemental.nadando and efecto_elemental.edad < 0.5
-	sprite.rotation = rotacion_sprite_base + (sin(efecto_elemental.edad * TAU * 4.0) * 0.2 if nadando else 0.0)
+	var nadando: bool = efecto_movimiento.elemento == "aqua" and efecto_movimiento.nadando and efecto_movimiento.edad < 0.5
+	sprite.rotation = rotacion_sprite_base + (sin(efecto_movimiento.edad * TAU * 4.0) * 0.2 if nadando else 0.0)
 
 func recibir_proyectil(cantidad: float) -> bool:
-	var extra := 1.0 if efecto_elemental.elemento == "venenum" else 0.0
+	var extra := 1.0 if efecto_dano.elemento == "venenum" else 0.0
 	return recibir_dano(cantidad + extra)
 
 func _tirada_defensa() -> float:
@@ -263,7 +304,9 @@ func recibir_dano(cantidad: float, es_impacto: bool = true) -> bool:
 		return false
 	if tipo == "terra" and es_impacto and _tirada_defensa() < 0.1:
 		return false
-	vida = maxf(0.0, vida - cantidad)
+	var aplicado := minf(vida, cantidad)
+	vida -= aplicado
+	dano_recibido.emit(aplicado, not es_impacto)
 	if vida <= 0:
 		_morir()
 	queue_redraw()
@@ -271,7 +314,8 @@ func recibir_dano(cantidad: float, es_impacto: bool = true) -> bool:
 
 func _morir():
 	_limpiar_veneno()
-	efecto_elemental.limpiar()
+	efecto_movimiento.limpiar()
+	efecto_dano.limpiar()
 	_actualizar_visual_elemental()
 	# Flamma renace una vez, en el mismo punto, y se queda 3 s quieta
 	if tipo == "flamma" and not renacio:
@@ -280,17 +324,20 @@ func _morir():
 		detenido = 3.0
 		return
 	muerto = true
-	if tipo == "natura" and randf() < PROBABILIDAD_INVOCAR:
+	if tipo == "natura" and es_divisor:
 		invocar_copia.emit(tipo, tamano, (get_parent() as PathFollow2D).progress)
 	get_parent().queue_free()
 
 func destruir_por_entorno():
 	if muerto or is_queued_for_deletion() or get_parent().is_queued_for_deletion():
 		return
+	var aplicado := vida
 	vida = 0.0
+	dano_recibido.emit(aplicado, false)
 	muerto = true
 	_limpiar_veneno()
-	efecto_elemental.limpiar()
+	efecto_movimiento.limpiar()
+	efecto_dano.limpiar()
 	queue_redraw()
 	get_parent().queue_free()
 
@@ -306,7 +353,7 @@ func aplicar_ataque_elemental(elemento: String, dano: float, ralentizar_venenum:
 	if muerto or is_queued_for_deletion() or get_parent().is_queued_for_deletion():
 		return false
 	elemento = elemento.to_lower()
-	if not efecto_elemental.DURACIONES.has(elemento):
+	if not EfectoElemental.DURACIONES.has(elemento):
 		return false
 	var inmunidades := {"natura": ["flamma", "venenum"], "flamma": ["flamma", "aqua"], "aqua": ["aqua"], "terra": ["terra"], "electricitas": ["electricitas"], "glacies": ["glacies"], "venenum": ["venenum"]}
 	if tipo in inmunidades[elemento]:
@@ -318,8 +365,8 @@ func aplicar_ataque_elemental(elemento: String, dano: float, ralentizar_venenum:
 	recibir_dano(dano_final)
 	if muerto or get_parent().is_queued_for_deletion():
 		return true
-	# Solo hay un paquete de hechizo activo. Los efectos de árboles son independientes.
-	efecto_elemental.aplicar(elemento, ralentizar_venenum, elemento == "aqua" and _tirada_natacion() < 0.5)
+	var efecto := efecto_dano if elemento in ["flamma", "venenum"] else efecto_movimiento
+	efecto.aplicar(elemento, ralentizar_venenum, elemento == "aqua" and _tirada_natacion() < 0.5)
 	if elemento == "aqua" and cambiar_ruta.is_valid():
 		cambiar_ruta.call(self)
 	_actualizar_visual_elemental()

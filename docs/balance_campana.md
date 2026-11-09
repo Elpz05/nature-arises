@@ -8,8 +8,8 @@ El controlador toma decisiones cada medio segundo de juego. Prioriza la bestia c
 
 | Nivel | Defensa usada |
 | --- | --- |
-| 1 | Natura cerca de varios tramos; compra antes de mejorar. |
-| 2 | Aqua en la casilla inundada (7,4), seguido de Natura junto al camino. |
+| 1 | Natura en seis parcelas cerca de varios tramos, con mejoras tras completar la formación. |
+| 2 | Natura y Flamma en la entrada, con Aqua en la poza lateral (10,5). |
 | 3 | Terra en el camino y Natura/Flamma junto a la primera columna vertical. |
 | 4 | Electricitas y Natura alternados; reposición de bajas por rayos. |
 | 5 | Flamma y Electricitas; reposición de bajas por erupción. |
@@ -21,22 +21,36 @@ Las estrategias están fijadas por nivel: no tienen acceso a eventos futuros, no
 
 ## Resultados observados
 
-Godot 4.7.2 y economía de recogida manual del pozo. Los niveles 1–7 terminaron con 20/20 HP en la pasada con semilla base `20261102`. El final terminó con 20/20 HP en dos pasadas con la formación mixta, bases `20261104` y `20261105`.
+Godot 4.7.2, parcelas marcadas y economía reducida. Las pruebas ganaron las ocho etapas con una formación legal. Las bases de semilla fueron `20261108` para los niveles 1–4 y `20261109` para los niveles 5–8.
 
-| Nivel | Tiempo simulado | Eventos |
-| --- | ---: | --- |
-| 1 | 105.0 s | Sin peligros periódicos |
-| 2 | 173.1 s | Lluvia |
-| 3 | 106.7 s | Sin peligros periódicos |
-| 4 | 114.7 s | 18 rayos |
-| 5 | 86.8 s | 16 emisiones de géiser y 3 erupciones |
-| 6 | 111.2 s | 11 ventiscas y 5 pulsos de calor |
-| 7 | 166.0 s | 11 derrumbes |
-| 8 | 221.1 s / 213.3 s | 27 / 26 pulsos de radiación |
+| Nivel | Sitios | Tiempo simulado | HP del Árbol Madre |
+| --- | ---: | ---: | ---: |
+| 1 | 10 | 175.0 s | 20 |
+| 2 | 12 | 181.6 s | 20 |
+| 3 | 13 | 246.2 s | 15 |
+| 4 | 15 | 165.2 s | 20 |
+| 5 | 12 | 117.6 s | 20 |
+| 6 | 13 | 119.4 s | 20 |
+| 7 | 17 | 126.4 s | 20 |
+| 8 | 16 | 223.7 s | 20 |
 
-El control sin defensas del nivel 8, base `20261103`, perdió en la segunda ronda con 0 HP a los 333.0 s. La simulación exige ese resultado cuando se ejecuta con `--without-defense`.
+La simulación también permite un control negativo con `--without-defense` y exige una derrota real.
 
 La prueba del final registra los árboles comprados y los proyectiles emitidos por elemento. Exige la compra de las siete variedades, disparos de los cinco tipos ofensivos y victoria. La protección de Aqua y el bloqueo Terra en la rama eléctrica se verifican por separado en `tests/test_sprint_finale.gd`.
+
+## Comparación de recarga en el nivel final
+
+Se usó la semilla de nivel `20261116` y la misma economía en todos los controles. La recarga ajustada es de 6 s para Glacies y 10 s para Venenum.
+
+| Defensa | Recarga | Tiempo simulado | HP final | Glacies | Venenum | Lanzamientos totales |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Mixta | 3 s | 208.6 s | 20 | 5 | 26 | 65 |
+| Mixta | Ajustada | 201.2 s | 20 | 3 | 20 | 70 |
+| Solo torres | Ajustada | 297.7 s | 20 | 0 | 0 | 0 |
+| Solo hechizos | 3 s | 659.3 s | 14 | 14 | 60 | 182 |
+| Solo hechizos | Ajustada | 566.4 s | 14 | 7 | 38 | 185 |
+
+Con la recarga ajustada, la defensa mixta ganó los ocho niveles. También ganó el desafío del último nivel en 227.5 s con 20 HP. Al alargar las recargas, el controlador lanzó menos Glacies y Venenum y recurrió más a Terra y Electricitas. Las torres por sí solas ganaron con el Árbol Madre intacto y el control de solo hechizos siguió siendo viable. Los conteos de lanzamiento y disparo no miden la proporción de daño por fuente.
 
 ## Ejecución
 
@@ -48,7 +62,7 @@ $env:LOCALAPPDATA = Join-Path $PWD '.godot\test_environment\local'
 & 'C:\Users\Admin\Desktop\godot\Godot_v4.7.2_console.exe' --headless --path . --script res://tests/simulate_campaign.gd -- --seed=20261103
 ```
 
-`--from=2 --to=7` limita la ejecución a los niveles 3–8 (índices desde cero). La semilla de cada nivel es la base más su índice. `--without-defense` omite árboles y ataques y exige una derrota real, no un tiempo agotado: sirve de control negativo.
+`--from=2 --to=7` limita la ejecución a los niveles 3–8 (índices desde cero). La semilla de cada nivel es la base más su índice. `--without-defense` omite árboles y ataques y exige una derrota real. `--towers-only` y `--spells-only` aíslan cada tipo de defensa. `--fast-recharge` usa la recarga anterior de 3 s solo para la simulación. Para reproducir la comparación, usa `--from=7 --to=7 --seed=20261109` junto a las opciones del control.
 
 Se acelera el reloj x8 con 240 pasos físicos por segundo real, equivalente a un paso nominal de 1/30 s de juego. Las duraciones reportadas son tiempo simulado, no tiempo de ejecución. El resultado JSON queda en `.godot/campaign_combat_<semilla>.json`; el control sin defensa usa el sufijo `_without_defense`. Para resultados estables deben mantenerse versión del motor y configuración; las semillas no prometen determinismo entre plataformas.
 

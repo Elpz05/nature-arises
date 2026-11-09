@@ -55,6 +55,7 @@ func _run():
 	for entry in [["Casilla Planta 0", KEY_T], ["Casilla Planta 1", KEY_Y], ["Casilla Planta 2", KEY_U], ["Elemento Natura", KEY_H], ["Elemento Electricitas", KEY_J], ["Pala", KEY_V], ["Iniciar Ronda", KEY_B], ["Pausa", KEY_P], ["Confirmar", KEY_K], ["Atras", KEY_BACKSPACE]]:
 		_bind(entry[0], _key(entry[1]))
 	_bind("Clic Izquierdo", _button(MOUSE_BUTTON_RIGHT))
+	_bind("Mejorar Arbol", _key(KEY_N))
 	var ctrl_t := _key(KEY_T)
 	ctrl_t.ctrl_pressed = true
 	InputMap.action_add_event("Casilla Planta 1", ctrl_t)
@@ -105,13 +106,29 @@ func _run():
 		_check(level.seleccion_tipo == "ataque" and level.seleccion_indice == 4, "Electricitas must have a working selection action")
 		root.push_input(_key(KEY_T), true)
 		var row := 4 if index == 0 else 3
-		var cell := Vector2i(0, row)
+		var cell: Vector2i = level.parcelas_secano[0]
 		var screen: Vector2 = level.suelo.get_global_transform_with_canvas() * level.suelo.map_to_local(cell)
 		_click(MOUSE_BUTTON_LEFT, screen)
 		_check(level.arboles_plantados.is_empty(), "Removed mouse binding must not place towers")
 		_click(MOUSE_BUTTON_RIGHT, screen)
 		_check(level.arboles_plantados.has(cell), "Remapped mouse confirmation must place once")
 		_check(level.gotas == 99, "Mouse press/release must not duplicate placement")
+		_click(MOUSE_BUTTON_RIGHT, screen)
+		await process_frame
+		_check(level.gotas == 99 and level.tamanos_plantados[cell] == 0 and level.hud.boton_mejorar.text == "Mejorar 2 gotas", "Selecting a tower is free and shows the exact upgrade price")
+		level.gotas = 1
+		level._actualizar_gotas_hud()
+		root.push_input(_key(KEY_N), true)
+		_check(level.gotas == 1 and level.tamanos_plantados[cell] == 0 and level.hud.boton_mejorar.disabled, "The selected tower cannot upgrade without enough water")
+		level._recoger_gotas(98)
+		_click(MOUSE_BUTTON_RIGHT, level.hud.boton_mejorar.get_global_rect().get_center())
+		_check(level.gotas == 97 and level.tamanos_plantados[cell] == 1, "The explicit upgrade button charges once")
+		root.push_input(_key(KEY_M), true)
+		_check(level.gotas == 97, "Removed upgrade binding must not spend water")
+		root.push_input(_key(KEY_N), true)
+		_check(level.gotas == 94 and level.tamanos_plantados[cell] == 2 and level.hud.boton_mejorar.disabled, "Remapped upgrade works and disables at the maximum level")
+		root.push_input(_key(KEY_BACKSPACE), true)
+		_check(not level.hud.boton_mejorar.visible and not paused, "Cancel clears a tower selection without spending")
 		level.usar_cursor_tablero = true
 		var wet_cell: Vector2i = level.puntos_ruta[0] + Vector2i(1, 0)
 		level.clima = "lluvia"
@@ -128,15 +145,16 @@ func _run():
 		root.push_input(press, true)
 		_check(level.seleccion_tipo == "semilla" and level.seleccion_indice == 1 and level.arrastrando, "Remapped mouse press must select a HUD plant for dragging")
 		var release := _button(MOUSE_BUTTON_RIGHT, false)
-		release.position = level.suelo.get_global_transform_with_canvas() * level.suelo.map_to_local(Vector2i(4, row))
+		var drag_cell: Vector2i = level.parcelas_secano[2]
+		release.position = level.suelo.get_global_transform_with_canvas() * level.suelo.map_to_local(drag_cell)
 		root.push_input(release, true)
-		_check(level.arboles_plantados.has(Vector2i(4, row)) and level.gotas == drag_money - 3, "Remapped drag release must plant and charge once")
+		_check(level.arboles_plantados.has(drag_cell) and level.gotas == drag_money - 3, "Remapped drag release must plant and charge once")
 		level.usar_cursor_tablero = true
-		level.cursor_tablero = Vector2i(2, row)
+		level.cursor_tablero = level.parcelas_secano[1]
 		root.push_input(_key(KEY_Y), true)
 		root.push_input(_pad(JOY_BUTTON_A), true)
 		root.push_input(_pad(JOY_BUTTON_A, false), true)
-		_check(level.arboles_plantados.has(Vector2i(2, row)), "Joypad confirmation must place at the grid cursor")
+		_check(level.arboles_plantados.has(level.parcelas_secano[1]), "Joypad confirmation must place at the grid cursor")
 		level.cursor_tablero = Vector2i(1, row)
 		Input.action_press("Derecha", 0.1)
 		level._process(0.01)

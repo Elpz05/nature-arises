@@ -1,46 +1,51 @@
 extends SceneTree
 
-# Real combat with legal purchases and earned tools. No save writes, stat changes,
-# enemy removal or manual wave completion. This is a smoke test, not human balance.
+# Real combat with legal purchases and earned tools. Comparison modes can omit
+# towers or restore the old three-second cooldown in a temporary HUD instance.
 const CAMPAIGN = preload("res://scripts/nivel/campana.gd")
 const STEP := 8.0 / 240.0
 var failures := 0
 var results: Array = []
 var run_seed := 20261102
 var without_defense := false
+var accept_challenges := false
+var spells_only := false
+var towers_only := false
+var fast_recharge := false
 
 func _initialize():
 	call_deferred("_run")
 
 func _plan(index: int) -> Array:
-	var plan: Array = []
-	if index == 0:
-		for cell in [Vector2i(0, 4), Vector2i(2, 4), Vector2i(4, 4), Vector2i(6, 4), Vector2i(4, 6), Vector2i(6, 6), Vector2i(4, 8), Vector2i(6, 8), Vector2i(4, 10), Vector2i(6, 10), Vector2i(8, 11), Vector2i(8, 13)]:
-			plan.append([cell, 0])
-	elif index in [2, 5, 6]:
-		# Defend both sides of the first vertical corridor; later rows cover its turn.
-		if index == 6:
-			for x in [3, 5, 6, 7, 9]:
-				plan.append([Vector2i(x, 3), 3])
-		plan.append([Vector2i(4, 9), 3])
-		for y in [4, 6, 8, 10, 12, 14]:
-			plan.append([Vector2i(3, y), 1 if y % 4 == 0 else 0])
-			plan.append([Vector2i(6, y), 5 if index >= 5 and y % 4 == 0 else 0])
-	elif index == 7:
-		# Aqua funds upgrades; Terra catches shortcut runners for the damage/control line.
-		plan = [[Vector2i(7, 5), 2], [Vector2i(18, 9), 3], [Vector2i(15, 6), 5],
-			[Vector2i(14, 5), 4], [Vector2i(13, 5), 1], [Vector2i(16, 5), 6],
-			[Vector2i(8, 6), 0], [Vector2i(26, 11), 3], [Vector2i(25, 11), 1],
-			[Vector2i(25, 9), 4], [Vector2i(23, 11), 0], [Vector2i(19, 9), 2]]
-	else:
-		if index == 1:
-			plan.append([Vector2i(7, 4), 2])
-		for x in range(0, 24, 2):
-			var type := 0
-			if index == 3: type = 4 if x % 4 == 0 else 0
-			if index == 4: type = 1 if x % 4 == 0 else 4
-			plan.append([Vector2i(x, 3), type])
-	return plan
+	match index:
+		0:
+			return [[Vector2i(0, 4), 0], [Vector2i(2, 4), 0], [Vector2i(4, 4), 0],
+				[Vector2i(6, 4), 0], [Vector2i(4, 7), 0], [Vector2i(6, 8), 0]]
+		1:
+			return [[Vector2i(1, 3), 0], [Vector2i(4, 3), 0], [Vector2i(6, 3), 0],
+				[Vector2i(9, 3), 1], [Vector2i(10, 5), 2], [Vector2i(16, 6), 0], [Vector2i(24, 6), 1]]
+		2:
+			return [[Vector2i(4, 8), 3], [Vector2i(3, 7), 1], [Vector2i(3, 4), 0],
+				[Vector2i(5, 6), 0], [Vector2i(3, 10), 1], [Vector2i(7, 10), 0], [Vector2i(6, 12), 1]]
+		3:
+			return [[Vector2i(1, 3), 4], [Vector2i(4, 3), 0], [Vector2i(7, 3), 4],
+				[Vector2i(10, 3), 0], [Vector2i(25, 9), 4], [Vector2i(13, 5), 0],
+				[Vector2i(26, 9), 3], [Vector2i(18, 5), 4]]
+		4:
+			return [[Vector2i(1, 3), 4], [Vector2i(4, 3), 1], [Vector2i(7, 5), 1],
+				[Vector2i(9, 3), 4], [Vector2i(12, 5), 4], [Vector2i(11, 7), 3], [Vector2i(5, 5), 0]]
+		5:
+			return [[Vector2i(4, 9), 3], [Vector2i(3, 4), 1], [Vector2i(5, 4), 5],
+				[Vector2i(5, 7), 1], [Vector2i(3, 6), 0], [Vector2i(5, 9), 5], [Vector2i(7, 13), 1]]
+		6:
+			return [[Vector2i(3, 3), 3], [Vector2i(5, 3), 3], [Vector2i(4, 3), 3],
+				[Vector2i(3, 4), 1], [Vector2i(5, 4), 4], [Vector2i(3, 7), 0],
+				[Vector2i(5, 9), 4], [Vector2i(7, 12), 5]]
+		_:
+			return [[Vector2i(8, 5), 2], [Vector2i(18, 9), 3], [Vector2i(15, 6), 5],
+				[Vector2i(14, 5), 4], [Vector2i(13, 5), 1], [Vector2i(8, 6), 0],
+				[Vector2i(16, 5), 6], [Vector2i(26, 11), 3], [Vector2i(25, 11), 1],
+				[Vector2i(25, 9), 4], [Vector2i(23, 11), 0], [Vector2i(19, 9), 2]]
 
 func _buy(level, plan: Array, metrics: Dictionary):
 	for entry in plan:
@@ -79,7 +84,7 @@ func _cast(level, metrics: Dictionary):
 	)
 	var target = enemies[0]
 	# Let existing burn, confusion and control finish before replacing them.
-	if not target.efecto_elemental.elemento.is_empty(): return
+	if not target.efecto_movimiento.elemento.is_empty() or not target.efecto_dano.elemento.is_empty(): return
 	var priority: Array = {
 		"flamma": [2, 5, 3, 4], "aqua": [4, 5, 3, 0],
 		"glacies": [1, 6, 3, 4, 0], "terra": [6, 4, 1, 0],
@@ -89,7 +94,21 @@ func _cast(level, metrics: Dictionary):
 		if level.hud.ATAQUES_ACTIVOS.has(type) and level.cargas[type] >= 1.0:
 			if level._lanzar_ataque(level.to_local(target.global_position), type):
 				metrics.casts += 1
+				var name: String = level.hud.ATAQUES[type].nombre
+				metrics.casts_by_type[name] = metrics.casts_by_type.get(name, 0) + 1
 			break
+
+func _hud_con_recarga_rapida(original: PackedScene) -> PackedScene:
+	var script := GDScript.new()
+	script.source_code = 'extends "res://scripts/HUD/hud.gd"\nfunc intervalo_recarga_ataque(_i: int) -> float:\n\treturn 3.0\n'
+	if script.reload() != OK:
+		return null
+	var hud := original.instantiate()
+	hud.set_script(script)
+	var escena := PackedScene.new()
+	var error := escena.pack(hud)
+	hud.free()
+	return escena if error == OK else null
 
 func _run():
 	var first := 0
@@ -99,6 +118,10 @@ func _run():
 		if argument.begins_with("--to="): last = clampi(argument.trim_prefix("--to=").to_int(), first, 7)
 		if argument.begins_with("--seed="): run_seed = argument.trim_prefix("--seed=").to_int()
 		if argument == "--without-defense": without_defense = true
+		if argument == "--challenge": accept_challenges = true
+		if argument == "--spells-only": spells_only = true
+		if argument == "--towers-only": towers_only = true
+		if argument == "--fast-recharge": fast_recharge = true
 	last = clampi(last, first, 7)
 	var save = root.get_node("Guardado")
 	var previous_slot: int = save.slot_actual
@@ -110,9 +133,21 @@ func _run():
 	for index in range(first, last + 1):
 		seed(run_seed + index)
 		var level = load(CAMPAIGN.ESCENAS[index]).instantiate()
+		if fast_recharge:
+			level.hud_escena = _hud_con_recarga_rapida(level.hud_escena)
+			if level.hud_escena == null:
+				push_error("Could not build the comparison HUD")
+				level.free()
+				quit(1)
+				return
 		root.add_child(level)
+		if not level.inicializado:
+			push_error("Campaign level %d failed to initialize" % (index + 1))
+			quit(1)
+			return
 		var metrics := {"level": index + 1, "seed": run_seed + index, "purchases": 0, "upgrades": 0, "spent": 0, "casts": 0,
-			"without_defense": without_defense, "roster": {}, "shots": {}}
+			"without_defense": without_defense, "spells_only": spells_only, "towers_only": towers_only, "fast_recharge": fast_recharge,
+			"challenges": 0, "roster": {}, "shots": {}, "casts_by_type": {}}
 		level.arboles.child_entered_tree.connect(func(node):
 			if "objetivo" in node and "elemento" in node:
 				var element: String = node.elemento
@@ -120,7 +155,7 @@ func _run():
 		)
 		var elapsed := 0.0
 		var decision := 0.0
-		var plan: Array = [] if without_defense else _plan(index)
+		var plan: Array = [] if without_defense or spells_only else _plan(index)
 		var valid_plan := true
 		for entry in plan:
 			if not level._se_puede_plantar(entry[0], entry[1]) or not level.hud.SEMILLAS_ACTIVAS.has(entry[1]):
@@ -132,8 +167,13 @@ func _run():
 				level._recoger_en_objetivo(level.suelo.map_to_local(level.celda_pozo))
 				if not without_defense:
 					_buy(level, plan, metrics)
-					_cast(level, metrics)
-				if not level.ronda_activa: level._iniciar_ronda()
+					if not towers_only:
+						_cast(level, metrics)
+				if not level.ronda_activa:
+					if accept_challenges and level.desafios_ronda.has(level.ronda):
+						level._alternar_desafio()
+						metrics.challenges += 1
+					level._iniciar_ronda()
 				decision = 0.5
 			await physics_frame
 			elapsed += STEP
@@ -144,8 +184,9 @@ func _run():
 		metrics.round = level.ronda
 		metrics.trees = level.arboles_plantados.size()
 		metrics.weather_events = level.gestor_clima.conteos.duplicate()
-		var expected_result: bool = level.terminado and (not metrics.won if without_defense else metrics.won)
-		if index == 7 and not without_defense:
+		var solo_control := spells_only or towers_only
+		var expected_result: bool = level.terminado and (not metrics.won if without_defense else (solo_control or metrics.won))
+		if index == 7 and not solo_control and not without_defense:
 			expected_result = expected_result and metrics.roster.size() == 7 and metrics.shots.size() == 5
 		if not expected_result: failures += 1
 		results.append(metrics)
@@ -156,7 +197,16 @@ func _run():
 	save.slot_actual = previous_slot
 	Engine.time_scale = previous_scale
 	Engine.physics_ticks_per_second = previous_ticks
-	var report = FileAccess.open("res://.godot/campaign_combat_%d%s.json" % [run_seed, "_without_defense" if without_defense else ""], FileAccess.WRITE)
+	var suffix := "_without_defense" if without_defense else ""
+	if spells_only:
+		suffix += "_spells_only"
+	if towers_only:
+		suffix += "_towers_only"
+	if fast_recharge:
+		suffix += "_fast_recharge"
+	if accept_challenges:
+		suffix += "_challenge"
+	var report = FileAccess.open("res://.godot/campaign_combat_%d%s.json" % [run_seed, suffix], FileAccess.WRITE)
 	if report != null: report.store_string(JSON.stringify(results, "\t"))
 	print("Campaign combat simulation: %s" % ("PASS" if failures == 0 else "%d FAILED" % failures))
 	quit(0 if failures == 0 else 1)

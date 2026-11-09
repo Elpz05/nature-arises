@@ -1,11 +1,32 @@
 # ajustes_manager.gd (Autoload)
 extends Node
 
+signal hud_debug_cambiado(activo: bool)
+signal numeros_dano_cambiado(activo: bool)
+
 const RUTA_CONFIG = "user://ajustes.cfg"
 var config = ConfigFile.new()
 
 func _ready() -> void:
 	cargar_ajustes()
+
+func hud_debug_activo() -> bool:
+	var activo: Variant = config.get_value("interfaz", "hud_debug", false)
+	return activo is bool and activo
+
+func establecer_hud_debug(activo: bool) -> void:
+	config.set_value("interfaz", "hud_debug", activo)
+	guardar_ajustes()
+	hud_debug_cambiado.emit(activo)
+
+func numeros_dano_activos() -> bool:
+	var activo: Variant = config.get_value("interfaz", "numeros_dano", true)
+	return activo if activo is bool else true
+
+func establecer_numeros_dano(activo: bool) -> void:
+	config.set_value("interfaz", "numeros_dano", activo)
+	guardar_ajustes()
+	numeros_dano_cambiado.emit(activo)
 
 func guardar_ajustes() -> void:
 	config.set_value("audio", "master", AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Master")))

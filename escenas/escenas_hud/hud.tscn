@@ -1,10 +1,9 @@
 [gd_scene format=3 uid="uid://b5h57urphn8pc"]
 
 [ext_resource type="Script" uid="uid://dux44ws0xmbme" path="res://scripts/HUD/hud.gd" id="1_1kbos"]
-[ext_resource type="FontFile" uid="uid://cgas0q8o7461n" path="res://fuentes/PixelOperatorMono.ttf" id="2_geety"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_geety"]
-bg_color = Color(0.18061538, 0.45507813, 0.018665314, 1)
+bg_color = Color(0.10, 0.15, 0.14, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_combate"]
 content_margin_left = 12.0
@@ -25,36 +24,98 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_geety")
 [node name="Margen" type="MarginContainer" parent="Barra" unique_id=21738782]
 layout_mode = 2
 theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
+theme_override_constants/margin_top = 2
 theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_bottom = 2
 
 [node name="Fila" type="HBoxContainer" parent="Barra/Margen" unique_id=82852815]
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 12
 
-[node name="Semillas" type="HBoxContainer" parent="Barra/Margen/Fila" unique_id=1122830101]
+[node name="Plantar" type="VBoxContainer" parent="Barra/Margen/Fila"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 1
+
+[node name="Titulo" type="Label" parent="Barra/Margen/Fila/Plantar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.77, 0.92, 0.65, 1)
+theme_override_font_sizes/font_size = 13
+text = "PLANTAR"
+
+[node name="Semillas" type="HBoxContainer" parent="Barra/Margen/Fila/Plantar" unique_id=1122830101]
+layout_mode = 2
+theme_override_constants/separation = 5
 
 [node name="VSeparator" type="VSeparator" parent="Barra/Margen/Fila" unique_id=1629167320]
 layout_mode = 2
 
-[node name="Ataques" type="HBoxContainer" parent="Barra/Margen/Fila" unique_id=921251129]
+[node name="Poderes" type="VBoxContainer" parent="Barra/Margen/Fila"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 1
 
-[node name="Espaciador" type="Control" parent="Barra/Margen/Fila" unique_id=960833781]
+[node name="Titulo" type="Label" parent="Barra/Margen/Fila/Poderes"]
 layout_mode = 2
-size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.64, 0.85, 0.97, 1)
+theme_override_font_sizes/font_size = 13
+text = "PODERES"
+
+[node name="Ataques" type="HBoxContainer" parent="Barra/Margen/Fila/Poderes" unique_id=921251129]
+layout_mode = 2
+theme_override_constants/separation = 5
 
 [node name="Acciones" type="VBoxContainer" parent="Barra/Margen/Fila"]
 layout_mode = 2
-custom_minimum_size = Vector2(235, 0)
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="PanelEstado" type="PanelContainer" parent="."]
+anchor_right = 1.0
+offset_top = 88.0
+offset_bottom = 120.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_combate")
+
+[node name="Fila" type="HBoxContainer" parent="PanelEstado"]
+layout_mode = 2
+
+[node name="Estado" type="Label" parent="PanelEstado/Fila"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_font_sizes/font_size = 19
+
+[node name="Terreno" type="Label" parent="PanelEstado/Fila"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="PanelPreparacion" type="PanelContainer" parent="."]
+visible = false
+anchor_right = 1.0
+offset_top = 120.0
+offset_bottom = 192.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_combate")
+
+[node name="Informe" type="VBoxContainer" parent="PanelPreparacion"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Titulo" type="Label" parent="PanelPreparacion/Informe"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text_overrun_behavior = 3
+
+[node name="Amenazas" type="Label" parent="PanelPreparacion/Informe"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 3
+max_lines_visible = 2
 
 [node name="PanelCombate" type="PanelContainer" parent="." unique_id=1197159048]
+visible = false
 anchor_right = 1.0
-offset_top = 84.0
+offset_top = 88.0
 offset_bottom = 192.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_combate")
@@ -70,16 +131,13 @@ theme_override_constants/separation = 0
 
 [node name="LabelGotas" type="Label" parent="PanelCombate/Columnas/Info" unique_id=2028477403]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_geety")
 
 [node name="LabelRonda" type="Label" parent="PanelCombate/Columnas/Info" unique_id=1977207242]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_geety")
 
 [node name="LabelVida" type="Label" parent="PanelCombate/Columnas/Info" unique_id=1981097648]
 texture_filter = 1
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_geety")
 
 [node name="Datos" type="VBoxContainer" parent="PanelCombate/Columnas" unique_id=199045737]
 layout_mode = 2
@@ -88,17 +146,14 @@ theme_override_constants/separation = 0
 
 [node name="LabelEstado" type="Label" parent="PanelCombate/Columnas/Datos" unique_id=1314425358]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_geety")
 theme_override_font_sizes/font_size = 19
 
 [node name="LabelRestantes" type="Label" parent="PanelCombate/Columnas/Datos" unique_id=68602998]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_geety")
 theme_override_font_sizes/font_size = 18
 
 [node name="LabelEntrantes" type="Label" parent="PanelCombate/Columnas/Datos" unique_id=927221365]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_geety")
 theme_override_font_sizes/font_size = 17
 autowrap_mode = 3
 max_lines_visible = 2

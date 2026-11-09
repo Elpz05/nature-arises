@@ -2,12 +2,19 @@ class_name Arbol
 extends Node2D
 
 signal murio
+signal dano_recibido(cantidad: float, periodico: bool)
+
+enum Prioridad { CERCA_META, MAYOR_VIDA }
+const NOMBRES_PRIORIDAD := ["Cerca de meta", "Mayor vida"]
+var prioridad := Prioridad.CERCA_META
 
 const TAMANO_CELDA := 64
 const DANO_BALA := 20
 const BALAS_POR_SEGUNDO_BASE := 2.0
 const DURACION_VENENO := 6.0
+const ICONOS = preload("res://scripts/HUD/iconos_combate.gd")
 const ESCALA := {"pequeno": 1.0, "mediano": 1.25, "grande": 1.5}
+const NIVEL_POR_TAMANO := {"pequeno": 1, "mediano": 2, "grande": 3}
 
 # Todas las estadísticas en un solo lugar
 const STATS := {
@@ -42,9 +49,9 @@ const STATS_ELEMENTALES := {
 		"grande": {"vida": 800, "radio": 4.0, "vel_ataque": 1.0, "area": 2.0},
 	},
 	"aqua": {
-		"pequeno": {"vida": 100, "radio": 0.0, "vel_ataque": 1.0, "produccion": 0.1},
-		"mediano": {"vida": 100, "radio": 0.0, "vel_ataque": 1.0, "produccion": 0.2},
-		"grande": {"vida": 100, "radio": 0.0, "vel_ataque": 1.0, "produccion": 0.3},
+		"pequeno": {"vida": 100, "radio": 0.0, "vel_ataque": 1.0, "produccion": 0.06},
+		"mediano": {"vida": 100, "radio": 0.0, "vel_ataque": 1.0, "produccion": 0.12},
+		"grande": {"vida": 100, "radio": 0.0, "vel_ataque": 1.0, "produccion": 0.18},
 	},
 }
 
@@ -72,22 +79,27 @@ func obtener_empuje() -> float:
 
 var tamano := "pequeno"
 var vida := 100
+var vida_maxima := 100
 var enemigos_en_rango: Array = []
 var escala_base := Vector2.ONE
 var rango_visible := false
 var congelado_por_aura := false
 var intoxicado_por_aura := false
+var expuesto_aura_electrica := false
+var protegido_aura_gelida := false
+var protegido_radiacion := false
 var nivel_congelacion := 0
 var protegido_ventisca := false
 var golpes_derrumbe := 0
 var bono_geiser_restante := 0.0
+var indicadores: Node2D
 
 func esta_congelado() -> bool:
 	return congelado_por_aura or nivel_congelacion >= 3
 
 func _actualizar_color_estado():
 	sprite.self_modulate = Color(0.55, 0.8, 1.0) if esta_congelado() else (Color(0.7, 1.0, 0.65) if intoxicado_por_aura else Color.WHITE)
-	queue_redraw()
+	indicadores.queue_redraw()
 
 func actualizar_clima(delta: float):
 	if bono_geiser_restante <= 0.0:
@@ -96,6 +108,7 @@ func actualizar_clima(delta: float):
 	if bono_geiser_restante <= 0.000001:
 		bono_geiser_restante = 0.0
 		_actualizar_cadencia()
+		indicadores.queue_redraw()
 
 func aplicar_geiser():
 	if elemento == "flamma" or vida <= 0 or is_queued_for_deletion():
@@ -104,6 +117,7 @@ func aplicar_geiser():
 	if vida > 0:
 		bono_geiser_restante = 7.0
 		_actualizar_cadencia()
+		indicadores.queue_redraw()
 
 func aplicar_ventisca():
 	if elemento in ["flamma", "glacies"] or vida <= 0 or is_queued_for_deletion():
@@ -131,13 +145,24 @@ func recibir_roca():
 			return
 	recibir_dano(vida)
 
-func aplicar_auras(congelado: bool, intoxicado: bool):
-	if congelado_por_aura == congelado and intoxicado_por_aura == intoxicado:
+func indicar_proteccion_radiacion(protegido: bool):
+	if protegido_radiacion != protegido:
+		protegido_radiacion = protegido
+		indicadores.queue_redraw()
+
+func aplicar_auras(congelado: bool, intoxicado: bool, electrico := false, protegido := false):
+	var cambio_ataque := congelado_por_aura != congelado or intoxicado_por_aura != intoxicado
+	if not cambio_ataque and expuesto_aura_electrica == electrico and protegido_aura_gelida == protegido:
 		return
 	congelado_por_aura = congelado
 	intoxicado_por_aura = intoxicado
-	_actualizar_cadencia()
-	_actualizar_color_estado()
+	expuesto_aura_electrica = electrico
+	protegido_aura_gelida = protegido
+	if cambio_ataque:
+		_actualizar_cadencia()
+		_actualizar_color_estado()
+	else:
+		indicadores.queue_redraw()
 
 func _actualizar_cadencia():
 	temporizador.paused = esta_congelado()
@@ -157,6 +182,11 @@ func _tirada_fallo() -> float:
 
 
 func _ready():
+	indicadores = Node2D.new()
+	indicadores.name = "Indicadores"
+	indicadores.z_index = 18
+	add_child(indicadores)
+	indicadores.draw.connect(_dibujar_indicadores)
 	escala_base = sprite.scale
 	temporizador.process_callback = Timer.TIMER_PROCESS_PHYSICS
 	temporizador.timeout.connect(_disparar)
@@ -165,7 +195,8 @@ func _ready():
 func _aplicar_tamano(nuevo: String):
 	tamano = nuevo
 	var datos: Dictionary = _datos(tamano)
-	vida = datos["vida"]
+	vida_maxima = datos.vida
+	vida = vida_maxima
 	if elemento == "flamma":
 		radio_explosion = datos.area * TAMANO_CELDA
 	elif elemento == "venenum":
@@ -182,6 +213,7 @@ func _aplicar_tamano(nuevo: String):
 		_actualizar_cadencia()
 		temporizador.start()
 	queue_redraw()
+	indicadores.queue_redraw()
 
 func obtener_estadisticas() -> Dictionary:
 	return {
@@ -221,12 +253,6 @@ func mostrar_rango(mostrar: bool):
 		queue_redraw()
 
 func _draw():
-	if elemento == "terra" and vida > 0:
-		var barra := Rect2(-24, -38 * sprite.scale.y, 48, 6)
-		draw_rect(barra.grow(1), Color.BLACK)
-		draw_rect(barra, Color(0.4, 0.1, 0.1))
-		var proporcion := clampf(float(vida) / float(_datos(tamano).vida), 0.0, 1.0)
-		draw_rect(Rect2(barra.position, Vector2(48 * proporcion, 6)), Color(0.45, 0.8, 0.25))
 	if not rango_visible or not is_instance_valid(forma) or forma.shape == null:
 		return
 	var centro := to_local(forma.global_position)
@@ -234,6 +260,39 @@ func _draw():
 	draw_circle(centro, radio, Color(0.2, 0.8, 1.0, 0.12))
 	draw_arc(centro, radio, 0.0, TAU, 64, Color(0.3, 0.9, 1.0, 0.8), 2.0, true)
 
+func obtener_iconos_combate() -> Array[String]:
+	var estados: Array[String] = []
+	if protegido_aura_gelida or protegido_ventisca:
+		estados.append("escudo")
+	if protegido_radiacion:
+		estados.append("proteccion_aqua")
+	if expuesto_aura_electrica:
+		estados.append("rayo")
+	if esta_congelado() or nivel_congelacion > 0:
+		estados.append("hielo")
+	if intoxicado_por_aura:
+		estados.append("veneno")
+	if bono_geiser_restante > 0.0:
+		estados.append("geiser")
+	return estados
+
+func _dibujar_indicadores():
+	if vida <= 0:
+		return
+	# Dentro de la casilla, también cuando el arte crece con el árbol.
+	var barra := Rect2(-11, 20, 39, 8)
+	var proporcion := clampf(float(vida) / vida_maxima, 0.0, 1.0)
+	indicadores.draw_rect(Rect2(-30, 15, 60, 19), Color("#102019"))
+	indicadores.draw_rect(barra, Color("#52363a"))
+	var color := Color("#94e76b") if proporcion > 0.5 else Color("#ffbb65")
+	if proporcion <= 0.25:
+		color = Color("#fa866e")
+	indicadores.draw_rect(Rect2(barra.position, Vector2(barra.size.x * proporcion, barra.size.y)), color)
+	indicadores.draw_string(ThemeDB.fallback_font, Vector2(-26, 30), str(obtener_nivel()), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color.WHITE)
+	ICONOS.dibujar_fila(indicadores, obtener_iconos_combate(), Vector2(0, -22), 62.0, nivel_congelacion)
+
+func obtener_nivel() -> int:
+	return NIVEL_POR_TAMANO[tamano]
 
 # Sube al siguiente tamaño (pequeno -> mediano -> grande)
 func mejorar() -> bool:
@@ -247,14 +306,16 @@ func mejorar() -> bool:
 
 
 func obtener_costo() -> int:
-	return costos[["pequeno", "mediano", "grande"].find(tamano)]
+	return costos[obtener_nivel() - 1]
 
 
 func recibir_dano(cantidad: int):
-	if vida <= 0 or is_queued_for_deletion():
+	if cantidad <= 0 or vida <= 0 or is_queued_for_deletion():
 		return
-	vida -= cantidad
-	queue_redraw()
+	var aplicado := mini(cantidad, vida)
+	vida -= aplicado
+	dano_recibido.emit(aplicado, false)
+	indicadores.queue_redraw()
 	if vida <= 0:
 		murio.emit()
 		queue_free()
@@ -284,8 +345,7 @@ func _disparar():
 	if enemigos_en_rango.is_empty():
 		return
 
-	# El primero que entró suele ser el más adelantado en el camino
-	var objetivo = _mas_adelantada()
+	var objetivo = _elegir_objetivo()
 	if not _es_objetivo_valido(objetivo) or semilla_escena == null or not rango.overlaps_body(objetivo):
 		return
 	if intoxicado_por_aura and _tirada_fallo() < 0.3:
@@ -317,17 +377,30 @@ func _disparar():
 func _limpiar_enemigos_muertos():
 	enemigos_en_rango = enemigos_en_rango.filter(_es_objetivo_valido)
 
-func _mas_adelantada():
+func puede_elegir_objetivo() -> bool:
+	return elemento not in ["aqua", "terra"] and vida > 0 and not is_queued_for_deletion()
+
+func cambiar_prioridad() -> String:
+	prioridad = Prioridad.MAYOR_VIDA if prioridad == Prioridad.CERCA_META else Prioridad.CERCA_META
+	return NOMBRES_PRIORIDAD[prioridad]
+
+func _elegir_objetivo():
 	var mejor = null
-	var menor := INF
+	var menor_distancia := INF
+	var mayor_vida := -INF
 	for e in enemigos_en_rango:
 		if not _es_objetivo_valido(e):
 			continue
 		var seg := e.get_parent() as PathFollow2D
 		var largo: float = (seg.get_parent() as Path2D).curve.get_baked_length()
 		var faltante: float = largo - seg.progress
-		if faltante < menor:
-			menor = faltante
+		var vida_enemigo: float = e.vida
+		var gana := faltante < menor_distancia
+		if prioridad == Prioridad.MAYOR_VIDA:
+			gana = vida_enemigo > mayor_vida or (vida_enemigo == mayor_vida and gana)
+		if gana:
+			menor_distancia = faltante
+			mayor_vida = vida_enemigo
 			mejor = e
 	return mejor
 

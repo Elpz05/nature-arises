@@ -11,10 +11,5 @@ func _configurar_nivel():
 	rutas_adicionales = [catalogo.ATAJO_FLAMMA] if datos.get("atajo", false) else []
 	if clima == "radiacion":
 		rutas_adicionales.append(catalogo.ATAJO_ELECTRICITAS)
-		celdas_inundadas.assign(catalogo.POZAS_RADIACION)
-	elif clima == "tormenta":
-		celdas_inundadas.assign([Vector2i(6, 4), Vector2i(7, 4), Vector2i(8, 4), Vector2i(9, 4), Vector2i(10, 4)])
-	else:
-		celdas_inundadas.clear()
 	intensidad_tormenta = "mediano"
 	celdas_geiser.assign([Vector2i(6, 5), Vector2i(17, 8)] if clima == "volcan" else [])

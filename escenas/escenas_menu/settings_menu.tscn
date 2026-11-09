@@ -303,6 +303,34 @@ popup/item_0/id = 0
 popup/item_1/text = "No"
 popup/item_1/id = 0
 
+[node name="HUDDebug" type="CheckButton" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 32)
+tooltip_text = "Muestra detalles de combate, bestias entrantes y el clima."
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("4_imfqx")
+theme_override_font_sizes/font_size = 24
+text = "HUD de depuración"
+
+[node name="NumerosDano" type="CheckButton" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 32)
+tooltip_text = "Muestra los puntos de vida perdidos por árboles y bestias sobre el tablero."
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("4_imfqx")
+theme_override_font_sizes/font_size = 24
+text = "Números de daño"
+
 [node name="HSeparator2" type="HSeparator" parent="ContenedorAjustes/MarginContainer/ScrollContainer/Opciones" unique_id=1707362956]
 layout_mode = 2
 

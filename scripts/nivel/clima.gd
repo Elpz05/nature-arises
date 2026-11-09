@@ -4,11 +4,15 @@ const NOMBRES := {"despejado": "Despejado", "lluvia": "Lluvia", "tormenta": "Tor
 const RAYOS := {"pequeno": {"intervalo": 5.0, "probabilidad": 0.1}, "mediano": {"intervalo": 3.0, "probabilidad": 0.5}, "grande": {"intervalo": 1.0, "probabilidad": 0.9}}
 const INTERVALO_RADIACION := 8.0
 const DANO_RADIACION := 6
+const AVISO_RAYO := 1.2
+const AVISO_DERRUMBE := 2.5
 
 var nivel
 var tiempo := 0.0
 var intervalos: Dictionary = {}
 var proximos: Dictionary = {}
+var anticipaciones: Dictionary = {}
+var avisos: Dictionary = {}
 var calor_activo := false
 var ultimo_evento := ""
 var conteos: Dictionary = {}
@@ -45,12 +49,19 @@ static func factor_velocidad_bestia(clima: String, tipo: String) -> float:
 func _ready():
 	z_index = 8
 	match nivel.clima:
-		"tormenta": intervalos = {"rayo": RAYOS[nivel.intensidad_tormenta].intervalo}
+		"tormenta":
+			var intervalo: float = RAYOS[nivel.intensidad_tormenta].intervalo
+			intervalos = {"aviso_rayo": intervalo}
+			anticipaciones["rayo"] = minf(AVISO_RAYO, intervalo * 0.8)
 		"volcan": intervalos = {"geiser": 10.0, "erupcion": 25.0}
 		"ventisca": intervalos = {"calor": 20.0, "ventisca": 10.0}
-		"derrumbe": intervalos = {"derrumbe": 15.0}
+		"derrumbe":
+			intervalos = {"aviso_derrumbe": 15.0}
+			anticipaciones["derrumbe"] = AVISO_DERRUMBE
 		"radiacion": intervalos = {"radiacion": INTERVALO_RADIACION}
 	proximos = intervalos.duplicate()
+	for tipo in anticipaciones:
+		proximos["aviso_" + tipo] -= anticipaciones[tipo]
 	ultimo_evento = {"tormenta": "Rayos: intensidad " + nivel.intensidad_tormenta, "volcan": "Géiser: 10 s | Erupción: 25 s", "ventisca": "Ventisca: 10 s | Calor: 20 s", "derrumbe": "Caída de roca cada 15 s", "radiacion": "Radiación: -6 HP cada 8 s en ronda. Aqua protege sus vecinas; Venenum es inmune."}.get(nivel.clima, "Sin peligros climáticos")
 	nivel.hud.actualizar_evento_clima(ultimo_evento)
 	queue_redraw()
@@ -91,10 +102,18 @@ func actualizar(delta: float):
 			break
 		_avanzar(maxf(0.0, siguiente - tiempo))
 		tiempo = siguiente
+		if intervalos.has(evento):
+			proximos[evento] += intervalos[evento]
+		else:
+			proximos.erase(evento)
 		match evento:
-			"rayo":
+			"aviso_rayo":
 				if _azar() < RAYOS[nivel.intensidad_tormenta].probabilidad:
-					rayo_en(_celda_aleatoria())
+					_avisar("rayo", _celda_aleatoria())
+			"rayo":
+				var celda: Vector2i = avisos["rayo"]
+				avisos.erase("rayo")
+				rayo_en(celda)
 			"geiser": emitir_geiseres()
 			"erupcion": erupcion()
 			"calor":
@@ -102,12 +121,28 @@ func actualizar(delta: float):
 				actualizar_proteccion(true)
 				_registrar("Calor de Flamma: deshielo y protección", "calor")
 			"ventisca": barrer_ventisca()
-			"derrumbe": derrumbe_en(_columna_aleatoria())
+			"aviso_derrumbe":
+				_avisar("derrumbe", Vector2i(_columna_aleatoria(), nivel.FILAS_BLOQUEADAS))
+			"derrumbe":
+				var celda: Vector2i = avisos["derrumbe"]
+				avisos.erase("derrumbe")
+				derrumbe_en(celda.x)
 			"radiacion": radiacion()
-		proximos[evento] += intervalos[evento]
 		actualizar_proteccion()
 	_avanzar(maxf(0.0, destino - tiempo))
 	tiempo = destino
+	queue_redraw()
+
+func _avisar(tipo: String, celda: Vector2i):
+	avisos[tipo] = celda
+	proximos[tipo] = tiempo + anticipaciones[tipo]
+	ultimo_evento = "Aviso de rayo · Electricitas resiste" if tipo == "rayo" else "Aviso de derrumbe · Terra protege lo que queda debajo"
+	nivel.hud.actualizar_evento_clima(ultimo_evento)
+
+func cancelar_avisos():
+	for tipo in avisos:
+		proximos.erase(tipo)
+	avisos.clear()
 	queue_redraw()
 
 func _avanzar(delta: float):
@@ -197,13 +232,24 @@ func derrumbe_en(columna: int):
 			bestia.destruir_por_entorno()
 	_registrar("Derrumbe en columna %d%s" % [columna, " · Terra bloqueó la roca" if fila_tope < nivel.ALTO else ""], "derrumbe", Vector2i(columna, fila_tope))
 
-func radiacion():
+func _celdas_protegidas_radiacion() -> Dictionary:
 	var protegidas := {}
 	for celda in nivel.arboles_plantados:
 		var aqua = nivel.arboles_plantados[celda]
 		if is_instance_valid(aqua) and not aqua.is_queued_for_deletion() and aqua.vida > 0 and aqua.elemento == "aqua":
 			for direccion in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
 				protegidas[celda + direccion] = true
+	return protegidas
+
+func actualizar_indicadores_radiacion():
+	var protegidas := _celdas_protegidas_radiacion()
+	for celda in nivel.arboles_plantados:
+		var arbol = nivel.arboles_plantados[celda]
+		if is_instance_valid(arbol) and not arbol.is_queued_for_deletion():
+			arbol.indicar_proteccion_radiacion(protegidas.has(celda) and arbol.elemento != "venenum")
+
+func radiacion():
+	var protegidas := _celdas_protegidas_radiacion()
 	for celda in nivel.arboles_plantados.keys():
 		var arbol = nivel.arboles_plantados.get(celda)
 		if not is_instance_valid(arbol) or arbol.is_queued_for_deletion() or arbol.vida <= 0 or arbol.elemento == "venenum":
@@ -222,10 +268,7 @@ func _draw():
 	draw_rect(tablero, tinte)
 	if nivel.clima == "volcan":
 		for celda in nivel.celdas_geiser:
-			var punto := _punto(celda)
-			draw_circle(punto, 23.0, Color(0.3, 0.16, 0.08))
-			draw_circle(punto, 13.0, Color(1, 0.4, 0.1))
-			draw_string(ThemeDB.fallback_font, punto + Vector2(-22, 38), "Géiser", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+			_dibujar_geiser(_punto(celda), tablero)
 	for visual in visuales:
 		var alpha: float = clampf(visual.restante / 0.8, 0.0, 1.0)
 		var punto := _punto(visual.celda)
@@ -233,7 +276,9 @@ func _draw():
 			"rayo":
 				var origen := Vector2(punto.x - 25.0, tablero.position.y)
 				draw_polyline(PackedVector2Array([origen, origen.lerp(punto, 0.4) + Vector2(25, 0), origen.lerp(punto, 0.6) - Vector2(20, 0), punto]), Color(1, 0.95, 0.4, alpha), 5.0, true)
-			"geiser", "erupcion":
+			"geiser":
+				draw_rect(_area_geiser(punto, tablero), Color(1, 0.4, 0.1, alpha * 0.25))
+			"erupcion":
 				if visual.celda.x >= 0:
 					draw_circle(punto, 50.0 * (2.0 - alpha), Color(1, 0.4, 0.1, alpha * 0.35))
 			"ventisca", "calor", "radiacion":
@@ -245,3 +290,42 @@ func _draw():
 				var fin_y: float = minf(tablero.end.y, punto.y)
 				draw_rect(Rect2(Vector2(punto.x - 30.0, tablero.position.y), Vector2(60.0, maxf(0.0, fin_y - tablero.position.y))), Color(0.6, 0.5, 0.35, alpha * 0.4))
 				draw_circle(Vector2(punto.x, fin_y - 25.0), 25.0, Color(0.45, 0.4, 0.3, alpha))
+	for tipo in avisos:
+		_dibujar_aviso(tipo, avisos[tipo], tablero)
+
+func _area_geiser(punto: Vector2, tablero: Rect2) -> Rect2:
+	var lado: Vector2 = Vector2.ONE * nivel.TAM_CELDA * 3.0
+	return Rect2(punto - lado / 2.0, lado).intersection(tablero)
+
+func _dibujar_geiser(punto: Vector2, tablero: Rect2):
+	var area := _area_geiser(punto, tablero).grow(-2.0)
+	var naranja := Color(1.0, 0.64, 0.25)
+	draw_rect(area, Color(naranja, 0.1))
+	draw_rect(area, Color(naranja, 0.7), false, 3.0)
+	draw_circle(punto, 23.0, Color(0.3, 0.16, 0.08))
+	draw_circle(punto, 13.0, Color(1, 0.4, 0.1))
+	var texto := "Géiser · %d s" % ceili(maxf(0.0, proximos["geiser"] - tiempo))
+	var fuente := ThemeDB.fallback_font
+	var ancho := fuente.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+	var x := clampf(punto.x - ancho / 2.0, tablero.position.x + 6.0, tablero.end.x - ancho - 6.0)
+	var posicion := Vector2(x, punto.y + 43.0)
+	draw_string_outline(fuente, posicion, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 4, Color.BLACK)
+	draw_string(fuente, posicion, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, naranja)
+
+func _dibujar_aviso(tipo: String, celda: Vector2i, tablero: Rect2):
+	var centro := _punto(celda)
+	var es_rayo := tipo == "rayo"
+	var area := Rect2(centro - Vector2.ONE * 32.0, Vector2.ONE * 64.0)
+	if not es_rayo:
+		area.size.y = tablero.size.y
+	var color := Color(1.0, 0.86, 0.3) if es_rayo else Color(1.0, 0.54, 0.27)
+	var restante := maxf(0.0, proximos[tipo] - tiempo)
+	draw_rect(area.grow(-2.0), Color(color, 0.26))
+	draw_rect(area.grow(-2.0), color, false, 4.0)
+	var texto := ("RAYO %.1f s · Electricitas resiste" if es_rayo else "ROCA %.1f s · Terra protege") % restante
+	var fuente := ThemeDB.fallback_font
+	var ancho := fuente.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+	var x := clampf(centro.x - ancho / 2.0, tablero.position.x + 10.0, tablero.end.x - ancho - 10.0)
+	var y := minf(area.end.y + 22.0, tablero.end.y - 10.0) if es_rayo else tablero.position.y + 24.0
+	draw_string_outline(fuente, Vector2(x, y), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color.BLACK)
+	draw_string(fuente, Vector2(x, y), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, color)

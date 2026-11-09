@@ -31,6 +31,10 @@ func _run():
 		root.add_child(level)
 		level.set_process(false)
 		var road := Vector2i(4, level.puntos_ruta[0].y)
+		level.puestos_terra.append(road)
+		level.parcelas_secano.append(Vector2i(4, 3 if index == 1 else 4))
+		if index == 1:
+			level.puestos_terra.append(Vector2i(26, 8))
 		var entry := 224.0
 		level._on_semilla_pulsada(3, false)
 		_check(level.seleccion_tipo == "", "Terra respects campaign unlocks")

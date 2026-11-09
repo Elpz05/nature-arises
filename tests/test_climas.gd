@@ -59,14 +59,29 @@ func _run():
 		var level = _level("tormenta", data[0])
 		var weather = level.gestor_clima
 		weather.tirada = 0.0
-		weather.actualizar(data[1] - 0.01)
-		_check(weather.conteos.get("rayo", 0) == 0, "Lightning waits its full intensity-specific interval")
+		var aviso: float = weather.anticipaciones.rayo
+		weather.actualizar(data[1] - aviso - 0.01)
+		_check(weather.avisos.is_empty() and weather.conteos.get("rayo", 0) == 0, "Lightning stays quiet before the warning window")
 		weather.actualizar(0.01)
-		_check(weather.conteos.get("rayo", 0) == 1, "Lightning occurs at the interval boundary")
+		_check(weather.avisos.get("rayo") == weather.celda_fija and weather.conteos.get("rayo", 0) == 0, "Lightning marks the exact tile before damage")
+		weather.actualizar(aviso - 0.01)
+		_check(weather.conteos.get("rayo", 0) == 0, "The warning lasts its full intensity-specific duration")
+		weather.actualizar(0.01)
+		_check(weather.conteos.get("rayo", 0) == 1 and weather.avisos.is_empty(), "Lightning impacts at the original interval boundary")
 		weather.tirada = data[2]
 		weather.actualizar(data[1])
-		_check(weather.conteos.rayo == 1, "Lightning probability uses the configured exclusive threshold")
+		_check(weather.conteos.rayo == 1 and weather.avisos.is_empty(), "A failed lightning roll creates neither a warning nor an impact")
 		level.free()
+	var response = _level("tormenta")
+	var warning = response.gestor_clima
+	warning.tirada = 0.0
+	warning.actualizar(3.0 - warning.anticipaciones.rayo)
+	var immune = _plant(response, Vector2i(5, 3), 4)
+	var neighbor = _plant(response, Vector2i(4, 3), 0)
+	warning.celda_fija = Vector2i(4, 3)
+	warning.actualizar(warning.anticipaciones.rayo)
+	_check(immune.vida == 200 and neighbor.vida == 100 and warning.conteos.rayo == 1, "Electricitas can be planted in response and the scheduled tile is never rerolled")
+	response.free()
 	var storm = _level("tormenta")
 	var weather = storm.gestor_clima
 	var shield = _plant(storm, Vector2i(4, 3), 4)
@@ -80,7 +95,7 @@ func _run():
 	var phoenix = _enemy(storm, "flamma")
 	weather.rayo_en(Vector2i(4, 4))
 	_check(electric.vida == 500.0 and phoenix.muerto and not phoenix.renacio, "Lightning spares Electricitas beasts and environmental destruction bypasses resurrection")
-	_check(is_equal_approx(storm.obtener_produccion_agua(), 0.4), "Storm adds 0.4 drops/s to the well")
+	_check(is_equal_approx(storm.obtener_produccion_agua(), 0.14), "Storm adds 0.14 drops/s to the well")
 	storm.free()
 	# Geyser's seven-second bonus has an independent timer and does not stack.
 	var volcano = _level("volcan")
@@ -90,7 +105,7 @@ func _run():
 	var flame = _plant(volcano, Vector2i(7, 5), 1)
 	var ice = _plant(volcano, Vector2i(8, 5), 5)
 	_check(is_equal_approx(nature.obtener_estadisticas().disparos_segundo, 2.2) and flame.obtener_estadisticas().disparos_segundo == 1.0 and ice.obtener_estadisticas().disparos_segundo == 1.0, "Volcano cadence bonus applies only to the other elements")
-	_check(flame.modificador_dano == 0.2 and ice.modificador_dano == -0.2 and volcano.obtener_produccion_agua() == 0.15, "Volcano configures damage and reduced water production")
+	_check(flame.modificador_dano == 0.2 and ice.modificador_dano == -0.2 and volcano.obtener_produccion_agua() == 0.07, "Volcano configures damage and reduced water production")
 	var ice_beast = _enemy(volcano, "glacies")
 	_check(ice_beast.vida_maxima == 275.0, "Volcano halves base Glacies beast HP")
 	weather.actualizar(9.0)
@@ -165,6 +180,27 @@ func _run():
 	_check(behind.muerto and above.vida == 100, "Subsequent rocks continue down the column; adjacent columns remain safe")
 	_check(not collapse._se_puede_plantar(Vector2i(4, 8), 0), "Destroyed road Terra leaves the road reserved")
 	collapse.free()
+	var fall = _level("derrumbe")
+	weather = fall.gestor_clima
+	var protected = _plant(fall, Vector2i(4, 6), 0)
+	weather.actualizar(12.5)
+	_check(weather.avisos.get("derrumbe") == Vector2i(4, fall.FILAS_BLOQUEADAS) and protected.vida == 100, "Rockfall marks its column 2.5 seconds before impact")
+	paused = true
+	weather.actualizar(8.0)
+	_check(weather.tiempo == 12.5 and weather.avisos.has("derrumbe"), "Pause freezes a pending warning")
+	paused = false
+	var response_terra = _plant(fall, Vector2i(4, 5), 3)
+	weather.columna_fija = 10
+	weather.actualizar(2.49)
+	_check(response_terra.golpes_derrumbe == 0, "Rockfall waits until the full warning elapses")
+	weather.actualizar(0.01)
+	_check(response_terra.golpes_derrumbe == 1 and protected.vida == 100 and weather.avisos.is_empty(), "A Terra planted during the warning shields the original column")
+	weather.actualizar(12.5)
+	fall._on_espiritu_llego(fall.arbol_meta.vida)
+	weather.actualizar(100.0)
+	_check(weather.avisos.is_empty() and weather.conteos.derrumbe == 1, "Defeat cancels pending warnings and their damage")
+	paused = false
+	fall.free()
 	# Radiation only pulses during a wave and has no instant-death roll.
 	var radioactive = _level("radiacion")
 	weather = radioactive.gestor_clima

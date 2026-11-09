@@ -8,7 +8,7 @@ Both levels use the same `semillas_escenas` order as `hud.gd` and saved plant un
 | --- | --- | --- | --- | --- |
 | 0 | Natura | `res://escenas/escenas_arboles/arbol_base.tscn` | 1 | 2, 3 |
 | 1 | Flamma | `res://escenas/escenas_arboles/arbol_flamma.tscn` | 3 | 4, 5 |
-| 2 | Aqua | `res://escenas/escenas_arboles/arbol_aqua.tscn` | 6 | 8, 10 |
+| 2 | Aqua | `res://escenas/escenas_arboles/arbol_aqua.tscn` | 6 | 4, 6 |
 
 The other four slots remain unimplemented. Do not reorder these indices: saves
 store the numeric plant IDs.

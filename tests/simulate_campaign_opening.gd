@@ -16,11 +16,7 @@ func _run():
 	for index in 2:
 		var level = load("res://escenas/escenas_niveles/nivel_%d.tscn" % index).instantiate()
 		root.add_child(level)
-		var cells: Array = [Vector2i(0, 4), Vector2i(2, 4), Vector2i(4, 4), Vector2i(6, 4), Vector2i(4, 6), Vector2i(6, 6), Vector2i(4, 8), Vector2i(6, 8), Vector2i(4, 10), Vector2i(6, 10), Vector2i(8, 11), Vector2i(8, 13)]
-		if index == 1:
-			cells = []
-			for x in range(0, 24, 2):
-				cells.append(Vector2i(x, 3))
+		var cells: Array = level.parcelas_secano.slice(0, 6)
 		var elapsed := 0.0
 		while not level.terminado and elapsed < 900.0:
 			level._recoger_en_objetivo(level.suelo.map_to_local(level.celda_pozo))

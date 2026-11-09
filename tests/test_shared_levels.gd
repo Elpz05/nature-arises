@@ -49,6 +49,10 @@ func _run():
 		_check(not level._se_puede_plantar(level.celda_arbol_madre), "Base cell must be blocked")
 		_check(not level._se_puede_plantar(Vector2i(29, 16)), "Level-specific obstacle cells must be blocked by the parent")
 		_check(not level._se_puede_plantar(Vector2i(-1, 4)) and not level._se_puede_plantar(Vector2i(0, 2)), "Bounds and HUD rows must be blocked")
+		level._on_semilla_pulsada(0, false)
+		level._confirmar(level.suelo.map_to_local(Vector2i(29, 15)))
+		_check(level.gotas == 3 and level.arboles_plantados.is_empty(), "Unmarked grass rejects the real purchase without charging water")
+		level._deseleccionar()
 		for cell in level._celdas_de(level.puntos_ruta):
 			_check(not level._se_puede_plantar(cell), "Main road cells must be blocked")
 		if index == 1:
@@ -68,7 +72,7 @@ func _run():
 		var queued: int = level.cola_bestias.size()
 		level._iniciar_ronda()
 		_check(level.cola_bestias.size() == queued, "Repeated starts must not duplicate a wave")
-		level._process(5.0)
+		level._process(12.0)
 		_check(level.gotas == 3 and level.pozo.reserva == 1 and level.pozo.generando, "Waves must fill the well without directly crediting the wallet")
 		level._lanzar_ataque(Vector2(1800, 1000), 0)
 		_check(level.cargas[0] == 1, "Shared ability logic must consume one charge")
@@ -90,9 +94,7 @@ func _run():
 		_clear_enemies(level)
 		for wave in range(1, 6):
 			level._iniciar_ronda()
-			var expected := 0
-			for amount in level.rondas[wave - 1].values():
-				expected += int(amount)
+			var expected: int = level._plan_de_ronda(wave, false).size()
 			var spawned := 0
 			while not level.cola_bestias.is_empty():
 				level._process(3.0)
@@ -100,7 +102,9 @@ func _run():
 				_check(level.ronda == wave and not level.terminado, "Wave must wait for spawned enemies")
 				_clear_enemies(level)
 			_check(spawned == expected, "Wave recipes must preserve enemy counts in level %d wave %d" % [index, wave])
+			var saldo: int = level.gotas
 			level._process(0.0)
+			_check(level.gotas == saldo + (2 if wave < 5 else 0), "A non-final clear credits two drops directly, and the final wave ends the level")
 			if wave < 5:
 				_check(level.ronda == wave + 1 and not level.ronda_activa, "Cleared waves must advance and wait for the next trigger")
 		_check(level.terminado and paused, "The final wave must open victory and pause gameplay")

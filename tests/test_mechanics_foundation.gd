@@ -32,12 +32,12 @@ func _run():
 	_check(not level._plantar(wet, 2) and not level._plantar(wet, 0), "A cell accepts one tree only")
 	var aqua = level.arboles_plantados[wet]
 	_check(aqua.vida == 100 and aqua.temporizador.is_stopped(), "Aqua supports production without attacks")
-	_check(is_equal_approx(level.obtener_produccion_agua(), 0.4), "Rain and Aqua add to base production")
+	_check(is_equal_approx(level.obtener_produccion_agua(), 0.17), "Rain and Aqua add to base production")
 	level.gotas = 20
 	level._mejorar_arbol(wet)
-	_check(aqua.vida == 100 and is_equal_approx(level.obtener_produccion_agua(), 0.5), "Medium Aqua produces 0.2/s")
+	_check(aqua.vida == 100 and level.gotas == 16 and is_equal_approx(level.obtener_produccion_agua(), 0.23), "Medium Aqua costs four water and produces 0.12/s")
 	level._mejorar_arbol(wet)
-	_check(aqua.vida == 100 and is_equal_approx(level.obtener_produccion_agua(), 0.6), "Large Aqua produces 0.3/s")
+	_check(aqua.vida == 100 and level.gotas == 10 and is_equal_approx(level.obtener_produccion_agua(), 0.29), "Large Aqua costs six water and produces 0.18/s")
 	var invested: int = level.gotas
 	level._quitar_arbol(wet)
 	_check(level.gotas == invested and not level._se_puede_plantar(wet, 0), "Shovel grants no refund and leaves the road reserved")
@@ -46,11 +46,12 @@ func _run():
 	level._process(40.0)
 	_check(level.gotas == 0 and level.pozo.reserva == 0, "The waiting phase generates no water")
 	level._iniciar_ronda()
-	level._actualizar_recursos(4.0)
+	var segundos_por_gota := 1.0 / 0.085
+	level._actualizar_recursos(segundos_por_gota - 1.0)
 	_check(level.pozo.reserva == 0, "Fractional production is saved")
 	level._actualizar_recursos(1.0)
-	_check(level.pozo.reserva == 1 and level.gotas == 0, "Five seconds produce one stored drop")
-	level._actualizar_recursos(15.0)
+	_check(level.pozo.reserva == 1 and level.gotas == 0, "The slower well produces one stored drop")
+	level._actualizar_recursos(segundos_por_gota * 3.0)
 	_check(level.pozo.reserva == 4, "Long frames preserve completed drops")
 	paused = true
 	level._process(100.0)
@@ -79,7 +80,7 @@ func _run():
 	_enemy(level, "natura", progress)
 	level._actualizar_contactos_aqua()
 	_check(aqua.vida <= 0 and not level.arboles_plantados.has(wet), "Other beasts instantly destroy Aqua and free its slot")
-	_check(is_equal_approx(level.obtener_produccion_agua(), 0.3), "Destroyed Aqua stops producing immediately")
+	_check(is_equal_approx(level.obtener_produccion_agua(), 0.11), "Destroyed Aqua stops producing immediately")
 	for enemy in level._bestias_vivas():
 		enemy.get_parent().queue_free()
 	await process_frame

@@ -34,7 +34,14 @@ layout_mode = 2
 [node name="Continuar" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=652412708]
 unique_name_in_owner = true
 layout_mode = 2
+focus_neighbor_bottom = NodePath("../Guia")
 text = "Continuar"
+
+[node name="Guia" type="Button" parent="Centro/PanelPrincipal/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_neighbor_top = NodePath("../Continuar")
+text = "Guía de campo"
 
 [node name="Sonido" type="Button" parent="Centro/PanelPrincipal/VBoxContainer" unique_id=1992518810]
 unique_name_in_owner = true

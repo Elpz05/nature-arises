@@ -5,6 +5,7 @@ signal reserva_cambiada(cantidad: int)
 
 const CAPACIDAD := 5
 const RADIO := 30.0
+const ICONOS = preload("res://scripts/HUD/iconos_combate.gd")
 
 var generando := false
 var reserva := 0
@@ -40,11 +41,10 @@ func recoger() -> bool:
 
 func _draw():
 	draw_circle(Vector2.ZERO, RADIO, Color(0.18, 0.19, 0.17))
-	draw_circle(Vector2.ZERO, 26.0, Color(0.73, 0.77, 0.74))
-	draw_circle(Vector2.ZERO, 22.0, Color(0.08, 0.32, 0.48).lerp(Color(0.1, 0.65, 0.88), float(reserva) / CAPACIDAD))
+	draw_circle(Vector2.ZERO, 26.0, Color("#b5ebff") if reserva > 0 else Color("#819da7"))
+	draw_circle(Vector2.ZERO, 22.0, Color("#173b51"))
+	ICONOS.dibujar(self, "gota", Vector2(0, -8), 1.25, false, reserva > 0)
 	var texto := "%d/%d" % [reserva, CAPACIDAD]
 	var fuente := ThemeDB.fallback_font
-	var ancho := fuente.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-	var origen := Vector2(-ancho / 2.0, 6.0)
-	draw_string_outline(fuente, origen, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color.BLACK)
-	draw_string(fuente, origen, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+	var ancho := fuente.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	draw_string(fuente, Vector2(-ancho / 2.0, 16), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)

@@ -22,7 +22,8 @@ func _ready():
 			indice = i
 			break
 	hud.panel_laboratorio = PanelContainer.new()
-	hud.acciones.add_child(hud.panel_laboratorio)
+	hud.panel_laboratorio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hud.fila_opciones.add_child(hud.panel_laboratorio)
 	var fila := HBoxContainer.new()
 	hud.panel_laboratorio.add_child(fila)
 	var anterior := Button.new()
@@ -56,12 +57,17 @@ func _abrir_laboratorio(indice: int):
 
 # Laboratorio F6: habilita las siete plantas sin tocar partidas guardadas.
 func _configurar_nivel():
+	var agua_laboratorio := celdas_inundadas.duplicate()
 	super._configurar_nivel()
+	limitar_plantado = false
+	desafios_ronda.clear()
+	celdas_inundadas.assign(agua_laboratorio)
 	if clima == "radiacion":
 		var catalogo = preload("res://scripts/nivel/campana.gd")
 		rutas_adicionales.append(catalogo.ATAJO_ELECTRICITAS)
 		celdas_inundadas.assign(catalogo.POZAS_RADIACION)
-	rondas = rondas.duplicate(true)
+	for i in rondas.size():
+		rondas[i] = _contar_bestias(_expandir_receta(rondas[i]))
 	rondas[0]["aqua:pequeno"] = 2
 	for tipo in ["terra", "electricitas", "glacies", "venenum"]:
 		rondas[0][tipo + ":pequeno"] = 1
@@ -78,6 +84,8 @@ func _crear_hud():
 func _ganar_nivel():
 	# La prueba no escribe progreso de campaña.
 	terminado = true
+	numeros_dano.limpiar()
+	gestor_clima.cancelar_avisos()
 	ronda_activa = false
 	pozo.activar_generacion(false)
 	_deseleccionar()

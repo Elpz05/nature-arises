@@ -79,6 +79,8 @@ For non-road obstacles, set the inherited `celdas_bloqueadas` array on the child
 scene root. The parent reserves these cells without creating art or geometry.
 Routes must consist of horizontal/vertical segments, with at least two points.
 
+Campaign layouts live in `TERRENOS` in `scripts/nivel/campana.gd`, in level order. Each map defines its dry plots, optional Terra posts on dry road or shortcut cells, and optional Aqua sites. The shared level validates these coordinates against the route, weather, and reserved infrastructure. Dry plots can also hold Terra when a blockade off the road makes sense, such as shielding a column in the collapse stage. For standalone scenes, configure the inherited `limitar_plantado`, `parcelas_secano`, `puestos_terra`, and `celdas_inundadas` exports. The mechanics lab leaves the plot restriction off.
+
 Enemy scenes retain the existing assignments: level 0's `espiritu_escena` is its
 Natura fallback; level 1's `bestias_escenas` uses Natura/Flamma/Aqua order. The
 parent owns both lookup paths and the standardized copy signal connection.

@@ -2,6 +2,7 @@ extends VBoxContainer
 
 @onready var boton_jugar: Button = $Play
 @onready var boton_ajustes: Button = $Options
+@onready var boton_guia: Button = $Guia
 @onready var boton_salir: Button = $Quit
 
 @export var musica_menu: AudioStream
@@ -19,9 +20,19 @@ func _on_new_game_pressed() -> void:
 func _on_options_pressed() -> void:
 	get_tree().change_scene_to_file("res://escenas/escenas_menu/settings_menu.tscn")
 
+func _on_guia_pressed() -> void:
+	var guia := preload("res://escenas/escenas_menu/guia_juego.tscn").instantiate()
+	hide()
+	get_parent().add_child(guia)
+	guia.cerrada.connect(func():
+		show()
+		boton_guia.grab_focus()
+	)
+
 func _input(event: InputEvent) -> void:
-	UIInputManager.manejar_input(event, get_viewport(), boton_jugar)
+	if visible:
+		UIInputManager.manejar_input(event, get_viewport(), boton_jugar)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if visible and event.is_action_pressed("ui_cancel"):
 		_on_quit_pressed()

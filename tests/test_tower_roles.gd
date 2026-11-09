@@ -31,8 +31,7 @@ func _run():
 		var level = load("res://escenas/escenas_niveles/nivel_%d.tscn" % index).instantiate()
 		root.add_child(level)
 		level.set_process(false)
-		var row := 4 if index == 0 else 3
-		var fire_cell := Vector2i(0, row)
+		var fire_cell: Vector2i = level.parcelas_secano[0]
 		var water_cell: Vector2i = level.puntos_ruta[0]
 		level.clima = "lluvia"
 		level.celdas_inundadas.assign([water_cell])
@@ -69,15 +68,15 @@ func _run():
 		var child_count: int = level.arboles.get_child_count()
 		water._disparar()
 		_check(level.arboles.get_child_count() == child_count, "Aqua must not create projectiles")
-		_check(is_equal_approx(level.obtener_produccion_agua(), 0.4), "Small Aqua must add 0.1 water/s to the well in rain")
+		_check(is_equal_approx(level.obtener_produccion_agua(), 0.17), "Small Aqua must add 0.06 water/s to the well in rain")
 		for cell in [fire_cell, water_cell]:
 			level._mejorar_arbol(cell)
 			level._mejorar_arbol(cell)
 			_check(level.arboles_plantados[cell].tamano == "grande", "Both towers must support all upgrade sizes")
-		_check(level.gotas == 4, "Upgrades must charge 4 + 5 + 8 + 10 drops")
+		_check(level.gotas == 12, "Upgrades must charge 4 + 5 + 4 + 6 drops")
 		level._quitar_arbol(fire_cell)
 		level._quitar_arbol(water_cell)
-		_check(level.gotas == 4 and level.arboles_plantados.is_empty(), "Shovel must free cells without refunding water")
+		_check(level.gotas == 12 and level.arboles_plantados.is_empty(), "Shovel must free cells without refunding water")
 		level.free()
 
 	save.slot_actual = previous_slot

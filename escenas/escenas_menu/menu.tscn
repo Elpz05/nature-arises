@@ -138,6 +138,25 @@ script = ExtResource("6_7brne")
 sonido_hover = ExtResource("7_kci3a")
 sonido_click = ExtResource("8_o0xwp")
 
+[node name="Guia" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+theme_override_colors/font_focus_color = Color(1, 0.9490196, 0, 1)
+theme_override_colors/font_hover_color = Color(1, 0.9490196, 0, 1)
+theme_override_constants/outline_size = 13
+theme_override_fonts/font = ExtResource("5_kjhnm")
+theme_override_font_sizes/font_size = 62
+theme_override_styles/normal = SubResource("StyleBoxEmpty_jde2l")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_4hy44")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_ytr4m")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_yb3qj")
+text = "Guía de campo"
+flat = true
+script = ExtResource("6_7brne")
+sonido_hover = ExtResource("7_kci3a")
+sonido_click = ExtResource("8_o0xwp")
+
 [node name="Quit" type="Button" parent="VBoxContainer" unique_id=2113345392]
 layout_mode = 2
 size_flags_horizontal = 4
@@ -194,4 +213,5 @@ color = Color(0, 0, 0.003921569, 1)
 
 [connection signal="pressed" from="VBoxContainer/Play" to="VBoxContainer" method="_on_new_game_pressed"]
 [connection signal="pressed" from="VBoxContainer/Options" to="VBoxContainer" method="_on_options_pressed"]
+[connection signal="pressed" from="VBoxContainer/Guia" to="VBoxContainer" method="_on_guia_pressed"]
 [connection signal="pressed" from="VBoxContainer/Quit" to="VBoxContainer" method="_on_quit_pressed"]

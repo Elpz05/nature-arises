@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+signal guia_solicitada
+
 @export_file("*.tscn") var escena_salida: String   # menú de slots o menú principal
 var numero_nivel := 0                          # lo asigna el nivel
 @export var sonido_hover: AudioStream
@@ -9,6 +11,7 @@ var numero_nivel := 0                          # lo asigna el nivel
 @onready var panel_sonido: Control = %PanelSonido
 @onready var boton_continuar: Button = %Continuar
 @onready var boton_sonido: Button = %Sonido
+@onready var boton_guia: Button = %Guia
 @onready var boton_salir: Button = %Salir
 @onready var check_musica: CheckBox = %CheckMusica
 @onready var check_efectos: CheckBox = %CheckEfectos
@@ -25,6 +28,7 @@ func _ready() -> void:
 
 	boton_continuar.pressed.connect(_continuar)
 	boton_sonido.pressed.connect(_mostrar_sonido.bind(true))
+	boton_guia.pressed.connect(func(): guia_solicitada.emit())
 	boton_atras.pressed.connect(_mostrar_sonido.bind(false))
 	boton_salir.pressed.connect(_salir)
 	check_musica.toggled.connect(func(on: bool): _silenciar_bus("Music", not on))
@@ -42,7 +46,7 @@ func _ready() -> void:
 		add_child(abrir)
 		abrir.play()
 		
-	for c in [boton_continuar, boton_sonido, boton_salir, boton_atras, check_musica, check_efectos]:
+	for c in [boton_continuar, boton_guia, boton_sonido, boton_salir, boton_atras, check_musica, check_efectos]:
 		c.mouse_entered.connect(_on_hover)
 	
 	_mostrar_sonido(false)
@@ -65,7 +69,7 @@ func _ready() -> void:
 
 		p.get_child(0).add_theme_constant_override("separation", 14)
 
-	for b in [boton_continuar, boton_sonido, boton_salir, boton_atras]:
+	for b in [boton_continuar, boton_guia, boton_sonido, boton_salir, boton_atras]:
 		b.focus_mode = Control.FOCUS_ALL
 		b.custom_minimum_size = Vector2(260, 56)
 		b.add_theme_font_size_override("font_size", 24)
@@ -81,6 +85,8 @@ func _mostrar_sonido(ver: bool) -> void:
 		boton_continuar.grab_focus()
 
 func _input(event: InputEvent) -> void:
+	if not visible:
+		return
 	if event.is_action_pressed("Pausa", false, true) or event.is_action_pressed("Atras", false, true):
 		get_viewport().set_input_as_handled()
 		if panel_sonido.visible:

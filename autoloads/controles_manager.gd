@@ -14,7 +14,7 @@ var acciones_configurables := ["Clic Izquierdo",
 "Casilla Planta 6", "Izquierda", "Derecha", "Arriba",
 "Abajo", "Confirmar", "Atras", "Usar Elemento", 
 "Cambiar Casilla Izquierda", "Cambiar Casilla Derecha",
-"Alternar Elemento o Planta"]
+"Alternar Elemento o Planta", "Alternar Desafio", "Cambiar Prioridad", "Mejorar Arbol"]
 
 var valores_por_defecto: Dictionary = {}
 
@@ -101,6 +101,13 @@ func cargar_controles() -> void:
 			for e in eventos:
 				if e is InputEvent:
 					InputMap.action_add_event(accion, e)
+	for accion in ["Alternar Desafio", "Cambiar Prioridad", "Mejorar Arbol"]:
+		if config.has_section_key("controles", accion):
+			continue
+		for evento in InputMap.action_get_events(accion):
+			var tipo := Tipo.TECLADO_MOUSE if es_del_tipo(evento, Tipo.TECLADO_MOUSE) else Tipo.MANDO
+			if not buscar_conflicto(evento, accion, tipo).is_empty():
+				InputMap.action_erase_event(accion, evento)
 
 func buscar_conflicto(evento: InputEvent, accion_actual: String, tipo: Tipo) -> String:
 	for accion in acciones_configurables:

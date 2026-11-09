@@ -90,7 +90,6 @@ func _run():
 	level.tipos_plantados[cell] = 0
 	level.tamanos_plantados[cell] = 0
 	level.costos_plantados[cell] = 1
-	level.celdas_ocupadas[cell] = true
 	tower.murio.connect(level.liberar_celda.bind(cell))
 	var electric = _enemy(level, "electricitas")
 	level._actualizar_auras_bestias(0.5)

@@ -12,7 +12,7 @@ Los costos mediano y grande se cobran al mejorar, con el mismo comportamiento de
 
 ## Terreno y colisión
 
-La prohibición de plantar Terra en caminos inundados de la especificación implica que puede colocarse en caminos secos para cumplir su función de bloqueo. Se permite pasto libre y camino seco, y solo bloquea las rutas que pasan por el centro de su casilla. Colocarlo en pasto junto al camino no detiene enemigos. Se conservan las restricciones de obstáculos, tablero, Árbol Madre y ocupación. Los caminos siguen reservados al morir o retirar Terra; la pala no devuelve agua.
+En campaña, Terra puede plantarse en parcelas secas y en puestos de bloqueo marcados con barras sobre el camino o un atajo. En el laboratorio puede ocupar cualquier terreno seco libre. Solo bloquea las rutas que pasan por el centro de su casilla. Al morir o retirarlo, se libera el puesto para otro Terra. La pala no devuelve agua.
 
 El avance se resuelve en la actualización física de cada bestia sobre su propia Path2D. Se comprueba el segmento completo desde su progreso actual hasta su siguiente posición y se elige el primer Terra atravesado. El borde de contacto está media casilla antes del centro. Esto evita atravesarlo en un fotograma largo y funciona en tramos horizontales, verticales, giros y atajos. Los enemigos que ya pasaron la casilla no son arrastrados hacia atrás. Plantar sobre un enemigo aún dentro de la casilla sí lo bloquea.
 

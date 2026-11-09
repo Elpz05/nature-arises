@@ -41,7 +41,7 @@ func _run():
 	queued_body.queue_free()
 	tower.enemigos_en_rango = [freed, dead, queued_path, queued_body, live]
 	freed.get_parent().free()
-	_check(tower._mas_adelantada() == live, "Target selection must skip freed, dead, queued-body and queued-path enemies")
+	_check(tower._elegir_objetivo() == live, "Target selection must skip freed, dead, queued-body and queued-path enemies")
 	tower._limpiar_enemigos_muertos()
 	_check(tower.enemigos_en_rango == [live], "Cleanup must retain only valid live targets")
 	tower._disparar()

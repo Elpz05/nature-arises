@@ -36,14 +36,14 @@ func _run():
 	level.set_process(false)
 	level.set_physics_process(false)
 	level.clima = "despejado"
-	_check(level.hud.ATAQUES_ACTIVOS.size() == 7 and level.cargas[6] == 2.5, "Lab enables seven spells and preserves Venenum's fractional capacity")
-	_check(level.hud.botones_ataque[6].text.contains("2.5/2.5"), "HUD displays fractional charge capacity")
+	_check(level.hud.ATAQUES_ACTIVOS.size() == 7 and level.cargas[6] == 2, "Lab enables seven spells and gives Venenum two whole charges")
+	_check(level.hud.botones_ataque[6].text.contains("●●") and level.hud.botones_ataque[6].tooltip_text.contains("2/2"), "HUD displays whole Venenum charges as pips")
 	var immune := {"Natura": ["flamma", "venenum"], "Flamma": ["flamma", "aqua"], "Aqua": ["aqua"], "Terra": ["terra"], "Electricitas": ["electricitas"], "Glacies": ["glacies"], "Venenum": ["venenum"]}
 	for spell in immune:
 		for tipo in immune[spell]:
 			var enemy = _enemy(level, tipo)
 			var hp: float = enemy.vida
-			_check(not enemy.aplicar_ataque_elemental(spell, 100.0) and enemy.vida == hp and enemy.efecto_elemental.elemento == "", "Immune targets receive neither spell damage nor status: " + spell + " / " + tipo)
+			_check(not enemy.aplicar_ataque_elemental(spell, 100.0) and enemy.vida == hp and enemy.efecto_movimiento.elemento == "" and enemy.efecto_dano.elemento == "", "Immune targets receive neither spell damage nor status: " + spell + " / " + tipo)
 	_clear(level)
 	for entry in [["Flamma", "glacies", 20.0], ["Aqua", "flamma", 30.0], ["Glacies", "flamma", 10.0], ["Glacies", "aqua", 10.0]]:
 		var enemy = _enemy(level, entry[1])
@@ -61,20 +61,28 @@ func _run():
 	var burned = _enemy(level)
 	burned.aplicar_ataque_elemental("Flamma", 20.0)
 	burned._physics_process(4.0)
-	_check(burned.vida == 450.0 and burned.efecto_elemental.elemento == "", "Flamma adds precisely thirty burn damage over three seconds")
+	_check(burned.vida == 450.0 and burned.efecto_dano.elemento == "", "Flamma adds precisely thirty burn damage over three seconds")
 	var changed = _enemy(level)
 	changed.aplicar_ataque_elemental("Flamma", 20.0)
 	changed.aplicar_ataque_elemental("Glacies", 10.0)
+	var congelado_en: float = changed.get_parent().progress
 	changed._physics_process(1.0)
-	_check(changed.vida == 470.0 and changed.efecto_elemental.elemento == "glacies", "New spell cancels old burn immediately")
+	_check(changed.vida == 460.0 and changed.get_parent().progress == congelado_en and changed.obtener_estado_combate().contains("Quemadura"), "Burn continues ticking while Glacies stops movement")
+	changed.aplicar_ataque_elemental("Glacies", 0.0)
+	_check(changed.efecto_movimiento.restante == 2.0 and changed.efecto_dano.restante == 2.0, "A second freeze refreshes a single movement slot without resetting the burn")
 	changed.aplicar_veneno(2.0, 0.73, 6.0)
 	changed.aplicar_ataque_elemental("Terra", 0.0)
 	changed._physics_process(1.0)
-	_check(changed.vida == 468.0 and changed.veneno_restante > 0.0, "Replacing player spells preserves tree-applied poison")
+	_check(changed.vida == 448.0 and changed.veneno_restante > 0.0 and changed.efecto_movimiento.elemento == "terra", "A different movement spell replaces freeze but preserves burn and tree poison")
 	var immune_change = _enemy(level, "aqua")
 	immune_change.aplicar_ataque_elemental("Glacies", 0.0)
 	immune_change.aplicar_ataque_elemental("Flamma", 20.0)
-	_check(immune_change.efecto_elemental.elemento == "glacies", "An ineffective immune spell does not cleanse an existing effect")
+	_check(immune_change.efecto_movimiento.elemento == "glacies", "An ineffective immune spell does not cleanse an existing effect")
+	var thaw = _enemy(level)
+	thaw.aplicar_ataque_elemental("Glacies", 0.0)
+	thaw.aplicar_ataque_elemental("Venenum", 0.0, true)
+	thaw.remover_congelacion()
+	_check(thaw.efecto_movimiento.elemento == "" and thaw.efecto_dano.elemento == "venenum", "Thaw clears freeze and retains vulnerability")
 	# Dizziness integrates each half-second, independent of frame size.
 	var dizzy = _enemy(level)
 	dizzy.aplicar_ataque_elemental("Terra", 50.0)
@@ -115,8 +123,9 @@ func _run():
 	position = exclusive.global_position
 	exclusive.aplicar_ataque_elemental("Aqua", 0.0)
 	_check(exclusive.get_parent().get_parent() != level.ruta and exclusive.global_position.is_equal_approx(position), "Aqua never teleports off an exclusive shortcut segment")
+	exclusive.aplicar_ataque_elemental("Venenum", 0.0)
 	exclusive._physics_process(3.0)
-	_check(exclusive.get_parent().get_parent() == level.ruta, "Confused beasts switch at the next shared junction crossed during a long frame")
+	_check(exclusive.get_parent().get_parent() == level.ruta and exclusive.efecto_dano.elemento == "venenum", "Confusion reroutes at the next junction while vulnerability stays active")
 	level._plantar(Vector2i(26, 9), 3)
 	var barrier = level.arboles_plantados[Vector2i(26, 9)]
 	var blocked = _enemy(level, "flamma", 1940.0)
@@ -134,12 +143,12 @@ func _run():
 	swimmer.set_physics_process(false)
 	swimmer.aplicar_ataque_elemental("Aqua", 0.0)
 	swimmer._physics_process(0.1)
-	_check(swimmer.efecto_elemental.nadando and absf(swimmer.sprite.rotation) > 0.01, "Aqua swimming roll triggers a visible half-second animation")
+	_check(swimmer.efecto_movimiento.nadando and absf(swimmer.sprite.rotation) > 0.01, "Aqua swimming roll triggers a visible half-second animation")
 	swimmer._physics_process(0.5)
 	_check(is_zero_approx(swimmer.sprite.rotation), "Swimming animation ends independently of confusion")
 	swimmer.tirada = 0.5
 	swimmer.aplicar_ataque_elemental("Aqua", 0.0)
-	_check(not swimmer.efecto_elemental.nadando, "Swimming probability uses the fifty-percent boundary")
+	_check(not swimmer.efecto_movimiento.nadando, "Swimming probability uses the fifty-percent boundary")
 	_clear(level)
 	# Area vulnerability affects all eligible victims, slow affects three distinct ones.
 	var victims: Array = []
@@ -152,8 +161,8 @@ func _run():
 	_check(level._lanzar_ataque(center, 6), "Venenum casts from the actual level API")
 	var slowed := 0
 	for enemy in victims:
-		_check(enemy.vida == 400.0 and enemy.efecto_elemental.elemento == "venenum", "Venenum area applies damage and vulnerability to each eligible victim")
-		if enemy.efecto_elemental.ralentizado:
+		_check(enemy.vida == 400.0 and enemy.efecto_dano.elemento == "venenum", "Venenum area applies damage and vulnerability to each eligible victim")
+		if enemy.efecto_dano.ralentizado:
 			slowed += 1
 	_check(slowed == 3 and immune_venom.vida == 600.0 and distant.vida == 500.0 and tiny.muerto, "Venenum slows three distinct victims, respects immunity/radius and kills small Natura")
 	var projectile = load("res://escenas/escenas_balas/bala.tscn").instantiate()
@@ -166,14 +175,27 @@ func _run():
 	_check(victims[0].vida == 377.0, "Vulnerability does not add damage to periodic damage")
 	victims[0].aplicar_ataque_elemental("Natura", 0.0)
 	projectile._golpear(victims[0])
-	_check(victims[0].vida == 357.0, "Replacing vulnerability removes the projectile bonus")
-	# Fractional capacity, no overspending, one recovered charge per three seconds.
-	_check(level.cargas[6] == 1.5 and level._lanzar_ataque(Vector2(1800, 1000), 6), "Venenum consumes one charge at a time")
-	_check(level.cargas[6] == 0.5 and not level._lanzar_ataque(center, 6) and level.hud.botones_ataque[6].disabled, "Half a charge cannot cast or go negative")
+	_check(victims[0].vida == 356.0, "Adding movement control retains the vulnerability bonus")
+	var replace_damage = _enemy(level)
+	replace_damage.aplicar_ataque_elemental("Natura", 0.0)
+	replace_damage.aplicar_ataque_elemental("Venenum", 0.0, true)
+	replace_damage.aplicar_ataque_elemental("Flamma", 0.0)
+	_check(replace_damage.efecto_dano.elemento == "flamma" and replace_damage.efecto_movimiento.elemento == "natura", "A damage spell can replace a damage effect independently")
+	# Whole charges, no overspending, one recovered charge per three seconds.
+	_check(level.cargas[6] == 1 and level._lanzar_ataque(Vector2(1800, 1000), 6), "Venenum consumes one charge at a time")
+	_check(level.cargas[6] == 0 and not level._lanzar_ataque(center, 6) and level.hud.botones_ataque[6].disabled, "Empty charges cannot cast or go negative")
+	level._actualizar_recargas(5.0)
+	_check(level.cargas[6] == 0 and level.recarga[6] == 5.0 and level.hud.barras_recarga[6].value == 50.0 and level.hud.botones_ataque[6].tooltip_text.contains("cada 10 s"), "Venenum's ten-second timer and HUD stay in sync")
+	level._actualizar_recargas(5.0)
+	_check(level.cargas[6] == 1 and level.recarga[6] == 10.0, "First recharge restores one whole charge")
+	level._actualizar_recargas(12.0)
+	_check(level.cargas[6] == 2 and level.recarga[6] == 0.0, "Long recharge steps cap at two charges")
+	level._lanzar_ataque(Vector2(1800, 1000), 5)
+	level._lanzar_ataque(Vector2(1800, 1000), 5)
 	level._actualizar_recargas(3.0)
-	_check(level.cargas[6] == 1.5 and level.recarga[6] == 3.0, "First recharge restores one charge, preserving the fraction")
+	_check(level.cargas[5] == 1 and level.recarga[5] == 3.0 and level.hud.barras_recarga[5].value == 50.0, "Glacies stays spent for six seconds")
 	level._actualizar_recargas(9.0)
-	_check(level.cargas[6] == 2.5 and level.recarga[6] == 0.0, "Long recharge steps cap at actual capacity")
+	_check(level.cargas[5] == 3 and level.recarga[5] == 0.0, "Glacies restores each charge on its own interval")
 	level._lanzar_ataque(Vector2(1800, 1000), 1)
 	level._lanzar_ataque(Vector2(1800, 1000), 1)
 	level._actualizar_recargas(3.0)
@@ -185,7 +207,7 @@ func _run():
 	paused = true
 	paused_enemy._physics_process(10.0)
 	level._process(10.0)
-	_check(paused_enemy.vida == hp and paused_enemy.efecto_elemental.restante == 3.0 and level.cargas[1] == 2.0, "Pause freezes burn, spell timers and recharge")
+	_check(paused_enemy.vida == hp and paused_enemy.efecto_dano.restante == 3.0 and level.cargas[1] == 2.0, "Pause freezes burn, spell timers and recharge")
 	paused = false
 	level.terminado = true
 	paused_enemy._physics_process(10.0)

@@ -12,6 +12,9 @@ or mouse-button constants. Both levels inherit the implementation in
 | Elemento Natura / Flamma / Aqua / Terra / Electricitas / Glacies / Venenum | 1 / 2 / 3 / 4 / 5 / 6 / 7 | Cycle or bind directly |
 | Pala | Q | Left-stick click |
 | Iniciar Ronda | Space | Back / Select |
+| Alternar Desafio | C | LT |
+| Cambiar Prioridad | R | Right-stick click |
+| Mejorar Arbol | M | RT |
 | Clic Izquierdo | Left mouse | Bind in settings if desired |
 | Clic Derecho | Right mouse | Bind in settings if desired |
 | Confirmar | Enter | A |
@@ -33,6 +36,7 @@ Existing saved profiles retain their bindings; newly introduced actions are left
 unassigned in those profiles to avoid stealing an already customized key. Bind
 them in Options, or use Reset to restore all fresh-profile defaults. Existing
 Glacies/Venenum bindings are preserved rather than silently shifted.
+The challenge, priority, and upgrade defaults are added to older profiles where their individual bindings are free. Conflicting controls can be assigned under Settings.
 
 ## Dispatch and selection
 
@@ -73,7 +77,8 @@ pointer targeting. Placement previews, tower inspection, upgrades, shovel,
 abilities and pickups all use the current target.
 
 Confirmar or Clic Izquierdo places/uses the selected tool. With no tool selected,
-confirmation inspects/upgrades the targeted tower as before. The configured
+confirmation selects a planted tower. Mejorar Arbol or the priced upgrade button
+buys the next level. The configured
 pointer action can select HUD tools and drag them onto the board. HUD panels
 block board actions. Pickup collection has priority and consumes the release, so
 confirmation cannot both collect and place/cast. A grid cursor collects drops in

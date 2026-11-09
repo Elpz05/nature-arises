@@ -29,7 +29,7 @@ func _run():
 		var well = level.pozo
 		var point: Vector2 = well.get_global_transform_with_canvas().origin
 		var per_drop: float = 1.0 / level.obtener_produccion_agua()
-		_check(not level._se_puede_plantar(level.celda_pozo) and per_drop > 3.0, "Central well reserves its cell and produces at a reduced rate")
+		_check(not level._se_puede_plantar(level.celda_pozo) and per_drop > 8.0, "Central well reserves its cell and produces more slowly than the old eight-second rate")
 		level._actualizar_recursos(100.0)
 		_check(well.reserva == 0 and level.gotas == 3, "No resources generate before the round")
 		level._iniciar_ronda()
@@ -64,8 +64,10 @@ func _run():
 		level.pausa._continuar()
 		await process_frame
 		level.cola_bestias.clear()
+		before = level.gotas
 		level._terminar_ronda()
 		level._actualizar_recursos(100.0)
+		_check(level.gotas == before + 2, "Clearing a non-final wave credits two drops directly")
 		_check(not well.generando and well.reserva == 3, "Between rounds the reserve is retained without generating more")
 		before = level.gotas
 		_mouse(point, true)

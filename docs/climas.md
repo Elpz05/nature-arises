@@ -16,13 +16,13 @@ El HUD mantiene visible clima y producción de agua, y el panel de combate muest
 
 | Clima | Árboles | Bestias | Agua base |
 | --- | --- | --- | --- |
-| Despejado | Sin cambios | Sin cambios | 0.20/s |
-| Lluvia | Cadencia x0.75, Flamma daño -25%, Electricitas daño +25% | Flamma vida x0.5 | 0.30/s |
-| Tormenta | Cadencia x0.5, Flamma daño -50%, Electricitas daño +35% | Flamma vida x0.5 | 0.40/s |
-| Volcán | Flamma daño +20%, Glacies daño -20%; los demás elementos cadencia x1.1 | Glacies vida x0.5 | 0.15/s |
-| Ventisca | Glacies cadencia x1.2, Flamma daño +10% | Glacies velocidad x1.2, Flamma vida x1.2 | 0.20/s |
-| Radiación | Cadencia x1.05 excepto Venenum | Sin cambios | 0.20/s |
-| Derrumbe | Sin modificadores base | Sin modificadores base | 0.20/s |
+| Despejado | Sin cambios | Sin cambios | 0.085/s |
+| Lluvia | Cadencia x0.75, Flamma daño -25%, Electricitas daño +25% | Flamma vida x0.5 | 0.11/s |
+| Tormenta | Cadencia x0.5, Flamma daño -50%, Electricitas daño +35% | Flamma vida x0.5 | 0.14/s |
+| Volcán | Flamma daño +20%, Glacies daño -20%; los demás elementos cadencia x1.1 | Glacies vida x0.5 | 0.07/s |
+| Ventisca | Glacies cadencia x1.2, Flamma daño +10% | Glacies velocidad x1.2, Flamma vida x1.2 | 0.085/s |
+| Radiación | Cadencia x1.05 excepto Venenum | Sin cambios | 0.085/s |
+| Derrumbe | Sin modificadores base | Sin modificadores base | 0.085/s |
 
 La producción de Aqua se suma al valor base cuando es plantable. Los modificadores de daño de elemento y entorno se suman: Flamma contra Flamma bajo volcán causa `40 × (1 - .25 + .20) = 38`. Cadencia, toxicidad y bonos temporales se multiplican. El renacimiento de Flamma usa su vida máxima ya ajustada al clima.
 
@@ -31,6 +31,8 @@ La producción de Aqua se suma al valor base cuando es plantable. Los modificado
 Los tamaños se interpretan como **intensidad de tormenta**, configurable en el inspector: pequeña = 10% cada 5 s; mediana = 50% cada 3 s; grande = 90% cada 1 s. En cada evento exitoso se elige una casilla uniforme del área jugable. Puede caer en una casilla vacía; no se garantiza que golpee una unidad.
 
 El rayo destruye instantáneamente los árboles alcanzados, sin reembolso. Árboles y bestias Electricitas son inmunes. La especificación menciona inmunidad de bestias pero solo describe explícitamente el daño a árboles: se interpreta que las demás bestias de la casilla también son destruidas. Estas muertes ambientales evitan armadura, invocación de Natura y renacimiento de Flamma.
+
+Si hay rayo, un recuadro amarillo identifica la casilla fija **1.2 s** antes del impacto, o **0.8 s** en tormenta grande. El aviso aparece sobre el tablero con una cuenta regresiva y un recordatorio de la inmunidad de Electricitas.
 
 ## Volcán
 
@@ -51,6 +53,8 @@ Si calor y barrido coinciden, se resuelve primero el calor. La protección clim�
 Cada 15 s se elige uniformemente una columna y la roca cae de arriba hacia abajo. Destruye árboles y bestias de esa columna hasta encontrar el primer Terra vivo. Terra absorbe la caída y protege su casilla y todo lo que hay debajo. Sobrevive a las dos primeras sin perder HP por roca; se destruye en la tercera, que también queda bloqueada. La siguiente caída ya puede continuar. Mejorar no reinicia el contador.
 
 Las bestias destruidas por roca no usan armadura, copia ni renacimiento. El terreno no se convierte en un obstáculo permanente. El laboratorio de derrumbe usa un trazado vertical largo, con seis columnas de caminos y sin atajo Flamma.
+
+La columna se marca en naranja **2.5 s** antes de la caída. Terra puede plantarse durante ese aviso en una casilla permitida y bloquear la roca al llegar. La pausa congela las cuentas regresivas y los resultados cancelan los impactos pendientes.
 
 ## Campo radiactivo
 
