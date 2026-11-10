@@ -12,29 +12,19 @@
 [ext_resource type="PackedScene" uid="uid://bglprybfm0gox" path="res://escenas/escenas_niveles/derrota.tscn" id="8_fd034"]
 [ext_resource type="AudioStream" uid="uid://b2fkv1kr47xhh" path="res://audios/ataques_sonidos/ataque_natura/sfx_throw.wav" id="9_u8jnm"]
 [ext_resource type="AudioStream" uid="uid://7p268nu32tob" path="res://audios/sfx_arboles/dano_arbol_madre/424911-impactshort78.wav" id="10_3t7eq"]
-[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_flamma.tscn" id="11_flamma"]
+[ext_resource type="PackedScene" uid="uid://dud8ocp4r7qod" path="res://escenas/escenas_arboles/arbol_flamma.tscn" id="11_flamma"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_aqua.tscn" id="12_aqua"]
-[ext_resource type="PackedScene" path="res://escenas/escenas_niveles/nivel_base.tscn" id="13_base"]
-
-[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_terra.tscn" id="terra"]
-
-[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_glacies.tscn" id="glacies"]
-
-[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_electricitas.tscn" id="electricitas"]
-
-[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_venenum.tscn" id="venenum"]
-
-[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_flamma.tscn" id="bestia_flamma"]
-
-[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_aqua.tscn" id="bestia_aqua"]
-
-[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_terra.tscn" id="bestia_terra"]
-
+[ext_resource type="PackedScene" uid="uid://cgfif4ebbohfe" path="res://escenas/escenas_niveles/nivel_base.tscn" id="13_base"]
+[ext_resource type="PackedScene" uid="uid://bcmhl1ea4dab" path="res://escenas/escenas_espiritu/espiritu_aqua.tscn" id="bestia_aqua"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_electricitas.tscn" id="bestia_electricitas"]
-
+[ext_resource type="PackedScene" uid="uid://bhmsd5y4fyo7g" path="res://escenas/escenas_espiritu/espiritu_flamma.tscn" id="bestia_flamma"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_glacies.tscn" id="bestia_glacies"]
-
+[ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_terra.tscn" id="bestia_terra"]
 [ext_resource type="PackedScene" path="res://escenas/escenas_espiritu/espiritu_venenum.tscn" id="bestia_venenum"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_electricitas.tscn" id="electricitas"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_glacies.tscn" id="glacies"]
+[ext_resource type="PackedScene" path="res://escenas/escenas_arboles/arbol_terra.tscn" id="terra"]
+[ext_resource type="PackedScene" uid="uid://4b6yhqq888xf" path="res://escenas/escenas_arboles/arbol_venenum.tscn" id="venenum"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3t7eq"]
 texture = ExtResource("2_hlm2r")
@@ -57,7 +47,7 @@ sources/2 = SubResource("TileSetAtlasSource_dkhx0")
 
 [sub_resource type="Curve2D" id="Curve2D_56kgh"]
 
-[node name="Nivel0" instance=ExtResource("13_base")]
+[node name="Nivel0" unique_id=1926190166 instance=ExtResource("13_base")]
 script = ExtResource("1_ejscs")
 espiritu_escena = ExtResource("2_vqj75")
 bestias_escenas = Array[PackedScene]([ExtResource("2_vqj75"), ExtResource("bestia_flamma"), ExtResource("bestia_aqua"), ExtResource("bestia_terra"), ExtResource("bestia_electricitas"), ExtResource("bestia_glacies"), ExtResource("bestia_venenum")])
@@ -71,7 +61,6 @@ sonidos_ataque = Array[AudioStream]([ExtResource("9_u8jnm")])
 sonido_dano_arbol = ExtResource("10_3t7eq")
 
 [node name="Suelo" parent="." index="0"]
-texture_filter = 1
 tile_set = SubResource("TileSet_3ahnv")
 
 [node name="Camino" parent="." index="1"]
