@@ -54,8 +54,11 @@ func _run():
 	var manager = root.get_node("ControlesManager")
 	var perfil_anterior := ConfigFile.new()
 	perfil_anterior.set_value("controles", "Pala", [_key(KEY_V)])
+	perfil_anterior.set_value("controles", "Confirmar", [_key(KEY_E)])
 	manager._aplicar_perfil(perfil_anterior)
 	_check(InputMap.action_get_events("Cambiar Velocidad").is_empty(), "An existing shovel binding keeps V when speed control is introduced")
+	_check(InputMap.event_is_action(_key(KEY_F), "Confirmar tablero") and InputMap.event_is_action(_key(KEY_E), "Confirmar"), "An existing E binding keeps E and assigns F to board confirmation")
+	_check(manager.buscar_conflicto(_key(KEY_KP_ENTER), "Confirmar tablero", manager.Tipo.TECLADO_MOUSE) == "Iniciar Ronda", "Numpad Enter is reserved on the board")
 	_bind("Cambiar Velocidad", _key(KEY_X))
 	for entry in [["Casilla Planta 0", KEY_T], ["Casilla Planta 1", KEY_Y], ["Casilla Planta 2", KEY_U], ["Elemento Natura", KEY_H], ["Elemento Electricitas", KEY_J], ["Pala", KEY_V], ["Iniciar Ronda", KEY_B], ["Pausa", KEY_P], ["Confirmar", KEY_K], ["Atras", KEY_BACKSPACE]]:
 		_bind(entry[0], _key(entry[1]))

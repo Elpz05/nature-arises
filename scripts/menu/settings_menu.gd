@@ -4,11 +4,13 @@ signal cerrada
 
 const ANCHO_ACCION := 350
 const ANCHO_CONTROL := 320
+const ESCALA_UI = preload("res://scripts/HUD/escala_interfaz.gd")
 
 @onready var container: VBoxContainer = %KeybindsContainer
 @onready var boton_volver: Button = %Volver
 @onready var boton_hud_debug: CheckButton = %HUDDebug
 @onready var boton_numeros_dano: CheckButton = %NumerosDano
+var selector_escala: OptionButton
 
 var accion_esperando: String = ""
 var tipo_esperando: ControlesManager.Tipo = ControlesManager.Tipo.TECLADO_MOUSE
@@ -16,7 +18,7 @@ var boton_esperando: Button = null
 var en_partida := false
 
 func _ready() -> void:
-	set_process_input(false)
+	set_process_input(en_partida)
 	if en_partida:
 		$FondoSettings.hide()
 		$Particulas.hide()
@@ -24,14 +26,67 @@ func _ready() -> void:
 	boton_hud_debug.toggled.connect(Ajustes.establecer_hud_debug)
 	boton_numeros_dano.set_pressed_no_signal(Ajustes.numeros_dano_activos())
 	boton_numeros_dano.toggled.connect(Ajustes.establecer_numeros_dano)
+	_crear_control_ambiente()
 	crear_encabezado()
 	for accion in ControlesManager.acciones_configurables:
 		crear_fila(accion)
+	var fila := HBoxContainer.new()
+	var etiqueta := Label.new()
+	etiqueta.text = "Tamaño de interfaz"
+	etiqueta.add_theme_color_override("font_color", Color("#18120c"))
+	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila.add_child(etiqueta)
+	selector_escala = OptionButton.new()
+	selector_escala.accessibility_name = etiqueta.text
+	for porcentaje in Ajustes.ESCALAS_UI:
+		selector_escala.add_item("%d%%" % porcentaje, porcentaje)
+	selector_escala.item_selected.connect(_seleccionar_escala)
+	fila.add_child(selector_escala)
+	var opciones := boton_numeros_dano.get_parent()
+	opciones.add_child(fila)
+	opciones.move_child(fila, boton_numeros_dano.get_index() + 1)
+	Ajustes.escala_ui_cambiada.connect(_actualizar_escala)
+	resized.connect(_ajustar_ancho)
+	_actualizar_escala(Ajustes.escala_ui())
 	UIInputManager.inicializar(boton_volver)
 
+func _crear_control_ambiente():
+	var fila_sfx := boton_numeros_dano.get_parent().get_node("FilaSonidos") as HBoxContainer
+	var fila := fila_sfx.duplicate(0) as HBoxContainer
+	fila.name = "FilaAmbiente"
+	var nombre := fila.get_child(0) as Label
+	nombre.text = "Ambiente"
+	var volumen := fila.get_child(1) as HSlider
+	var porcentaje := fila.get_child(2) as Label
+	volumen.accessibility_name = nombre.text
+	var bus := AudioServer.get_bus_index("Ambience")
+	volumen.set_value_no_signal(db_to_linear(AudioServer.get_bus_volume_db(bus)))
+	porcentaje.text = "%d%%" % roundi(volumen.value * 100)
+	volumen.value_changed.connect(func(valor: float):
+		AudioServer.set_bus_volume_db(bus, linear_to_db(valor) if valor > 0.0 else -80.0)
+		porcentaje.text = "%d%%" % roundi(valor * 100)
+		Ajustes.guardar_ajustes()
+	)
+	fila_sfx.add_sibling(fila)
+
+func _seleccionar_escala(indice: int):
+	Ajustes.establecer_escala_ui(selector_escala.get_item_id(indice))
+
+func _actualizar_escala(porcentaje: int):
+	selector_escala.select(selector_escala.get_item_index(porcentaje))
+	ESCALA_UI.aplicar(self, porcentaje)
+	selector_escala.get_popup().add_theme_font_size_override("font_size", roundi(0.30 * porcentaje))
+	_ajustar_ancho()
+
+func _ajustar_ancho():
+	var mitad := minf(560.0 * Ajustes.escala_ui() / 100.0, size.x / 2.0 - 24.0)
+	$ContenedorAjustes.offset_left = -mitad
+	$ContenedorAjustes.offset_right = mitad
+
 func _unhandled_input(event: InputEvent) -> void:
-	if accion_esperando.is_empty() and (event.is_action_pressed("Atras", false, true) \
-			or (en_partida and event.is_action_pressed("Pausa", false, true))):
+	if en_partida:
+		return
+	if accion_esperando.is_empty() and event.is_action_pressed("Atras", false, true):
 		get_viewport().set_input_as_handled()
 		_on_volver_pressed()
 		return
@@ -93,7 +148,7 @@ func crear_boton(accion: String, tipo: ControlesManager.Tipo) -> Button:
 func terminar_captura() -> void:
 	accion_esperando = ""
 	boton_esperando = null
-	set_process_input(false)
+	set_process_input(en_partida)
 	get_viewport().set_input_as_handled()
 
 func _on_boton_reasignar(boton: Button, accion: String, tipo: ControlesManager.Tipo) -> void:
@@ -109,6 +164,9 @@ func _input(event: InputEvent) -> void:
 	UIInputManager.manejar_input(event, get_viewport(), boton_volver)
 	
 	if accion_esperando == "":
+		if en_partida and not event.is_echo() and (event.is_action_pressed("Pausa", false, true) or event.is_action_pressed("Atras", false, true)):
+			get_viewport().set_input_as_handled()
+			_on_volver_pressed()
 		return
 
 	var cancelar: bool = event is InputEventKey and event.pressed and (event.keycode == KEY_BACKSPACE or event.physical_keycode == KEY_BACKSPACE)

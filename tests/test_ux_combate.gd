@@ -52,7 +52,9 @@ func _run():
 	_comprobar(arbol.obtener_iconos_combate() == ["escudo", "rayo", "veneno"] and arbol.vida == 100, "Live aura symbols distinguish protection and exposure before electrical damage ticks")
 	nivel._actualizar_auras_bestias(0.75)
 	_comprobar(arbol.vida == 99 and nivel.numeros_dano.impactos.back().texto == "−1", "Electricitas health loss shows a real damage number")
+	nivel.ronda_activa = true
 	nivel.gestor_clima.emitir_geiseres()
+	nivel.ronda_activa = false
 	_comprobar(arbol.vida == 74 and arbol.obtener_iconos_combate().has("geiser"), "A geyser pulse updates the health badge and temporary buff icon")
 	arbol.actualizar_clima(7.0)
 	_comprobar(not arbol.obtener_iconos_combate().has("geiser"), "The geyser icon expires with its buff")
@@ -68,10 +70,10 @@ func _run():
 	nivel.gotas = 2
 	nivel._actualizar_gotas_hud()
 	await process_frame
-	_clic(punto)
+	_clic(nivel.suelo.get_global_transform_with_canvas() * punto)
 	await process_frame
 	var hud = nivel.hud
-	_comprobar(not hud.panel_combate.visible and hud.panel_mejora.visible and arbol.rango_visible, "Selection and range work with debug off")
+	_comprobar(not hud.label_entrantes.visible and hud.panel_mejora.visible and arbol.rango_visible, "Selection and range work with debug off")
 	_comprobar(hud.titulo_torre.text.contains("Nv. 1") and hud.resumen_torre.text.contains("74 / 100 HP"), "The card shows current level and exact current and max HP")
 	_comprobar(hud.boton_mejorar.text == "Mejorar 2 gotas" and hud.boton_mejorar.tooltip_text.contains("Mejorar por 2 gotas"), "The nearby button shows the charged price and action hint")
 	_clic(hud.boton_mejorar.get_global_rect().get_center())
@@ -92,7 +94,7 @@ func _run():
 	_comprobar(not hud.panel_mejora.visible and not arbol.rango_visible, "Pause hides the card and range")
 	nivel.pausa._continuar()
 	await process_frame
-	nivel._actualizar_tooltip()
+	nivel._actualizar_inspeccion()
 	_comprobar(hud.panel_mejora.visible and arbol.rango_visible, "Resuming restores the existing selection")
 	nivel._on_semilla_pulsada(0, false)
 	nivel._confirmar(punto)
@@ -107,10 +109,10 @@ func _run():
 	for celda in [Vector2i(29, 16), nivel.celda_pozo + Vector2i.LEFT]:
 		_comprobar(nivel._plantar(celda, 0), "Plant geometry fixture on dry terrain")
 		nivel.celda_torre_seleccionada = celda
-		nivel._actualizar_tooltip()
+		nivel._actualizar_inspeccion()
 		var tarjeta: Rect2 = hud.panel_mejora.get_global_rect()
-		_comprobar(root.get_visible_rect().encloses(tarjeta) and tarjeta.position.y >= hud.panel_preparacion.get_global_rect().end.y, "Card stays inside the viewport and clear of the dock at board edges")
-		_comprobar(not hud.punto_sobre_hud(nivel.suelo.map_to_local(nivel.celda_pozo)), "The tower card does not block the well")
+		_comprobar(hud.espacio_camara().encloses(tarjeta), "Card stays inside the playable viewport at board edges")
+		_comprobar(not hud.punto_sobre_hud(nivel.pozo.get_global_transform_with_canvas().origin), "The tower card does not block the well")
 
 	nivel.numeros_dano.limpiar()
 	var flamma = _bestia(nivel, "flamma")

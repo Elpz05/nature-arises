@@ -12,7 +12,7 @@ var acciones_configurables := ["Clic Izquierdo",
 "Casilla Planta 2", "Casilla Planta 3", 
 "Casilla Planta 4", "Casilla Planta 5", 
 "Casilla Planta 6", "Izquierda", "Derecha", "Arriba",
-"Abajo", "Confirmar", "Atras", "Usar Elemento", 
+"Abajo", "Confirmar", "Confirmar tablero", "Atras", "Usar Elemento",
 "Cambiar Casilla Izquierda", "Cambiar Casilla Derecha",
 "Alternar Elemento o Planta", "Alternar Desafio", "Cambiar Prioridad", "Mejorar Arbol",
 "Detalles de Ronda", "Abrir Codice", "Cambiar Velocidad"]
@@ -122,8 +122,20 @@ func _aplicar_perfil(config: ConfigFile) -> void:
 			var tipo := Tipo.TECLADO_MOUSE if es_del_tipo(evento, Tipo.TECLADO_MOUSE) else Tipo.MANDO
 			if not buscar_conflicto(evento, accion, tipo).is_empty():
 				InputMap.action_erase_event(accion, evento)
+	if not config.has_section_key("controles", "Confirmar tablero"):
+		InputMap.action_erase_events("Confirmar tablero")
+		for codigo in [KEY_E, KEY_F]:
+			var tecla := InputEventKey.new()
+			tecla.physical_keycode = codigo
+			if buscar_conflicto(tecla, "Confirmar tablero", Tipo.TECLADO_MOUSE).is_empty():
+				InputMap.action_add_event("Confirmar tablero", tecla)
+				break
 
 func buscar_conflicto(evento: InputEvent, accion_actual: String, tipo: Tipo) -> String:
+	if accion_actual == "Confirmar tablero" and evento is InputEventKey \
+			and not (evento.ctrl_pressed or evento.alt_pressed or evento.shift_pressed or evento.meta_pressed) \
+			and (evento.physical_keycode in [KEY_ENTER, KEY_KP_ENTER] or evento.keycode in [KEY_ENTER, KEY_KP_ENTER]):
+		return "Iniciar Ronda"
 	if accion_actual != "Iniciar Ronda" and evento is InputEventKey:
 		var espacio := InputEventKey.new()
 		espacio.physical_keycode = KEY_SPACE

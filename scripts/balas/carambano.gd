@@ -38,12 +38,17 @@ func _physics_process(delta: float):
 			victimas.append(bestia)
 	# El impacto sigue el orden espacial aunque los enemigos nacieran en otro orden.
 	victimas.sort_custom(func(a, b): return (a.global_position - inicio).dot(direccion) < (b.global_position - inicio).dot(direccion))
+	var confirmados := PackedVector2Array()
 	for bestia in victimas:
 		golpeados[bestia.get_instance_id()] = true
-		_golpear(bestia)
+		var punto: Vector2 = bestia.global_position
+		if _golpear(bestia):
+			confirmados.append(punto)
 		if golpeados.size() >= maximo_objetivos:
 			impacto = true
 			break
+	if not confirmados.is_empty():
+		_presentar_impacto(confirmados[0], confirmados)
 	global_position = fin
 	distancia_recorrida += paso
 	if impacto or distancia_recorrida >= distancia_maxima:

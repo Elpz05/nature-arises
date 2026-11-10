@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b5h57urphn8pc"]
 
 [ext_resource type="Script" uid="uid://dux44ws0xmbme" path="res://scripts/HUD/hud.gd" id="1_1kbos"]
-[ext_resource type="Theme" path="res://fuentes/interfaz.tres" id="2_theme"]
+[ext_resource type="Theme" uid="uid://c54k2to42uujg" path="res://fuentes/interfaz.tres" id="2_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud"]
 content_margin_left = 12.0
@@ -20,40 +20,44 @@ shadow_size = 4
 [node name="HUD" type="CanvasLayer" unique_id=1832469491]
 script = ExtResource("1_1kbos")
 
-[node name="Fondo" type="CanvasLayer" parent="."]
+[node name="Fondo" type="CanvasLayer" parent="." unique_id=1517408872]
 layer = -1
 
-[node name="Color" type="ColorRect" parent="Fondo"]
+[node name="Color" type="ColorRect" parent="Fondo" unique_id=1444703216]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 color = Color(0.045, 0.075, 0.062, 1)
 
 [node name="Barra" type="PanelContainer" parent="." unique_id=1056705167]
-theme = ExtResource("2_theme")
-anchor_left = 0.5
+anchors_preset = 12
 anchor_top = 1.0
-anchor_right = 0.5
+anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 12.0
 offset_top = -12.0
+offset_right = -12.0
 offset_bottom = -12.0
-grow_horizontal = 2
 grow_vertical = 0
+theme = ExtResource("2_theme")
 theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 
-[node name="Fila" type="HBoxContainer" parent="Barra" unique_id=82852815]
+[node name="Fila" type="HFlowContainer" parent="Barra" unique_id=82852815]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 4
+alignment = 1
 
-[node name="Plantar" type="VBoxContainer" parent="Barra/Fila"]
+[node name="Plantar" type="VBoxContainer" parent="Barra/Fila" unique_id=336602609]
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="Cabecera" type="HBoxContainer" parent="Barra/Fila/Plantar"]
-layout_mode = 2
+[node name="Cabecera" type="HBoxContainer" parent="Barra/Fila/Plantar" unique_id=602330922]
 custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
 
-[node name="Titulo" type="Label" parent="Barra/Fila/Plantar/Cabecera"]
+[node name="Titulo" type="Label" parent="Barra/Fila/Plantar/Cabecera" unique_id=1951578165]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.77, 0.92, 0.65, 1)
@@ -64,19 +68,16 @@ text = "PLANTAR"
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="VSeparator" type="VSeparator" parent="Barra/Fila" unique_id=1629167320]
-layout_mode = 2
-
-[node name="Poderes" type="VBoxContainer" parent="Barra/Fila"]
+[node name="Poderes" type="VBoxContainer" parent="Barra/Fila" unique_id=765024668]
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="Cabecera" type="HBoxContainer" parent="Barra/Fila/Poderes"]
-layout_mode = 2
+[node name="Cabecera" type="HBoxContainer" parent="Barra/Fila/Poderes" unique_id=755852986]
 custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Titulo" type="Label" parent="Barra/Fila/Poderes/Cabecera"]
+[node name="Titulo" type="Label" parent="Barra/Fila/Poderes/Cabecera" unique_id=1328994175]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.64, 0.85, 0.97, 1)
@@ -87,59 +88,73 @@ text = "PODERES"
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="PanelEstado" type="PanelContainer" parent="."]
-theme = ExtResource("2_theme")
+[node name="Muelle" type="VBoxContainer" parent="." unique_id=1601483741]
+anchors_preset = 10
+anchor_right = 1.0
 offset_left = 12.0
 offset_top = 12.0
-offset_right = 12.0
+offset_right = -12.0
 offset_bottom = 12.0
+mouse_filter = 2
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 4
+
+[node name="Cabecera" type="HBoxContainer" parent="Muelle" unique_id=1569354537]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PanelEstado" type="PanelContainer" parent="Muelle/Cabecera" unique_id=373331046]
+layout_mode = 2
+theme = ExtResource("2_theme")
 theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 
-[node name="Contadores" type="HBoxContainer" parent="PanelEstado"]
+[node name="Contadores" type="HBoxContainer" parent="Muelle/Cabecera/PanelEstado" unique_id=1410237146]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="PanelRonda" type="PanelContainer" parent="."]
+[node name="PanelRonda" type="PanelContainer" parent="Muelle/Cabecera" unique_id=442362267]
+layout_mode = 2
+size_flags_horizontal = 3
 theme = ExtResource("2_theme")
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -12.0
-offset_top = 12.0
-offset_right = -12.0
-offset_bottom = 12.0
-grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 
-[node name="Acciones" type="HBoxContainer" parent="PanelRonda"]
+[node name="Acciones" type="HFlowContainer" parent="Muelle/Cabecera/PanelRonda" unique_id=821040757]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/h_separation = 8
+alignment = 2
 
-[node name="PanelOla" type="PanelContainer" parent="."]
-theme = ExtResource("2_theme")
-visible = false
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -480.0
-offset_top = 84.0
-offset_right = -12.0
-offset_bottom = 84.0
-grow_horizontal = 0
+[node name="Franja" type="PanelContainer" parent="Muelle" unique_id=863390483]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 
-[node name="Contenido" type="VBoxContainer" parent="PanelOla"]
+[node name="PanelOla" type="PanelContainer" parent="Muelle" unique_id=118614244]
+visible = false
 layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="Lectura" type="ScrollContainer" parent="Muelle/PanelOla" unique_id=2038991588]
+custom_minimum_size = Vector2(0, 122)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Contenido" type="VBoxContainer" parent="Muelle/PanelOla/Lectura" unique_id=1360010986]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="Informe" type="VBoxContainer" parent="PanelOla/Contenido"]
+[node name="Informe" type="VBoxContainer" parent="Muelle/PanelOla/Lectura/Contenido" unique_id=832827317]
 layout_mode = 2
 
-[node name="Datos" type="VBoxContainer" parent="PanelOla/Contenido"]
+[node name="Datos" type="VBoxContainer" parent="Muelle/PanelOla/Lectura/Contenido" unique_id=783801189]
 visible = false
 layout_mode = 2
 
-[node name="Separador" type="HSeparator" parent="PanelOla/Contenido"]
+[node name="Separador" type="HSeparator" parent="Muelle/PanelOla/Lectura/Contenido" unique_id=387717830]
 layout_mode = 2
 
-[node name="Detalles" type="VBoxContainer" parent="PanelOla/Contenido"]
+[node name="Detalles" type="VBoxContainer" parent="Muelle/PanelOla/Lectura/Contenido" unique_id=1131579296]
 layout_mode = 2
 theme_override_constants/separation = 3

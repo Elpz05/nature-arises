@@ -8,6 +8,7 @@ extends VBoxContainer
 @export var musica_menu: AudioStream
 
 func _ready() -> void:
+	add_child(preload("res://scripts/HUD/escala_interfaz.gd").new())
 	MusicaManager.reproducir(musica_menu)
 	UIInputManager.inicializar(boton_jugar)
 

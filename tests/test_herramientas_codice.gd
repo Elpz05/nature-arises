@@ -40,11 +40,28 @@ func _probar():
 		_clic(boton)
 		await process_frame
 		await process_frame
-		_comprobar(hud.boton_cerrar_seleccion.visible, "Seleccionar una herramienta muestra un cierre")
+		_comprobar(hud.boton_cerrar_seleccion.visible and hud.boton_cerrar_seleccion.text == "× Cerrar", "Seleccionar una herramienta muestra un cierre")
 		var fin: Vector2 = nivel.suelo.get_global_transform_with_canvas() * Vector2(0, 17 * 64)
 		_comprobar(hud.barra.get_global_rect().position.y >= fin.y, "El cierre deja visible la última fila")
+		nivel.arrastrando = true
+		var agua: int = nivel.gotas
+		var cargas: Array = nivel.cargas.duplicate()
 		_clic(hud.boton_cerrar_seleccion)
-		_comprobar(nivel.seleccion_tipo.is_empty() and not nivel.arrastrando, "El cierre cancela la selección y el arrastre")
+		_comprobar(nivel.seleccion_tipo.is_empty() and not nivel.arrastrando and nivel.datos_rango_colocacion.is_empty(), "El cierre cancela la selección, el arrastre y el alcance")
+		_comprobar(root.gui_get_focus_owner() == boton and nivel.gotas == agua and nivel.cargas == cargas, "El cierre devuelve el foco sin confirmar el tablero")
+
+	nivel._on_semilla_pulsada(0, false)
+	var atras := InputEventKey.new()
+	atras.physical_keycode = KEY_BACKSPACE
+	atras.pressed = true
+	root.push_input(atras, true)
+	_comprobar(nivel.seleccion_tipo.is_empty() and root.gui_get_focus_owner() == hud.botones_semilla[0], "Atrás en teclado cierra y devuelve el foco")
+	nivel._on_pala_pulsada(false)
+	var mando := InputEventJoypadButton.new()
+	mando.button_index = JOY_BUTTON_B
+	mando.pressed = true
+	root.push_input(mando, true)
+	_comprobar(nivel.seleccion_tipo.is_empty() and root.gui_get_focus_owner() == hud.boton_pala, "Atrás en mando cierra y devuelve el foco")
 
 	var celda: Vector2i = nivel.parcelas_secano[0]
 	nivel._plantar(celda, 0)
@@ -52,12 +69,12 @@ func _probar():
 	await process_frame
 	await process_frame
 	_clic(hud.boton_cerrar_ficha)
-	_comprobar(not hud.panel_mejora.visible, "La ficha de torre se cierra sin cambiar de selección")
+	_comprobar(not hud.panel_mejora.visible and nivel.cursor_tablero == celda and not nivel.arboles_plantados[celda].rango_visible, "La ficha cierra el alcance y devuelve el foco al tablero")
 
 	_clic(hud.boton_velocidad)
 	_comprobar(Engine.time_scale == 2.0 and hud.boton_velocidad.text.begins_with("2×"), "El botón acelera la partida")
-	var atajo := InputEventAction.new()
-	atajo.action = "Abrir Codice"
+	var atajo := InputEventKey.new()
+	atajo.physical_keycode = KEY_I
 	atajo.pressed = true
 	root.push_input(atajo, true)
 	_comprobar(is_instance_valid(nivel.guia) and paused and Engine.time_scale == 1.0, "El atajo abre el Códice y deja su interfaz a velocidad normal")

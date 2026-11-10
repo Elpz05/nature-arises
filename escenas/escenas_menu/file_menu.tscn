@@ -202,7 +202,7 @@ texture_filter = 1
 custom_minimum_size = Vector2(360, 398)
 layout_mode = 2
 focus_neighbor_right = NodePath("../Slot2")
-focus_neighbor_bottom = NodePath("../../Volver")
+focus_neighbor_bottom = NodePath("../../Acciones/Volver")
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("4_wupu0")
 theme_override_font_sizes/font_size = 24
@@ -235,7 +235,7 @@ custom_minimum_size = Vector2(360, 398)
 layout_mode = 2
 focus_neighbor_left = NodePath("../Slot1")
 focus_neighbor_right = NodePath("../Slot3")
-focus_neighbor_bottom = NodePath("../../EliminarFile")
+focus_neighbor_bottom = NodePath("../../Acciones/EliminarFile")
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("4_wupu0")
 theme_override_font_sizes/font_size = 24
@@ -267,7 +267,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(360, 398)
 layout_mode = 2
 focus_neighbor_left = NodePath("../Slot2")
-focus_neighbor_bottom = NodePath("../../Seleccionar")
+focus_neighbor_bottom = NodePath("../../Acciones/Seleccionar")
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("4_wupu0")
 theme_override_font_sizes/font_size = 24
@@ -294,24 +294,27 @@ theme_override_fonts/font = ExtResource("4_wupu0")
 text = "Archivo 3"
 label_settings = SubResource("LabelSettings_ouk20")
 
-[node name="Volver" type="Button" parent="." unique_id=517067183]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 2
+[node name="Acciones" type="HBoxContainer" parent="."]
 anchor_top = 1.0
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 217.0
-offset_top = -185.0
-offset_right = 442.0
-offset_bottom = -109.0
+offset_left = 24.0
+offset_top = -114.0
+offset_right = -24.0
+offset_bottom = -36.0
 grow_vertical = 0
-size_flags_vertical = 3
-focus_neighbor_top = NodePath("../ContenedorSlots/Slot1")
+alignment = 1
+theme_override_constants/separation = 96
+
+[node name="Volver" type="Button" parent="Acciones" unique_id=517067183]
+unique_name_in_owner = true
+layout_mode = 2
+focus_neighbor_top = NodePath("../../ContenedorSlots/Slot1")
 theme_override_colors/font_focus_color = Color(1, 0.9490196, 0, 1)
 theme_override_colors/font_hover_color = Color(1, 0.9490196, 0, 1)
 theme_override_constants/outline_size = 13
 theme_override_fonts/font = ExtResource("4_wupu0")
-theme_override_font_sizes/font_size = 75
+theme_override_font_sizes/font_size = 48
 theme_override_styles/normal = SubResource("StyleBoxFlat_qfiju")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_3xvyj")
 theme_override_styles/hover = SubResource("StyleBoxFlat_v3d21")
@@ -322,7 +325,7 @@ script = ExtResource("6_xnm4b")
 sonido_hover = ExtResource("7_0nv83")
 sonido_click = ExtResource("8_jplno")
 
-[node name="Label" type="Label" parent="Volver" unique_id=120947254]
+[node name="Label" type="Label" parent="Acciones/Volver" unique_id=120947254]
 visible = false
 layout_mode = 1
 anchors_preset = 7
@@ -339,27 +342,15 @@ grow_vertical = 0
 text = "Esc"
 label_settings = SubResource("LabelSettings_ab6sv")
 
-[node name="Seleccionar" type="Button" parent="." unique_id=849651385]
+[node name="Seleccionar" type="Button" parent="Acciones" unique_id=849651385]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -530.0
-offset_top = -188.0
-offset_right = -117.0
-offset_bottom = -112.0
-grow_horizontal = 0
-grow_vertical = 0
-size_flags_vertical = 3
-focus_neighbor_top = NodePath("../ContenedorSlots/Slot3")
+layout_mode = 2
+focus_neighbor_top = NodePath("../../ContenedorSlots/Slot3")
 theme_override_colors/font_focus_color = Color(1, 0.9490196, 0, 1)
 theme_override_colors/font_hover_color = Color(1, 0.9490196, 0, 1)
 theme_override_constants/outline_size = 13
 theme_override_fonts/font = ExtResource("4_wupu0")
-theme_override_font_sizes/font_size = 75
+theme_override_font_sizes/font_size = 48
 theme_override_styles/normal = SubResource("StyleBoxFlat_qfiju")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_3xvyj")
 theme_override_styles/hover = SubResource("StyleBoxFlat_v3d21")
@@ -370,7 +361,7 @@ script = ExtResource("6_xnm4b")
 sonido_hover = ExtResource("7_0nv83")
 sonido_click = ExtResource("8_jplno")
 
-[node name="Label" type="Label" parent="Seleccionar" unique_id=941121838]
+[node name="Label" type="Label" parent="Acciones/Seleccionar" unique_id=941121838]
 visible = false
 layout_mode = 1
 anchors_preset = 7
@@ -387,27 +378,15 @@ grow_vertical = 0
 text = "Enter"
 label_settings = SubResource("LabelSettings_ab6sv")
 
-[node name="EliminarFile" type="Button" parent="." unique_id=953563008]
+[node name="EliminarFile" type="Button" parent="Acciones" unique_id=953563008]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -150.0
-offset_top = -140.0
-offset_right = 90.0
-offset_bottom = -109.0
-grow_horizontal = 2
-grow_vertical = 0
-size_flags_vertical = 3
-focus_neighbor_top = NodePath("../ContenedorSlots/Slot2")
+layout_mode = 2
+focus_neighbor_top = NodePath("../../ContenedorSlots/Slot2")
 theme_override_colors/font_focus_color = Color(1, 0.9490196, 0, 1)
 theme_override_colors/font_hover_color = Color(1, 0.9490196, 0, 1)
 theme_override_constants/outline_size = 13
 theme_override_fonts/font = ExtResource("4_wupu0")
-theme_override_font_sizes/font_size = 75
+theme_override_font_sizes/font_size = 48
 theme_override_styles/normal = SubResource("StyleBoxFlat_qfiju")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_3xvyj")
 theme_override_styles/hover = SubResource("StyleBoxFlat_v3d21")
@@ -418,4 +397,4 @@ script = ExtResource("6_xnm4b")
 sonido_hover = ExtResource("7_0nv83")
 sonido_click = ExtResource("8_jplno")
 
-[connection signal="pressed" from="Volver" to="." method="_on_volver_pressed"]
+[connection signal="pressed" from="Acciones/Volver" to="." method="_on_volver_pressed"]

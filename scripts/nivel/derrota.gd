@@ -41,6 +41,7 @@ func _ready() -> void:
 	var reiniciar := _boton("Reiniciar Nivel", _reiniciar)
 	caja.add_child(reiniciar)
 	caja.add_child(_boton("Volver al Menú", _volver))
+	caja.add_child(preload("res://scripts/HUD/escala_interfaz.gd").new())
 	reiniciar.grab_focus()
 
 func _boton(texto: String, accion: Callable) -> Button:

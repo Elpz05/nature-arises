@@ -15,6 +15,8 @@ var fast_recharge := false
 var baseline := false
 var speed := 1.0
 var report_tag := ""
+var winter_basin := false
+var sin_presentacion := false
 
 func _initialize():
 	call_deferred("_run")
@@ -38,8 +40,12 @@ func _plan(index: int) -> Array:
 			return [[Vector2i(1, 3), 4], [Vector2i(4, 3), 1], [Vector2i(7, 5), 1],
 				[Vector2i(9, 3), 4], [Vector2i(12, 5), 4], [Vector2i(11, 7), 3], [Vector2i(5, 5), 0]]
 		5:
-			return [[Vector2i(4, 9), 3], [Vector2i(3, 4), 1], [Vector2i(5, 4), 5],
-				[Vector2i(5, 7), 1], [Vector2i(3, 6), 0], [Vector2i(5, 9), 5], [Vector2i(7, 13), 1]]
+			if winter_basin:
+				return [[Vector2i(12, 9), 3], [Vector2i(11, 5), 5], [Vector2i(13, 11), 1],
+					[Vector2i(15, 14), 4], [Vector2i(15, 8), 0], [Vector2i(24, 9), 3],
+					[Vector2i(23, 9), 1], [Vector2i(25, 5), 5]]
+			return [[Vector2i(4, 9), 3], [Vector2i(5, 7), 1], [Vector2i(3, 4), 5],
+				[Vector2i(7, 13), 0], [Vector2i(13, 11), 1], [Vector2i(15, 8), 5], [Vector2i(23, 9), 4]]
 		6:
 			return [[Vector2i(3, 3), 3], [Vector2i(5, 3), 3], [Vector2i(4, 3), 3],
 				[Vector2i(3, 4), 1], [Vector2i(5, 4), 4], [Vector2i(3, 7), 0],
@@ -126,6 +132,8 @@ func _run():
 		if argument == "--towers-only": towers_only = true
 		if argument == "--fast-recharge": fast_recharge = true
 		if argument == "--baseline": baseline = true
+		if argument == "--winter-build=basin": winter_basin = true
+		if argument == "--no-presentation": sin_presentacion = true
 		if argument.begins_with("--report-tag="): report_tag = argument.trim_prefix("--report-tag=").validate_filename()
 		if argument.begins_with("--speed="):
 			var requested := argument.trim_prefix("--speed=").to_float()
@@ -155,6 +163,7 @@ func _run():
 				quit(1)
 				return
 		root.add_child(level)
+		level.presentacion.activo = not sin_presentacion
 		level._aplicar_tiempo(speed)
 		level.gestor_clima.set_process(false)
 		if not level.inicializado:
@@ -229,6 +238,8 @@ func _run():
 		suffix += "_challenge"
 	if baseline:
 		suffix += "_baseline"
+	if sin_presentacion:
+		suffix += "_without_presentation"
 	suffix += "_%d-%d_%dx" % [first, last, int(speed)]
 	if not report_tag.is_empty():
 		suffix += "_" + report_tag

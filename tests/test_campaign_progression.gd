@@ -21,6 +21,83 @@ func _clear(level):
 		for follower in path.get_children():
 			follower.free()
 
+func _victory(level):
+	for child in level.get_children():
+		if child is CanvasLayer and child.get_script() == load("res://scripts/nivel/victoria.gd"):
+			return child
+	return null
+
+func _probar_transicion_en_disco(save, temp_path: String):
+	var slot := -1
+	for index in save.TOTAL_SLOTS:
+		if not save.existe(index):
+			slot = index
+			break
+	_check(slot >= 0, "Disk regression requires an unused slot")
+	if slot < 0:
+		return
+	save._ruta_codice = temp_path + ".disco"
+	save._codice = ConfigFile.new()
+	save._codice_pendiente = false
+	for fixture in [{"version": 2, "nivel_actual": 1}, {"version": 1, "nivel_actual": 1, "plantas": [0, 1], "ataques": [0, 1]}]:
+		var archivo := FileAccess.open(save._ruta(slot), FileAccess.WRITE)
+		_check(archivo != null, "Write a new isolated save fixture")
+		if archivo == null:
+			return
+		archivo.store_string(JSON.stringify(fixture))
+		archivo.close()
+		save.entrar(slot)
+		await scene_changed
+		var nivel = current_scene
+		_check(nivel.numero_nivel == 1 and nivel.hud.SEMILLAS_ACTIVAS.has(2), "Level 2 has Aqua before the first clear")
+		nivel._ganar_nivel()
+		var victoria = _victory(nivel)
+		_check(victoria.guardado_correcto and victoria.desbloqueos.size() == 1 and victoria.desbloqueos[0].nombre == "Terra" and victoria.desbloqueos_ataques == [3], "The victory writes the slot and announces only Terra")
+		victoria._siguiente()
+		var etiquetas: Array[Node] = victoria.contenedor.find_children("*", "Label", true, false)
+		_check(etiquetas.filter(func(etiqueta): return etiqueta.text.begins_with("Terra")).size() == 1, "The Terra plant and power share one visible reward")
+		victoria._ir_al_siguiente_nivel()
+		await scene_changed
+		_check(current_scene.numero_nivel == 2 and current_scene.hud.SEMILLAS_ACTIVAS == [0, 1, 2, 3], "Next stage still owns Aqua and Terra")
+		_check(current_scene.hud.botones_semilla[2].tooltip_text.contains("Requiere una poza"), "Unavailable terrain has a reason distinct from a lock")
+		save.entrar(slot)
+		await scene_changed
+		_check(current_scene.numero_nivel == 2 and current_scene.hud.ATAQUES_ACTIVOS == [0, 1, 2, 3] and current_scene.hud.SEMILLAS_ACTIVAS == [0, 1, 2, 3], "Reload preserves both tools")
+		save.ir_a_nivel(1)
+		await scene_changed
+		current_scene._ganar_nivel()
+		victoria = _victory(current_scene)
+		_check(victoria.desbloqueos.is_empty() and victoria.desbloqueos_ataques.is_empty(), "Replay does not announce an earned unlock")
+
+	# Force an I/O failure, then retry through the real victory overlay.
+	var ruta_correcta: String = save._ruta_codice
+	save._ruta_codice = temp_path.path_join("no-existe/codice.cfg")
+	save.ir_a_nivel(7)
+	await scene_changed
+	current_scene._ganar_nivel()
+	var final = _victory(current_scene)
+	_check(not final.guardado_correcto and save.todo_desbloqueado(), "Failed profile write keeps the session unlock and exposes retry")
+	_check(save.leer(slot).campana_completada, "Slot completion persists independently")
+	save._ruta_codice = ruta_correcta
+	for boton in final.contenedor.find_children("*", "Button", true, false):
+		if boton.text == "Reintentar guardado":
+			boton.pressed.emit()
+			break
+	_check(final.guardado_correcto, "Retry verifies the completed profile")
+	save.borrar(slot)
+	save._codice = ConfigFile.new()
+	save._ready()
+	_check(save.todo_desbloqueado(), "A profile reload survives deletion of the completed slot")
+	save.entrar(slot)
+	await scene_changed
+	_check(current_scene.numero_nivel == 0 and current_scene.hud.SEMILLAS_ACTIVAS == range(7) and current_scene.hud.ATAQUES_ACTIVOS == range(7), "A genuinely new slot starts at Level 1 with all tools")
+	for especie in ["natura", "flamma", "aqua", "terra", "electricitas", "glacies", "venenum"]:
+		_check(save.entrada_descubierta("bestias", especie), "The reloaded profile reveals every bestiary entry")
+	save.borrar(slot)
+	paused = false
+	unload_current_scene()
+	DirAccess.remove_absolute(ruta_correcta)
+
 func _run():
 	var profile := SaveHarness.new()
 	profile.datos = profile.datos_nuevos()
@@ -37,8 +114,10 @@ func _run():
 	var old_data: Dictionary = singleton.datos.duplicate(true)
 	var old_codice: ConfigFile = singleton._codice
 	var old_path: String = singleton._ruta_codice
+	var old_pending: bool = singleton._codice_pendiente
 	var temp_path := OS.get_environment("TEMP").path_join("codice-campana-%d.cfg" % OS.get_process_id())
 	singleton._codice = ConfigFile.new()
+	singleton._codice_pendiente = false
 	singleton._ruta_codice = temp_path
 	var climates := ["despejado", "lluvia", "despejado", "tormenta", "volcan", "ventisca", "derrumbe", "radiacion"]
 	var plants := [[0], [0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6]]
@@ -68,7 +147,8 @@ func _run():
 				for direccion in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 					junto_al_camino = junto_al_camino or level._es_camino(cell + direccion)
 				var camino_seco: bool = level._celda_valida_terreno(cell) and level._es_camino(cell) and not wet
-				_check(terra == (camino_seco or (dry and junto_al_camino)), "Terra can plant on dry roads or adjacent plots")
+				var terra_esperada: bool = level.puestos_terra.has(cell) if index == 5 else camino_seco or (dry and junto_al_camino)
+				_check(terra == terra_esperada, "Terra obeys the winter posts and the other stages' original rules")
 				if dry or wet:
 					legal += 1
 		_check(level.limitar_plantado and legal >= 10 and legal <= 17, "Every campaign stage must have a small, finite number of build sites")
@@ -108,10 +188,7 @@ func _run():
 			level._actualizar_spawn(0.0)
 			total_waves += 1
 		_check(level.terminado and paused, "Last wave opens a terminal victory overlay")
-		var victory = null
-		for child in level.get_children():
-			if child is CanvasLayer and child.get_script() == load("res://scripts/nivel/victoria.gd"):
-				victory = child
+		var victory = _victory(level)
 		_check(victory != null and victory.campana_finalizada == (index == 7), "Only the eighth stage displays final campaign completion")
 		if index < 7:
 			victory._mostrar_desbloqueo()
@@ -131,10 +208,12 @@ func _run():
 	profile.completar_nivel(0)
 	_check(profile.datos.nivel_actual == 8 and profile.datos.plantas == [0, 1, 2, 3, 4, 5, 6] and profile.datos.ataques == [0, 1, 2, 3, 4, 5, 6], "Replay cannot regress progress or duplicate earned rewards")
 	_check(profile.escena_para_nivel(8) == profile.ESCENA_CAMPANA and profile.escena_para_nivel(2) == profile.NIVELES[2], "Resume routing reaches new content or the actual final outcome")
+	await _probar_transicion_en_disco(singleton, temp_path)
 	singleton.slot_actual = old_slot
 	singleton.datos = old_data
 	singleton._codice = old_codice
 	singleton._ruta_codice = old_path
+	singleton._codice_pendiente = old_pending
 	DirAccess.remove_absolute(temp_path)
 	profile.free()
 	await process_frame

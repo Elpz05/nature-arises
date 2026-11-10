@@ -1,4 +1,4 @@
-[gd_resource type="Theme" format=3 uid="uid://ckqx0q8kkcmoo"]
+[gd_resource type="Theme" format=3 uid="uid://c54k2to42uujg"]
 
 [ext_resource type="FontFile" uid="uid://421q3jayq1g2" path="res://fuentes/PixelOperator-Bold.ttf" id="1_body"]
 [ext_resource type="FontFile" uid="uid://ci5pxwub8ardw" path="res://fuentes/PixelOperatorMono-Bold.ttf" id="2_title"]
@@ -89,13 +89,13 @@ border_color = Color(0.2745, 0.3647, 0.251, 1)
 
 [resource]
 default_font = ExtResource("1_body")
-default_font_size = 24
+default_font_size = 28
 Button/colors/font_color = Color(0.9333, 0.9451, 0.8627, 1)
 Button/colors/font_disabled_color = Color(0.5882, 0.6392, 0.5686, 1)
 Button/colors/font_focus_color = Color(1, 0.9412, 0.4196, 1)
 Button/colors/font_hover_color = Color(1, 0.9412, 0.4196, 1)
 Button/colors/font_pressed_color = Color(1, 0.9412, 0.4196, 1)
-Button/constants/icon_max_width = 40
+Button/constants/icon_max_width = 45
 Button/font_sizes/font_size = 30
 Button/fonts/font = ExtResource("2_title")
 Button/styles/disabled = SubResource("disabled")
@@ -110,5 +110,5 @@ PanelInterior/styles/panel = SubResource("inset")
 TituloPixel/base_type = &"Label"
 TituloPixel/colors/font_color = Color(1, 0.9412, 0.5412, 1)
 TituloPixel/fonts/font = ExtResource("2_title")
-TooltipLabel/font_sizes/font_size = 22
+TooltipLabel/font_sizes/font_size = 28
 TooltipPanel/styles/panel = SubResource("inset")
