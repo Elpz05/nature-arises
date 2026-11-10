@@ -8,6 +8,7 @@ extends Node2D
 @export var limitar_plantado := false
 @export var parcelas_secano: Array[Vector2i] = []
 @export var puestos_terra: Array[Vector2i] = []
+@export var terra_solo_puestos := false
 @export var intervalos_spawn: Array[float] = [3.0, 2.6, 2.2, 1.8, 1.5]
 @export var arbol_madre_escena: PackedScene
 @export var hud_escena: PackedScene
@@ -27,6 +28,7 @@ extends Node2D
 @export var celdas_inundadas: Array[Vector2i] = []
 @export var celdas_geiser: Array[Vector2i] = []
 var gestor_clima: Node2D
+var presentacion: Node2D
 var numeros_dano: Node2D
 
 @onready var suelo: TileMapLayer = $Suelo
@@ -134,8 +136,6 @@ var costos_plantados := {}
 var pausa
 var guia: CanvasLayer
 
-var sfx_ataque: AudioStreamPlayer
-var sfx_arbol: AudioStreamPlayer
 
 # Punto de extensión: solo datos, sin duplicar _ready() ni llamar super.
 func _configurar_nivel() -> void:
@@ -262,6 +262,7 @@ func _ready():
 	_crear_hud()
 	_generar_tablero()
 	_generar_camino()
+	_crear_arte_bioma()
 	_marcar_terreno()
 	_generar_curva()
 	_crear_numeros_dano()
@@ -271,7 +272,7 @@ func _ready():
 	hud.mostrar_hud_debug(Ajustes.hud_debug_activo())
 	Ajustes.hud_debug_cambiado.connect(_on_hud_debug_cambiado)
 	if musica_nivel != null:
-		MusicaManager.reproducir(musica_nivel)
+		MusicaManager.reproducir(musica_nivel, -7.0)
 
 	for i in hud.ATAQUES.size():
 		cargas.append(hud.ATAQUES[i].capacidad)
@@ -282,14 +283,10 @@ func _ready():
 	_actualizar_ronda_hud()
 	hud.mostrar_boton_ronda("Iniciar ronda", true)
 
-	sfx_ataque = AudioStreamPlayer.new()
-	sfx_ataque.bus = "SFX"
-	add_child(sfx_ataque)
-
-	sfx_arbol = AudioStreamPlayer.new()
-	sfx_arbol.stream = sonido_dano_arbol
-	sfx_arbol.bus = "SFX"
-	add_child(sfx_arbol)
+	presentacion = preload("res://scripts/nivel/presentacion_combate.gd").new()
+	presentacion.clima = clima
+	add_child(presentacion)
+	move_child(presentacion, ruta.get_index())
 	inicializado = true
 	gestor_clima = preload("res://scripts/nivel/clima.gd").new()
 	gestor_clima.nivel = self
@@ -356,21 +353,21 @@ func _suspender_tiempo():
 	_bumpers.clear()
 	_acorde_consumido = false
 	if is_instance_valid(gestor_clima):
-		gestor_clima.ocultar_avisos(false)
+		gestor_clima.ocultar_avisos()
 # ---------------- HUD ----------------
 func _crear_hud():
 	hud = hud_escena.instantiate()
+	hud.aqua_sin_poza = not celdas_inundadas.any(_esta_inundada)
 	add_child(hud)
 	hud.barra.resized.connect(_solicitar_ajuste_camara)
-	hud.panel_ronda.resized.connect(_solicitar_ajuste_camara)
-	hud.panel_estado.resized.connect(_solicitar_ajuste_camara)
+	hud.muelle.resized.connect(_solicitar_ajuste_camara)
 	get_viewport().size_changed.connect(_solicitar_ajuste_camara)
 	_solicitar_ajuste_camara()
 	hud.configurar_retratos_semillas(semillas_escenas)
 	if limitar_plantado:
 		var leyenda := "Cuadros: árboles"
 		if not puestos_terra.is_empty():
-			leyenda += " · Barras: Terra"
+			leyenda += " · Terra solo en barras" if terra_solo_puestos else " · Barras: Terra"
 		if not celdas_inundadas.is_empty():
 			leyenda += " · Gotas: Aqua"
 		hud.leyenda_terreno = leyenda
@@ -392,8 +389,9 @@ func _crear_hud():
 	hud.pala_pulsada.connect(_on_pala_pulsada)
 	hud.guia_solicitada.connect(_abrir_guia)
 	hud.velocidad_solicitada.connect(_alternar_velocidad)
+	hud.pausa_solicitada.connect(_abrir_pausa)
 	hud.cerrar_seleccion_solicitada.connect(_deseleccionar)
-	hud.cerrar_ficha_solicitada.connect(_limpiar_inspeccion)
+	hud.cerrar_ficha_solicitada.connect(_limpiar_inspeccion.bind(true))
 	for i in semillas_escenas.size():
 		if semillas_escenas[i] != null:
 			hud.plantas_disponibles.append(i)
@@ -414,7 +412,6 @@ func _ajustar_camara():
 	camara.zoom = Vector2.ONE * zoom
 	camara.global_position = centro + (get_viewport_rect().get_center() - area.get_center()) / zoom
 	camara.force_update_scroll()
-	hud.posicionar_previa(suelo.get_global_transform_with_canvas() * suelo.map_to_local(puntos_ruta[0]))
 
 func _crear_pozo():
 	pozo = pozo_escena.instantiate()
@@ -428,6 +425,7 @@ func _recoger_gotas(cantidad: int):
 	if not _puede_jugar() or cantidad <= 0:
 		return
 	gotas += cantidad
+	presentacion.agua(pozo.global_position)
 	_actualizar_gotas_hud()
 
 func _recoger_en_objetivo(pos: Vector2) -> bool:
@@ -505,13 +503,18 @@ func _generar_tablero():
 			if hay_variante and (x + y) % 2 == 1:
 				coords = Vector2i(1, 0)
 			suelo.set_cell(Vector2i(x, y), source_pasto, coords)
-	if clima == "ventisca":
-		var velo := Node2D.new()
-		velo.name = "Nieve"
-		var origen := suelo.map_to_local(Vector2i(0, FILAS_BLOQUEADAS)) - Vector2.ONE * TAM_CELDA / 2.0
-		var terreno := Rect2(origen, Vector2(ANCHO, ALTO - FILAS_BLOQUEADAS) * TAM_CELDA)
-		velo.draw.connect(func(): velo.draw_rect(terreno, Color(Color("#c6d8e2"), 0.58)))
-		suelo.add_child(velo)
+
+func _crear_arte_bioma():
+	if clima not in ["volcan", "ventisca", "tormenta"] or DisplayServer.get_name() == "headless":
+		return
+	var arte := preload("res://scripts/nivel/arte_bioma.gd").new()
+	arte.nivel = self
+	add_child(arte)
+	move_child(arte, suelo.get_index())
+	suelo.hide()
+	camino.hide()
+	if is_instance_valid(capa_atajo):
+		capa_atajo.hide()
 
 func _generar_camino():
 	for celda in _celdas_de(puntos_ruta):
@@ -765,7 +768,7 @@ func _on_espiritu_llego(dano: int):
 	if not _puede_jugar():
 		return
 	if sonido_dano_arbol != null:
-		sfx_arbol.play()
+		presentacion.cue_combate(sonido_dano_arbol, arbol_meta.global_position, -12.0)
 	arbol_meta.recibir_dano(dano)
 
 func _on_vida_arbol_cambiada(actual: int, maxima: int):
@@ -847,8 +850,7 @@ func _actualizar_preparacion():
 				"nombre": tipo.capitalize(), "cantidad": conteo_tipos[tipo],
 				"retrato": RETRATOS.bestia(_escena_para_tipo(tipo), tallas[tipo]),
 			})
-	var entrada := suelo.get_global_transform_with_canvas() * suelo.map_to_local(puntos_ruta[0])
-	hud.mostrar_previa_ronda(retratos, entrada, _cobertura_previa)
+	hud.mostrar_previa_ronda(retratos)
 	if divisores > 0:
 		avisos.append("Natura divisor ×%d: deja una copia al caer" % divisores)
 	for tipo in AMENAZAS:
@@ -889,7 +891,7 @@ func _terminar_ronda():
 	if not ronda_activa or not _puede_jugar() or not cola_bestias.is_empty() or _bestias_en_camino() > 0:
 		return
 	ronda_activa = false
-	gestor_clima.ocultar_avisos(true)
+	gestor_clima.cerrar_ronda()
 	if is_instance_valid(pozo):
 		pozo.activar_generacion(false)
 	if ronda >= rondas.size():
@@ -1177,22 +1179,28 @@ func _ganar_nivel():
 	_limpiar_inspeccion()
 	_actualizar_combate_hud()
 
-	if _es_escena_campana():
-		Guardado.registrar_victoria(numero_nivel)
-
-	if victoria_escena == null:
-		push_error("Falta asignar Victoria Escena en el Inspector del nivel")
-		return
-
+	var es_campana := _es_escena_campana()
+	var partida_activa := es_campana and Guardado.slot_actual >= 0
+	var plantas_ganadas: Array = Guardado.plantas_activas() if partida_activa else hud.SEMILLAS_ACTIVAS
+	var ataques_ganados: Array = Guardado.ataques_activos() if partida_activa else hud.ATAQUES_ACTIVOS
 	var nombres: Array = []
 	for i in desbloqueos:
-		if not hud.SEMILLAS_ACTIVAS.has(i) and i < semillas_escenas.size() and semillas_escenas[i] != null:
-			nombres.append({"nombre": hud.SEMILLAS[i].nombre, "retrato": RETRATOS.arbol(semillas_escenas[i], &"idle_pequeno", true)})
+		if es_campana and not partida_activa and Guardado.entrada_descubierta("plantas", i):
+			continue
+		if not plantas_ganadas.has(i) and i < semillas_escenas.size() and semillas_escenas[i] != null:
+			nombres.append({"indice": i, "nombre": hud.SEMILLAS[i].nombre, "retrato": RETRATOS.arbol(semillas_escenas[i], &"idle_pequeno", true)})
 
 	var nombres_ataques: Array = []
 	for i in desbloqueos_ataques:
-		if not hud.ATAQUES_ACTIVOS.has(i):
+		if es_campana and not partida_activa and Guardado.entrada_descubierta("ataques", i):
+			continue
+		if not ataques_ganados.has(i):
 			nombres_ataques.append(i)
+
+	var guardado_correcto := not es_campana or Guardado.registrar_victoria(numero_nivel)
+	if victoria_escena == null:
+		push_error("Falta asignar Victoria Escena en el Inspector del nivel")
+		return
 
 	if has_node("MusicaNivel"):
 		$MusicaNivel.stop()
@@ -1202,6 +1210,7 @@ func _ganar_nivel():
 	v.campana_finalizada = Guardado.es_ultimo_nivel(numero_nivel)
 	v.desbloqueos = nombres
 	v.desbloqueos_ataques = nombres_ataques
+	v.guardado_correcto = guardado_correcto
 	add_child(v)
 	get_tree().paused = true
 
@@ -1213,6 +1222,7 @@ func _on_semilla_pulsada(i: int, arrastre: bool):
 		return
 	if i < 0 or i >= semillas_escenas.size() or semillas_escenas[i] == null:
 		return
+	AudioUI.click_madera()
 	if arrastre and seleccion_tipo == "semilla" and seleccion_indice == i:
 		_deseleccionar()
 		return
@@ -1231,6 +1241,7 @@ func _on_ataque_pulsado(i: int, arrastre: bool):
 		return
 	if i < 0 or i >= cargas.size() or not hud.ATAQUES_ACTIVOS.has(i) or cargas[i] < 1.0:
 		return
+	AudioUI.click_madera()
 	if arrastre and seleccion_tipo == "ataque" and seleccion_indice == i:
 		_deseleccionar()
 		return
@@ -1242,25 +1253,34 @@ func _on_ataque_pulsado(i: int, arrastre: bool):
 	hud.resaltar("ataque", i)
 
 func _deseleccionar():
+	var origen: Button = hud.boton_herramienta(seleccion_tipo, seleccion_indice)
 	seleccion_tipo = ""
 	seleccion_indice = -1
 	arrastrando = false
+	_clic_gota_consumido = false
 	datos_rango_colocacion.clear()
 	hud.resaltar("", -1)
 	hud.ocultar_aviso_colocacion()
+	if is_instance_valid(origen) and not origen.disabled and _puede_jugar():
+		origen.grab_focus()
 	vista.queue_redraw()
 
 func _input(event: InputEvent):
-	if not _puede_jugar() or event.is_echo():
+	if not _puede_jugar():
+		return
+	if event is InputEventKey and not (event.ctrl_pressed or event.alt_pressed or event.shift_pressed or event.meta_pressed):
+		var teclas_ronda := [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
+		if event.physical_keycode in teclas_ronda or event.keycode in teclas_ronda:
+			get_viewport().set_input_as_handled()
+			if event.pressed and not event.is_echo() and not ronda_activa:
+				hud.indicar_dispositivo(event)
+				_iniciar_ronda()
+			return
+	if event.is_echo():
 		return
 	hud.indicar_dispositivo(event)
 	if event is InputEventJoypadButton and _procesar_bumper(event):
 		get_viewport().set_input_as_handled()
-		return
-	if event is InputEventKey and event.pressed and (event.physical_keycode == KEY_SPACE or event.keycode == KEY_SPACE) \
-			and not (event.ctrl_pressed or event.alt_pressed or event.shift_pressed or event.meta_pressed):
-		get_viewport().set_input_as_handled()
-		_iniciar_ronda()
 		return
 	if event is InputEventMouseMotion:
 		if event.relative.length_squared() > 0.0:
@@ -1276,7 +1296,7 @@ func _input(event: InputEvent):
 		if seleccion_tipo != "":
 			_deseleccionar()
 		elif celda_torre_seleccionada != Vector2i(-1, -1):
-			_limpiar_inspeccion()
+			_limpiar_inspeccion(true)
 		elif event.is_action_pressed("Atras", false, true):
 			_abrir_pausa()
 		return
@@ -1291,19 +1311,14 @@ func _input(event: InputEvent):
 			vista.queue_redraw()
 			get_viewport().set_input_as_handled()
 			return
-	if not ronda_activa and seleccion_tipo.is_empty() and event is InputEventKey \
-			and (event.physical_keycode == KEY_ENTER or event.keycode == KEY_ENTER) \
-			and event.is_action_pressed("Confirmar", false, true):
-		get_viewport().set_input_as_handled()
-		_iniciar_ronda()
-		return
 	if hud.manejar_accion(event):
 		if event is InputEventJoypadButton or event is InputEventJoypadMotion:
 			usar_cursor_tablero = true
 		_ajustar_cursor()
 		get_viewport().set_input_as_handled()
 		return
-	var confirma := event.is_action_pressed("Clic Izquierdo", false, true) or event.is_action_pressed("Confirmar", false, true) or event.is_action_pressed("Usar Elemento", false, true)
+	var confirma_tablero := event.is_action_pressed("Confirmar tablero", false, true)
+	var confirma := confirma_tablero or event.is_action_pressed("Clic Izquierdo", false, true) or event.is_action_pressed("Confirmar", false, true) or event.is_action_pressed("Usar Elemento", false, true)
 	var suelta := event.is_action_released("Clic Izquierdo", true)
 	if suelta and _clic_gota_consumido:
 		_clic_gota_consumido = false
@@ -1311,7 +1326,7 @@ func _input(event: InputEvent):
 		return
 	if not confirma and not (suelta and arrastrando):
 		return
-	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+	if confirma_tablero or event is InputEventJoypadButton or event is InputEventJoypadMotion:
 		usar_cursor_tablero = true
 	if not event is InputEventMouseButton:
 		_ajustar_cursor()
@@ -1320,6 +1335,10 @@ func _input(event: InputEvent):
 		usar_cursor_tablero = false
 		pos = get_global_transform_with_canvas().affine_inverse() * event.position
 	var pantalla := get_global_transform_with_canvas() * pos
+	if event is InputEventMouseButton and hud.punto_sobre_lectura(pantalla):
+		if suelta:
+			arrastrando = false
+		return
 	get_viewport().set_input_as_handled()
 	if not usar_cursor_tablero and hud.punto_sobre_hud(pantalla):
 		if confirma:
@@ -1397,6 +1416,8 @@ func _impedimento_plantado(celda: Vector2i, tipo: int) -> String:
 	if _esta_inundada(celda):
 		return "Aquí solo se planta Aqua"
 	if tipo == 3:
+		if terra_solo_puestos:
+			return "" if puestos_terra.has(celda) else "Terra solo se planta en los puestos marcados"
 		if _es_camino(celda):
 			return ""
 		if not VECINOS_ORTOGONALES.any(func(vecino: Vector2i): return _es_camino(celda + vecino)):
@@ -1412,6 +1433,7 @@ func _plantar(celda: Vector2i, tipo: int) -> bool:
 		push_warning("Falta la escena de la semilla %d en Semillas Escenas" % tipo)
 		return false
 	var arbol = semillas_escenas[tipo].instantiate()
+	arbol.presentacion = presentacion
 	var modificadores: Dictionary = preload("res://scripts/nivel/clima.gd").modificadores_arbol(clima, arbol.elemento)
 	arbol.modificador_cadencia = modificadores.cadencia
 	arbol.modificador_dano = modificadores.dano
@@ -1428,6 +1450,7 @@ func _plantar(celda: Vector2i, tipo: int) -> bool:
 		if clima == "radiacion":
 			gestor_clima.actualizar_indicadores_radiacion()
 	hud.actualizar_produccion(obtener_produccion_agua(), clima)
+	presentacion.plantar(arbol.global_position)
 	return true
 
 func _actualizar_recargas(delta: float):
@@ -1452,10 +1475,9 @@ func _lanzar_ataque(pos: Vector2, i: int) -> bool:
 	if recarga[i] == 0.0:
 		recarga[i] = hud.intervalo_recarga_ataque(i)
 	hud.actualizar_ataque(i, cargas[i], datos.capacidad, recarga[i])
-	if i < sonidos_ataque.size() and sonidos_ataque[i] != null:
-		sfx_ataque.stream = sonidos_ataque[i]
-		sfx_ataque.play()
 	var centro := to_global(pos)
+	if i < sonidos_ataque.size() and sonidos_ataque[i] != null:
+		presentacion.cue_combate(sonidos_ataque[i], centro, -12.0)
 	var radio: float = datos.radio * TAM_CELDA
 	var victimas: Array = _bestias_vivas().filter(func(bestia): return bestia.global_position.distance_squared_to(centro) <= radio * radio)
 	var lentas: Array = []
@@ -1529,6 +1551,7 @@ func _cambiar_prioridad_seleccion():
 func _on_pala_pulsada(arrastre: bool):
 	if not _puede_jugar():
 		return
+	AudioUI.click_madera()
 	if arrastre and seleccion_tipo == "pala":
 		_deseleccionar()
 		return
@@ -1602,7 +1625,12 @@ func _ocultar_info_torre():
 	torre_informada = null
 	hud.panel_mejora.hide()
 
-func _limpiar_inspeccion():
+func _limpiar_inspeccion(restaurar_foco := false):
+	if restaurar_foco and celda_torre_seleccionada != Vector2i(-1, -1):
+		cursor_tablero = celda_torre_seleccionada
+		var foco := get_viewport().gui_get_focus_owner()
+		if foco != null:
+			foco.release_focus()
 	celda_torre_seleccionada = Vector2i(-1, -1)
 	_ocultar_info_torre()
 	vista.queue_redraw()
@@ -1675,14 +1703,6 @@ func _cobertura_camino(area: Rect2) -> float:
 				cubierta += region.intersection(tile).get_area()
 	return cubierta
 
-func _cobertura_previa(area: Rect2) -> float:
-	var cubierta := _cobertura_camino(area)
-	for celda: Vector2i in parcelas_secano + celdas_inundadas + [celda_pozo]:
-		var centro := suelo.get_global_transform_with_canvas() * suelo.map_to_local(celda)
-		var parcela := Rect2(centro - Vector2.ONE * 24.0, Vector2.ONE * 48.0)
-		cubierta += area.intersection(parcela).get_area() * 2.0
-	return cubierta
-
 func _actualizar_inspeccion():
 	if _puede_jugar() and seleccion_tipo.is_empty() and arboles_plantados.has(celda_torre_seleccionada):
 		_mostrar_info_torre(celda_torre_seleccionada)
@@ -1694,23 +1714,30 @@ func _abrir_pausa():
 		return
 	_ocultar_info_torre()
 	hud.ocultar_aviso_colocacion()
+	arrastrando = false
+	_clic_gota_consumido = false
 	hud.opciones_presionadas.clear()
 	pausa = pausa_escena.instantiate()
 	pausa.numero_nivel = numero_nivel
-	add_child(pausa)
 	pausa.guia_solicitada.connect(_abrir_guia)
-	pausa.tree_exited.connect(func():
-		pausa = null
-		if is_inside_tree():
-			_aplicar_tiempo(velocidad_partida if _puede_jugar() else 1.0)
-	)
+	pausa.reanudar_solicitado.connect(_reanudar_partida)
 	_suspender_tiempo()
 	get_tree().paused = true
+	add_child(pausa)
+
+func _reanudar_partida():
+	pausa = null
+	_aplicar_tiempo(velocidad_partida)
+	get_tree().paused = false
+	gestor_clima.presentar_avisos(0.0)
+	gestor_clima.queue_redraw()
 
 func _es_escena_campana() -> bool:
 	return scene_file_path == Guardado.escena_para_nivel(numero_nivel)
 
 func _mostrar_informe_inicial():
+	if not is_inside_tree() or terminado:
+		return
 	var clave := Vector2i(Guardado.slot_actual, numero_nivel)
 	if get_tree().current_scene == self and _es_escena_campana() and not _informes_vistos.has(clave):
 		_abrir_guia()
@@ -1761,6 +1788,5 @@ func _abrir_guia():
 			pausa.show()
 			pausa.boton_guia.grab_focus()
 		else:
-			get_tree().paused = false
-			_aplicar_tiempo(velocidad_partida)
+			_reanudar_partida()
 	)

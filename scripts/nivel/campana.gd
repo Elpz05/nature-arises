@@ -59,9 +59,11 @@ const TERRENOS := [
 		"terra": [Vector2i(11, 7), Vector2i(6, 13)],
 	},
 	{
-		"secano": [Vector2i(3, 4), Vector2i(5, 4), Vector2i(3, 6), Vector2i(5, 7), Vector2i(3, 9),
-			Vector2i(5, 9), Vector2i(7, 13), Vector2i(10, 4), Vector2i(15, 8), Vector2i(21, 14)],
-		"terra": [Vector2i(4, 9), Vector2i(8, 12), Vector2i(20, 9)],
+		"secano": [Vector2i(3, 4), Vector2i(5, 7), Vector2i(7, 13),
+			Vector2i(11, 5), Vector2i(13, 11), Vector2i(15, 14), Vector2i(15, 8),
+			Vector2i(21, 14), Vector2i(23, 9), Vector2i(25, 5)],
+		"terra": [Vector2i(4, 9), Vector2i(12, 9), Vector2i(24, 9)],
+		"terra_solo_puestos": true,
 	},
 	{
 		"secano": [Vector2i(3, 3), Vector2i(5, 3), Vector2i(3, 4), Vector2i(5, 4), Vector2i(6, 5),
@@ -127,7 +129,7 @@ const ETAPAS := [
 	},
 	{
 		"nombre": "El bosque helado", "clima": "ventisca", "agua": 14, "vertical": true,
-		"consejo": "Alterna Flamma y Glacies para resistir el frío. Protege tus defensas de las auras tóxicas y aprovecha el alcance de Venenum.",
+		"consejo": "Terra solo se planta en los tres puestos marcados. Combina Flamma y Glacies y guarda una defensa para el último tramo.",
 		"plantas": [], "ataques": [], "intervalos": [2.7, 2.5, 2.3, 2.0, 1.8],
 		"rondas": [{"glacies:pequeno": 3, "venenum:pequeno": 2}, {"glacies:mediano": 2, "venenum:pequeno": 3},
 			[{"venenum:mediano": 2}, {"flamma:mediano": 2}],
@@ -183,6 +185,7 @@ static func configurar_progreso(nivel, numero: int):
 	nivel.limitar_plantado = true
 	nivel.parcelas_secano.assign(terreno.secano)
 	nivel.puestos_terra.assign(terreno.get("terra", []))
+	nivel.terra_solo_puestos = terreno.get("terra_solo_puestos", false)
 	nivel.celdas_inundadas.assign(terreno.get("agua", []))
 	nivel.titulo_nivel = datos.nombre
 	nivel.consejo_nivel = datos.consejo

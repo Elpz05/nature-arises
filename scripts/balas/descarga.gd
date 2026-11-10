@@ -3,7 +3,7 @@ extends "res://scripts/balas/bala.gd"
 var maximo_objetivos := 3
 var candidatos: Array = []
 var radio_salto := 128.0
-var duracion_visual := 0.12
+var duracion_visual := 0.18
 var puntos := PackedVector2Array()
 var golpeados: Array = []
 
@@ -24,7 +24,7 @@ func _physics_process(delta: float):
 		_descargar()
 		queue_redraw()
 	else:
-		duracion_visual -= delta
+		duracion_visual -= delta / Engine.time_scale
 		if duracion_visual <= 0.0:
 			queue_free()
 
@@ -50,8 +50,12 @@ func _descargar():
 				menor = distancia
 				siguiente = bestia
 		actual = siguiente
-	for bestia in golpeados:
-		_golpear(bestia)
+	var confirmados := PackedVector2Array()
+	for i in golpeados.size():
+		if _golpear(golpeados[i]):
+			confirmados.append(to_global(puntos[i + 1]))
+	if not confirmados.is_empty():
+		_presentar_impacto(confirmados[0], confirmados)
 	# El dibujo usa las posiciones capturadas, aunque una víctima desaparezca.
 	candidatos.clear()
 

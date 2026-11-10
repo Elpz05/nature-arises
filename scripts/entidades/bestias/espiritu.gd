@@ -202,10 +202,17 @@ func obtener_iconos_combate() -> Array[String]:
 			estados.append(icono)
 	return estados
 
+func tiene_marca_veneno() -> bool:
+	return not muerto and veneno_restante > 0.0 and veneno_por_segundo > 0.0
+
 func _draw():
 	if muerto or not is_instance_valid(colision) or colision.shape == null:
 		return
 	var radio: float = colision.shape.radius * colision.scale.x + 5.0
+	if tiene_marca_veneno():
+		var escoria := Color("#b4c568a0")
+		draw_arc(Vector2.ZERO, radio, 0.22 * PI, 0.78 * PI, 12, escoria, 2.5, true)
+		draw_circle(Vector2(0, radio + 3.0), 2.5, escoria)
 	if not efecto_movimiento.elemento.is_empty():
 		draw_arc(Vector2.ZERO, radio, 0.0, TAU, 32, EfectoElemental.COLORES[efecto_movimiento.elemento], 2.0, true)
 	if not efecto_dano.elemento.is_empty():

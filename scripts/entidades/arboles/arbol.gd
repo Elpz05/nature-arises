@@ -330,6 +330,8 @@ func _es_objetivo_valido(enemigo) -> bool:
 	return recorrido != null and not recorrido.is_queued_for_deletion() and recorrido.curve != null
 
 
+var presentacion: Node2D
+
 func _disparar():
 	if elemento in ["aqua", "terra"] or esta_congelado() or vida <= 0 or is_queued_for_deletion():
 		return
@@ -362,8 +364,9 @@ func _disparar():
 	elif elemento == "venenum":
 		semilla.dano_veneno = float(_datos(tamano).veneno)
 		semilla.duracion_veneno = DURACION_VENENO
+	semilla.presentacion = presentacion
+	semilla.position = position
 	get_parent().add_child(semilla)
-	semilla.global_position = global_position
 
 
 func _limpiar_enemigos_muertos():

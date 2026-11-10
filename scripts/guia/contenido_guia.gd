@@ -8,7 +8,7 @@ const TAMANOS := ["pequeno", "mediano", "grande"]
 const LECCION_VOLCAN := [
 	["Géiseres · cada 10 s", "Los círculos naranjas indican los géiseres. El borde marca sus ocho casillas vecinas, incluidas las diagonales. Cada pulso quita 25 HP a los árboles de esa zona y aumenta su cadencia un 25% durante 7 s. El centro queda reservado."],
 	["Erupción · cada 25 s", "La erupción es un evento separado. Elige un árbol al azar y lo destruye si no es Flamma. Flamma también ignora el daño y el bono de los géiseres."],
-	["Qué probar", "Planta un atacante dentro del borde naranja para ganar cadencia a cambio de vida. Coloca otro fuera del borde para comparar. Flamma es una buena defensa donde perder un árbol abriría el paso."],
+	["Qué probar", "Las marcas naranjas del aviso señalan las casillas vecinas del géiser. Allí los atacantes ganan cadencia a cambio de vida. La mira roja señala el árbol elegido por una erupción."],
 ]
 
 const LECCIONES := [
@@ -32,6 +32,7 @@ const LECCIONES := [
 	LECCION_VOLCAN,
 	[
 		["Ventisca · cada 10 s en ronda", "El frío quita 25 HP y añade un nivel de congelación. Con tres niveles el árbol deja de disparar. Flamma y Glacies resisten la ventisca."],
+		["Puestos de Terra", "Aquí Terra solo se planta en los tres puestos marcados con barras. Hay un puesto en la entrada, otro en el centro y otro cerca del Árbol Madre."],
 		["Calor de Flamma", "Cada 20 s, Flamma reduce un nivel de congelación en sus ocho casillas vecinas y protege de nuevos niveles mientras siga allí. La ventisca aún quita vida. Contra el aura de una bestia Glacies, la protección de Flamma abarca su alcance de ataque."],
 		["Qué probar", "Pon un Flamma junto a un atacante. Mantén a otros árboles a distancia del camino para evitar el aura tóxica de las bestias Venenum."],
 	],
@@ -106,7 +107,7 @@ static func como_jugar() -> Array:
 			["Árbol Madre", "Defiende el árbol al final de la ruta. Las bestias que llegan le quitan vida.", "meta"],
 		]},
 		{"titulo": "Combate y controles", "secciones": [
-			["Teclado y mando", "Mueve el cursor del tablero con las acciones de dirección. Usa Confirmar para plantar, seleccionar un árbol o recoger el pozo. Usa Alternar Elemento o Planta y Cambiar Casilla para recorrer la barra. Puedes consultar o reasignar todas las teclas y botones en Ajustes."],
+			["Teclado y mando", "Mueve el cursor con las acciones de dirección. Usa Confirmar tablero en teclado (E por defecto) o Confirmar en mando para plantar, inspeccionar o recoger agua. Espacio y Enter inician la ronda desde la preparación. Usa Alternar Elemento o Planta y Cambiar Casilla para recorrer la barra. Consulta tus asignaciones en Ajustes."],
 			["Poderes", "Selecciona un poder y confirma sobre el grupo objetivo. Cada uso gasta una carga aunque no alcance a nadie. Los efectos de daño y de movimiento pueden coexistir."],
 			["Prioridad", "Selecciona un árbol ofensivo. Usa el botón Prioridad en su ficha o la acción Cambiar Prioridad para alternar entre Cerca de meta y Mayor vida.", "prioridad"],
 		]},

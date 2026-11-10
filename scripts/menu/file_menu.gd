@@ -1,5 +1,7 @@
 extends Control
 
+const ESCALA_UI = preload("res://scripts/HUD/escala_interfaz.gd")
+
 @onready var slot1: Button = %Slot1
 @onready var slot2: Button = %Slot2
 @onready var slot3: Button = %Slot3
@@ -23,16 +25,23 @@ func _ready() -> void:
 	for slot in slots:
 		slot.toggle_mode = true
 		slot.toggled.connect(_on_slot_toggled.bind(slot))
+		for estado in ["font_focus_color", "font_hover_color", "font_pressed_color"]:
+			slot.add_theme_color_override(estado, Color.BLACK)
 
 	boton_seleccionar.pressed.connect(_on_seleccionar_pressed)
 	boton_eliminar.pressed.connect(_on_eliminar_pressed)
 
 	dialogo = ConfirmationDialog.new()
 	dialogo.dialog_text = "¿Eliminar este archivo? No se puede deshacer."
+	dialogo.theme = preload("res://fuentes/interfaz.tres")
 	dialogo.confirmed.connect(_borrar_confirmado)
 	add_child(dialogo)
+	for control in [dialogo.get_label(), dialogo.get_ok_button(), dialogo.get_cancel_button()]:
+		ESCALA_UI.aplicar(control, Ajustes.escala_ui())
 
 	_refrescar()
+	$Acciones.move_child(boton_eliminar, 1)
+	add_child(ESCALA_UI.new())
 	UIInputManager.inicializar(slot1)
 	
 	MusicaManager.reproducir(preload("res://audios/menu_musica/Forest 01.ogg"))

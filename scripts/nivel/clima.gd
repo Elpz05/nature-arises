@@ -8,13 +8,6 @@ const AVISO_RAYO := 1.2
 const AVISO_DERRUMBE := 2.5
 const MINIMO_VISIBLE := {"geiser": 1.5, "erupcion": 2.0, "rayo": 1.2, "derrumbe": 2.5, "ventisca": 2.0, "radiacion": 1.5}
 const NOMBRES_AVISO := {"geiser": "Géiser", "erupcion": "Erupción", "rayo": "Rayo", "derrumbe": "Derrumbe", "ventisca": "Ventisca", "radiacion": "Radiación"}
-const EFECTOS := {
-	"ventisca": preload("res://escenas/escenas_efectos/nieve.tscn"),
-	"geiser": preload("res://escenas/escenas_efectos/vapor.tscn"),
-	"erupcion": preload("res://escenas/escenas_efectos/brasas.tscn"),
-	"ceniza": preload("res://escenas/escenas_efectos/ceniza.tscn"),
-}
-const LIMITE_PARTICULAS := 256
 
 var nivel
 var tiempo := 0.0
@@ -22,7 +15,6 @@ var intervalos: Dictionary = {}
 var proximos: Dictionary = {}
 var anticipaciones: Dictionary = {}
 var avisos: Dictionary = {}
-var particulas: Array[CPUParticles2D] = []
 var _ultimo_reloj := -1.0
 var calor_activo := false
 var ultimo_evento := ""
@@ -96,7 +88,7 @@ func _indice_aleatorio(cantidad: int) -> int:
 	return randi_range(0, cantidad - 1)
 
 func actualizar(delta: float):
-	if not nivel._puede_jugar() or not nivel.ronda_activa or delta < 0.0:
+	if not _en_ronda() or delta < 0.0:
 		return
 	actualizar_proteccion()
 	var destino := tiempo + delta
@@ -122,13 +114,16 @@ func actualizar(delta: float):
 	_avanzar(maxf(0.0, destino - tiempo))
 	tiempo = destino
 	for tipo in avisos.keys():
-		var aviso: Dictionary = avisos[tipo]
-		if aviso.presentado and tiempo + 0.000001 >= aviso.impacto and aviso.visible + 0.000001 >= MINIMO_VISIBLE[tipo]:
-			_resolver_aviso(tipo, aviso)
+		_resolver_aviso(tipo, avisos[tipo])
 	queue_redraw()
+
+func _en_ronda() -> bool:
+	return nivel.ronda_activa and nivel._puede_jugar()
 
 func _anunciar(evento: String):
 	var tipo := evento.trim_prefix("aviso_")
+	if not _en_ronda() or avisos.has(tipo):
+		return
 	var celda := Vector2i(-1, -1)
 	var objetivo := 0
 	match tipo:
@@ -150,6 +145,9 @@ func _anunciar(evento: String):
 	avisos[tipo] = {"evento": evento, "celda": celda, "objetivo": objetivo, "impacto": tiempo + anticipaciones[tipo], "visible": 0.0, "presentado": false}
 
 func _resolver_aviso(tipo: String, aviso: Dictionary):
+	if not _en_ronda() or not aviso.presentado or tiempo + 0.000001 < aviso.impacto \
+			or aviso.visible + 0.000001 < MINIMO_VISIBLE[tipo]:
+		return
 	avisos.erase(tipo)
 	proximos[aviso.evento] = tiempo + intervalos[aviso.evento] - anticipaciones[tipo]
 	match tipo:
@@ -161,7 +159,6 @@ func _resolver_aviso(tipo: String, aviso: Dictionary):
 			if is_instance_valid(arbol) and not arbol.is_queued_for_deletion() and arbol.get_instance_id() == aviso.objetivo:
 				_impactar_erupcion(arbol, aviso.celda)
 				_emitir_particulas(tipo, aviso.celda)
-				_emitir_particulas("ceniza", aviso.celda)
 		"ventisca": barrer_ventisca()
 		"radiacion": radiacion()
 	if tipo != "erupcion":
@@ -174,7 +171,7 @@ func _process(_delta: float):
 	presentar_avisos(real)
 
 func presentar_avisos(delta_real: float):
-	if not nivel._puede_jugar() or not nivel.ronda_activa:
+	if not _en_ronda():
 		return
 	var textos := PackedStringArray()
 	for tipo in avisos:
@@ -183,57 +180,44 @@ func presentar_avisos(delta_real: float):
 			aviso.visible += delta_real
 		else:
 			aviso.presentado = true
-			_emitir_particulas("ceniza" if tipo == "erupcion" else tipo, aviso.celda)
-		textos.append("%s %.1f s" % [NOMBRES_AVISO[tipo], _restante(tipo, aviso)])
-	for emisor in particulas:
-		emisor.speed_scale = 1.0 / Engine.time_scale
+			nivel.presentacion.alerta(tipo)
+		var restante := ceilf(_restante(tipo, aviso) * 10.0) / 10.0
+		var texto := "%s %.1f s" % [NOMBRES_AVISO[tipo], restante]
+		if tipo == "ventisca":
+			texto += "   ·   + daño y escarcha   ·   − solo daño"
+		textos.append(texto)
 	nivel.hud.mostrar_avisos_clima("  ·  ".join(textos))
 
 func _restante(tipo: String, aviso: Dictionary) -> float:
 	return maxf(0.0, maxf(MINIMO_VISIBLE[tipo] - aviso.visible, (aviso.impacto - tiempo) / Engine.time_scale))
 
-func ocultar_avisos(reiniciar: bool):
+func ocultar_avisos():
 	_ultimo_reloj = -1.0
-	if reiniciar:
-		for aviso in avisos.values():
-			aviso.visible = 0.0
-			aviso.presentado = false
-	for emisor in particulas:
-		emisor.queue_free()
-	particulas.clear()
 	visuales.clear()
 	nivel.hud.mostrar_avisos_clima("")
 	queue_redraw()
 
 func cancelar_avisos():
 	avisos.clear()
-	ocultar_avisos(false)
+	nivel.presentacion.cerrar_clima()
+	ocultar_avisos()
+
+func cerrar_ronda():
+	for tipo in avisos:
+		var evento: String = avisos[tipo].evento
+		proximos[evento] = tiempo + intervalos[evento] - anticipaciones[tipo]
+	cancelar_avisos()
 
 func _emitir_particulas(tipo: String, celda: Vector2i):
-	if not EFECTOS.has(tipo) or DisplayServer.get_name() == "headless":
-		return
-	var centros: Array = nivel.celdas_geiser if tipo == "geiser" else [celda]
-	for centro: Vector2i in centros:
-		var emisor := (EFECTOS[tipo] as PackedScene).instantiate() as CPUParticles2D
-		var usadas := 0
-		for activo in particulas:
-			usadas += activo.amount
-		if usadas + emisor.amount > LIMITE_PARTICULAS:
-			emisor.free()
-			break
-		if tipo == "ventisca":
-			emisor.emission_rect_extents = Vector2(nivel.ANCHO, nivel.ALTO - nivel.FILAS_BLOQUEADAS) * 32.0
-			emisor.position = _punto(Vector2i(0, nivel.FILAS_BLOQUEADAS)) - Vector2.ONE * 32.0 + emisor.emission_rect_extents
-		else:
-			emisor.position = _punto(centro)
-		emisor.speed_scale = 1.0 / Engine.time_scale
-		particulas.append(emisor)
-		emisor.finished.connect(func():
-			particulas.erase(emisor)
-			emisor.queue_free()
-		)
-		add_child(emisor)
-		emisor.emitting = true
+	if tipo == "geiser":
+		for centro: Vector2i in nivel.celdas_geiser:
+			nivel.presentacion.clima_resuelto(tipo, to_global(_punto(centro)))
+	elif tipo == "ventisca":
+		var mitad := Vector2(nivel.ANCHO, nivel.ALTO - nivel.FILAS_BLOQUEADAS) * 32.0
+		var origen := _punto(Vector2i(0, nivel.FILAS_BLOQUEADAS)) - Vector2.ONE * 32.0
+		nivel.presentacion.clima_resuelto(tipo, to_global(origen + mitad), mitad)
+	else:
+		nivel.presentacion.clima_resuelto(tipo, to_global(_punto(celda)))
 
 func _avanzar(delta: float):
 	for arbol in _arboles():
@@ -250,6 +234,8 @@ func _registrar(texto: String, tipo: String, celda := Vector2i(-1, -1)):
 	queue_redraw()
 
 func rayo_en(celda: Vector2i):
+	if not _en_ronda():
+		return
 	var arbol = nivel.arboles_plantados.get(celda)
 	if is_instance_valid(arbol) and arbol.elemento != "electricitas":
 		arbol.recibir_dano(arbol.vida)
@@ -258,16 +244,28 @@ func rayo_en(celda: Vector2i):
 			bestia.destruir_por_entorno()
 	_registrar("Rayo en casilla %d, %d" % [celda.x, celda.y], "rayo", celda)
 
+func _vecinas_geiser(centro: Vector2i) -> Array[Vector2i]:
+	var vecinas: Array[Vector2i] = []
+	for y in range(-1, 2):
+		for x in range(-1, 2):
+			var celda := centro + Vector2i(x, y)
+			if celda != centro and nivel._celda_valida_terreno(celda) and not nivel._reserva_terreno(celda):
+				vecinas.append(celda)
+	return vecinas
+
 func emitir_geiseres():
-	for celda in nivel.celdas_geiser:
-		for vecina in nivel.arboles_plantados.keys():
-			if vecina != celda and absi(vecina.x - celda.x) <= 1 and absi(vecina.y - celda.y) <= 1:
-				var arbol = nivel.arboles_plantados[vecina]
-				if is_instance_valid(arbol) and not arbol.is_queued_for_deletion():
-					arbol.aplicar_geiser()
+	if not _en_ronda():
+		return
+	for celda: Vector2i in nivel.celdas_geiser:
+		for vecina in _vecinas_geiser(celda):
+			var arbol = nivel.arboles_plantados.get(vecina)
+			if is_instance_valid(arbol) and not arbol.is_queued_for_deletion():
+				arbol.aplicar_geiser()
 		_registrar("Géiser: 25 de daño y cadencia +25% por 7 s", "geiser", celda)
 
 func erupcion():
+	if not _en_ronda():
+		return
 	var arboles := _arboles()
 	if arboles.is_empty():
 		_registrar("Erupción: no hay árboles expuestos", "erupcion")
@@ -302,11 +300,15 @@ func actualizar_proteccion(reducir: bool = false):
 		arbol.calentar_ventisca(protegido, reducir)
 
 func barrer_ventisca():
+	if not _en_ronda():
+		return
 	for arbol in _arboles():
 		arbol.aplicar_ventisca()
 	_registrar("Ventisca: -25 HP y +1 congelación; nivel 3 detiene disparos", "ventisca")
 
 func derrumbe_en(columna: int):
+	if not _en_ronda():
+		return
 	var fila_tope: int = nivel.ALTO
 	for y in range(nivel.FILAS_BLOQUEADAS, nivel.ALTO):
 		var arbol = nivel.arboles_plantados.get(Vector2i(columna, y))
@@ -342,6 +344,8 @@ func actualizar_indicadores_radiacion():
 			arbol.indicar_proteccion_radiacion(protegidas.has(celda) and arbol.elemento != "venenum")
 
 func radiacion():
+	if not _en_ronda():
+		return
 	var protegidas := _celdas_protegidas_radiacion()
 	for celda in nivel.arboles_plantados.keys():
 		var arbol = nivel.arboles_plantados.get(celda)
@@ -361,7 +365,7 @@ func _draw():
 	draw_rect(tablero, tinte)
 	if nivel.clima == "volcan":
 		for celda in nivel.celdas_geiser:
-			_dibujar_geiser(_punto(celda), tablero)
+			_dibujar_geiser(_punto(celda))
 	for visual in visuales:
 		var alpha: float = clampf(visual.restante / 0.8, 0.0, 1.0)
 		var punto := _punto(visual.celda)
@@ -391,13 +395,9 @@ func _area_geiser(punto: Vector2, tablero: Rect2) -> Rect2:
 	var lado: Vector2 = Vector2.ONE * nivel.TAM_CELDA * 3.0
 	return Rect2(punto - lado / 2.0, lado).intersection(tablero)
 
-func _dibujar_geiser(punto: Vector2, tablero: Rect2):
-	var area := _area_geiser(punto, tablero).grow(-2.0)
-	var naranja := Color(1.0, 0.64, 0.25)
-	draw_rect(area, Color(naranja, 0.1))
-	draw_rect(area, Color(naranja, 0.7), false, 3.0)
-	draw_circle(punto, 23.0, Color(0.3, 0.16, 0.08))
-	draw_circle(punto, 13.0, Color(1, 0.4, 0.1))
+func _dibujar_geiser(punto: Vector2):
+	draw_circle(punto, 23.0, Color("#3f302c"))
+	draw_circle(punto, 15.0, Color("#ac8067"), false, 3.0, true)
 func _dibujar_aviso(tipo: String, aviso: Dictionary, tablero: Rect2):
 	var color := Color("#ffdb62")
 	if tipo == "ventisca":
@@ -407,8 +407,34 @@ func _dibujar_aviso(tipo: String, aviso: Dictionary, tablero: Rect2):
 	elif tipo in ["geiser", "erupcion", "derrumbe"]:
 		color = Color("#ffa464")
 	if tipo == "geiser":
-		for celda in nivel.celdas_geiser:
-			_marcar_aviso(_area_geiser(_punto(celda), tablero), color)
+		for centro: Vector2i in nivel.celdas_geiser:
+			for celda in _vecinas_geiser(centro):
+				var punto := _punto(celda)
+				_dibujar_esquinas(Rect2(punto - Vector2.ONE * 28.0, Vector2.ONE * 56.0), color, 10.0)
+				draw_polyline(PackedVector2Array([punto + Vector2(-8, 17), punto + Vector2(0, 10), punto + Vector2(8, 17)]), color, 3.0, true)
+		return
+	if tipo == "erupcion":
+		var arbol = nivel.arboles_plantados.get(aviso.celda)
+		if not is_instance_valid(arbol) or arbol.get_instance_id() != aviso.objetivo:
+			return
+		var punto := _punto(aviso.celda)
+		var rojo := Color("#ff696d")
+		draw_circle(punto, 31.0, Color("#2b1724"), false, 8.0, true)
+		draw_circle(punto, 31.0, rojo, false, 4.0, true)
+		for direccion in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+			draw_line(punto + direccion * 22.0, punto + direccion * 38.0, rojo, 4.0, true)
+		return
+	if tipo == "ventisca":
+		_dibujar_esquinas(tablero.grow(-4.0), color, 44.0)
+		for arbol in _arboles():
+			if arbol.elemento in ["flamma", "glacies"]:
+				continue
+			var punto := to_local(arbol.global_position) + Vector2(18, -19)
+			draw_circle(punto, 11.0, Color("#152630"))
+			draw_line(punto + Vector2(-7, 0), punto + Vector2(7, 0), color, 2.5, true)
+			# La protección evita acumular escarcha. El daño se sigue aplicando.
+			if not arbol.protegido_ventisca:
+				draw_line(punto + Vector2(0, -7), punto + Vector2(0, 7), color, 2.5, true)
 		return
 	var area := tablero
 	if tipo not in ["ventisca", "radiacion"]:
@@ -421,3 +447,14 @@ func _dibujar_aviso(tipo: String, aviso: Dictionary, tablero: Rect2):
 func _marcar_aviso(area: Rect2, color: Color):
 	draw_rect(area.grow(-2.0), Color(color, 0.18))
 	draw_rect(area.grow(-2.0), color, false, 5.0)
+
+func _dibujar_esquinas(area: Rect2, color: Color, largo: float):
+	for x in [0, 1]:
+		for y in [0, 1]:
+			var origen := area.position + area.size * Vector2(x, y)
+			var brazos := PackedVector2Array([
+				origen + Vector2(largo * (1 - 2 * x), 0), origen,
+				origen + Vector2(0, largo * (1 - 2 * y)),
+			])
+			draw_polyline(brazos, Color("#17202a"), 7.0, true)
+			draw_polyline(brazos, color, 4.0, true)

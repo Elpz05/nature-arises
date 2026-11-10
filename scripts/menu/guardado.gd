@@ -16,6 +16,7 @@ var datos := {}
 var _slots_reparados: Dictionary = {}
 var _codice := ConfigFile.new()
 var _ruta_codice := RUTA_CODEX
+var _codice_pendiente := false
 
 func _ready():
 	_codice.load(_ruta_codice)
@@ -43,32 +44,45 @@ func _entradas_codice(categoria: String) -> Array:
 	var entradas: Variant = _codice.get_value("progreso", categoria, iniciales)
 	return entradas if entradas is Array else iniciales
 
-func _guardar_codice():
-	var temporal := _ruta_codice + ".tmp"
-	if _codice.save(temporal) != OK or DirAccess.rename_absolute(temporal, _ruta_codice) != OK:
-		push_warning("No se pudo guardar el progreso del Códice.")
+func _verificar_codice_completo(ruta: String) -> bool:
+	var comprobacion := ConfigFile.new()
+	return comprobacion.load(ruta) == OK and comprobacion.get_value("progreso", "completada", false) == true
 
-func _registrar_descubrimientos(progreso: Dictionary):
-	var cambio := false
+func _guardar_codice() -> bool:
+	_codice_pendiente = true
+	var temporal := _ruta_codice + ".tmp"
+	var verificar := todo_desbloqueado()
+	if _codice.save(temporal) != OK \
+			or (verificar and not _verificar_codice_completo(temporal)) \
+			or DirAccess.rename_absolute(temporal, _ruta_codice) != OK \
+			or (verificar and not _verificar_codice_completo(_ruta_codice)):
+		push_warning("No se pudo guardar el progreso del Códice.")
+		return false
+	_codice_pendiente = false
+	return true
+
+func _registrar_descubrimientos(progreso: Dictionary) -> bool:
 	if progreso.campana_completada and not todo_desbloqueado():
 		_codice.set_value("progreso", "completada", true)
-		cambio = true
+		_codice_pendiente = true
 	for categoria in ["plantas", "ataques"]:
 		var descubiertos := _entradas_codice(categoria)
 		var limite := TOTAL_PLANTAS if categoria == "plantas" else TOTAL_ATAQUES
 		var unidos := _lista_ids(descubiertos + progreso[categoria], limite, true)
 		if unidos != descubiertos:
 			_codice.set_value("progreso", categoria, unidos)
-			cambio = true
-	if cambio:
-		_guardar_codice()
+			_codice_pendiente = true
+	return not _codice_pendiente or _guardar_codice()
 
-func registrar_victoria(n: int):
+func registrar_victoria(n: int) -> bool:
 	if n < 0 or n >= NIVELES.size():
-		return
-	_registrar_descubrimientos(validar_datos({"version": VERSION_GUARDADO, "nivel_actual": n + 1}))
-	if _slot_valido(slot_actual):
-		completar_nivel(n)
+		return false
+	# Una victoria final también repara un archivo perdido durante la sesión.
+	if es_ultimo_nivel(n) and not _verificar_codice_completo(_ruta_codice):
+		_codice_pendiente = true
+	var perfil_guardado := _registrar_descubrimientos(validar_datos({"version": VERSION_GUARDADO, "nivel_actual": n + 1}))
+	var partida_guardada := not _slot_valido(slot_actual) or completar_nivel(n)
+	return perfil_guardado and partida_guardada
 
 func _ruta(i: int) -> String:
 	return "user://partida_%d.json" % (i + 1)
@@ -210,15 +224,15 @@ func entrar(i: int):
 		guardar()
 	ir_a_nivel(datos.nivel_actual)
 
-func completar_nivel(n: int):
+func completar_nivel(n: int) -> bool:
 	if n < 0 or n >= NIVELES.size():
-		return
+		return false
 	datos = validar_datos(datos)
 	if not datos.niveles_completados.has(n):
 		datos.niveles_completados.append(n)
 	datos.nivel_actual = maxi(datos.nivel_actual, n + 1)
 	datos = validar_datos(datos)
-	guardar()
+	return guardar() == true
 
 func ir_a_nivel(n: int) -> void:
 	get_tree().paused = false

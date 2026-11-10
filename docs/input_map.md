@@ -1,8 +1,8 @@
 # Gameplay InputMap support
 
-Gameplay now dispatches named InputMap actions rather than checking key numbers
-or mouse-button constants. Both levels inherit the implementation in
-`scripts/nivel/nivel_base.gd`; their child scripts need no separate input code.
+Campaign levels share named InputMap actions in `scripts/nivel/nivel_base.gd`.
+The preparation board also reserves unmodified Space, Enter, and numpad Enter
+for round start.
 
 ## Actions and fresh-profile defaults
 
@@ -18,6 +18,7 @@ or mouse-button constants. Both levels inherit the implementation in
 | Clic Izquierdo | Left mouse | Bind in settings if desired |
 | Clic Derecho | Right mouse | Bind in settings if desired |
 | Confirmar | Enter | A |
+| Confirmar tablero | E | Use Confirmar |
 | Atras | Backspace | B |
 | Pausa | Escape | Start |
 | Izquierda / Derecha / Arriba / Abajo | Arrow keys | Left stick / D-pad |
@@ -37,10 +38,13 @@ unassigned in those profiles to avoid stealing an already customized key. Bind
 them in Options, or use Reset to restore all fresh-profile defaults. Existing
 Glacies/Venenum bindings are preserved rather than silently shifted.
 The challenge, priority, and upgrade defaults are added to older profiles where their individual bindings are free. Conflicting controls can be assigned under Settings.
+Board confirmation defaults to E, then F if E is already assigned. Players can
+bind the action in Settings when both keys are in use.
 
 ## Dispatch and selection
 
-`NivelBase._input()` checks Pausa and cancel actions first, handles directional
+`NivelBase._input()` consumes the reserved round-start keys on the board, then
+checks Pausa and cancel actions, handles directional
 cursor use, delegates selection/cycling/wave actions to `hud.manejar_accion()`,
 then handles confirmation and drag release. Each handled event is consumed once.
 Keyboard echo does not trigger repeated placement, selection, or pause. Exact
@@ -76,7 +80,9 @@ initial repeat delay and a 0.12-second repeat interval. Mouse movement restores
 pointer targeting. Placement previews, tower inspection, upgrades, shovel,
 abilities and pickups all use the current target.
 
-Confirmar or Clic Izquierdo places/uses the selected tool. With no tool selected,
+Confirmar tablero, controller Confirmar, and Clic Izquierdo place or use the
+selected tool. Custom non-Enter Confirmar bindings also work on the board.
+With no tool selected,
 confirmation selects a planted tower. Mejorar Arbol or the priced upgrade button
 buys the next level. The configured
 pointer action can select HUD tools and drag them onto the board. HUD panels

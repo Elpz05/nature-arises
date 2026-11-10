@@ -6,6 +6,7 @@ const CONTENIDO = preload("res://scripts/guia/contenido_guia.gd")
 const ICONOS = preload("res://scripts/HUD/iconos_combate.gd")
 const RETRATOS = preload("res://scripts/HUD/retratos_unidad.gd")
 const INDICACIONES = preload("res://scripts/HUD/indicaciones_control.gd")
+const ESCALA_UI = preload("res://scripts/HUD/escala_interfaz.gd")
 const COLOR_ENCABEZADO := Color(0.68, 0.92, 0.65)
 
 # Se asigna antes de agregar la guía al árbol. Vacío en el menú.
@@ -31,6 +32,7 @@ func _ready():
 	tema.set_font("font", "Button", _fuente_nitida(tema.get_font("font", "Button")))
 	tema.set_font("font", "TituloPixel", _fuente_nitida(tema.get_font("font", "TituloPixel")))
 	panel.theme = tema
+	panel.set_meta("minimo_ui_adaptativo", true)
 	get_viewport().size_changed.connect(_ajustar_panel)
 	_ajustar_panel()
 	cerrar.pressed.connect(_cerrar)
@@ -49,6 +51,7 @@ func _ready():
 	_agregar_capitulo("arboles", "Árboles", CONTENIDO.arboles())
 	_agregar_capitulo("poderes", "Poderes", CONTENIDO.poderes())
 	_mostrar_capitulo("jugar" if fichas_nivel.is_empty() else "nivel")
+	add_child(ESCALA_UI.new())
 	_botones_pestana[pestana_actual].grab_focus()
 
 func _fuente_nitida(original: FontFile) -> FontFile:
@@ -84,6 +87,7 @@ func _mostrar_capitulo(id: String):
 		boton.focus_entered.connect(_mostrar_ficha.bind(i))
 		boton.pressed.connect(_mostrar_ficha.bind(i))
 	_actualizar_foco()
+	ESCALA_UI.aplicar(indice, Ajustes.escala_ui())
 	_mostrar_ficha(0)
 
 func _mostrar_ficha(i: int):
@@ -95,6 +99,7 @@ func _mostrar_ficha(i: int):
 	if not _descubierta(i):
 		detalle.add_child(_etiqueta("Entrada bloqueada", 40, COLOR_ENCABEZADO))
 		detalle.add_child(_etiqueta("Encuentra esta bestia o consigue el desbloqueo en la campaña.", 28, Color.WHITE))
+		ESCALA_UI.aplicar(detalle, Ajustes.escala_ui())
 		lectura.scroll_vertical = 0
 		return
 	var cabecera := HBoxContainer.new()
@@ -115,9 +120,13 @@ func _mostrar_ficha(i: int):
 			var icono := Control.new()
 			var id: String = seccion[2]
 			var lleno: bool = seccion.size() > 3 and seccion[3]
-			icono.custom_minimum_size.x = 28
+			icono.custom_minimum_size = Vector2(45, 45)
 			fila.add_child(icono)
-			icono.draw.connect(func(): ICONOS.dibujar(icono, id, Vector2(14, 15), 1.5, true, lleno))
+			icono.resized.connect(icono.queue_redraw)
+			icono.draw.connect(func():
+				var lado := icono.custom_minimum_size.x
+				ICONOS.dibujar(icono, id, Vector2.ONE * lado / 2.0, lado / 17.0, true, lleno)
+			)
 			destino = fila
 		var bloque := VBoxContainer.new()
 		bloque.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -126,6 +135,7 @@ func _mostrar_ficha(i: int):
 		bloque.add_child(_etiqueta(seccion[0], 30, COLOR_ENCABEZADO))
 		bloque.add_child(_etiqueta(seccion[1], 30, Color(0.91, 0.95, 0.92)))
 	lectura.scroll_vertical = 0
+	ESCALA_UI.aplicar(detalle, Ajustes.escala_ui())
 
 func _descubierta(i: int) -> bool:
 	match pestana_actual:

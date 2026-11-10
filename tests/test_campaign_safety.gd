@@ -36,7 +36,7 @@ func _run():
 		_check(save.validar_datos({"nivel_actual": invalid}).nivel_actual == 0, "Invalid progress fields must fall back safely")
 	var legacy := save.validar_datos({"nivel_actual": "1", "niveles_completados": null, "plantas": [2, 2, -1, 999, "1", false, {}, 1.5], "ataques": "invalid", "nota": "preservar"})
 	_check(legacy.nivel_actual == 1 and legacy.niveles_completados == [0], "Legacy progress must recover completed levels")
-	_check(legacy.plantas == [0, 1, 2] and legacy.ataques == [0, 1], "Unlock lists must be deduplicated, bounded and recovered")
+	_check(legacy.plantas == [0, 1, 2] and legacy.ataques == [0, 1, 2], "Unlock lists must be deduplicated and restore the Aqua power earned after Level 1")
 	_check(legacy.nota == "preservar" and save.validar_datos(legacy) == legacy, "Validation must preserve extra JSON fields and be idempotent")
 	for content in ["", "{bad", "[]", "null", "true"]:
 		_write(save._ruta(0), content)

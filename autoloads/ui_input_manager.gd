@@ -3,10 +3,14 @@ extends Node
 var boton_con_hover: Button = null
 
 func _ready() -> void:
-	Input.joy_connection_changed.connect(func(_d, connected):
-		if connected:
-			Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-	)
+	Input.joy_connection_changed.connect(_al_conectar_mando)
+
+func _exit_tree() -> void:
+	Input.joy_connection_changed.disconnect(_al_conectar_mando)
+
+func _al_conectar_mando(_dispositivo: int, conectado: bool) -> void:
+	if conectado:
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 
 func inicializar(boton_default: Button) -> void:
 	if Input.get_connected_joypads().size() > 0:

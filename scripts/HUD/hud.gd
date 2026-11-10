@@ -9,12 +9,14 @@ signal mejora_solicitada
 signal pala_pulsada(arrastre: bool)
 signal guia_solicitada
 signal velocidad_solicitada
+signal pausa_solicitada
 signal cerrar_seleccion_solicitada
 signal cerrar_ficha_solicitada
 const ICONOS = preload("res://scripts/HUD/iconos_combate.gd")
 const INDICACIONES = preload("res://scripts/HUD/indicaciones_control.gd")
 const RETRATOS = preload("res://scripts/HUD/retratos_unidad.gd")
 const INTERFAZ = preload("res://fuentes/interfaz.tres")
+const ESCALA_UI = preload("res://scripts/HUD/escala_interfaz.gd")
 
 const SEMILLAS := [
 	{"nombre": "Natura", "costo": 1, "costos": [1, 2, 3], "rol": "Disparo rápido a un objetivo."},
@@ -40,14 +42,16 @@ const ATAQUES := [
 @onready var barra: PanelContainer = $Barra
 @onready var fila_semillas: HBoxContainer = $Barra/Fila/Plantar/Semillas
 @onready var fila_ataques: HBoxContainer = $Barra/Fila/Poderes/Ataques
-@onready var panel_estado: PanelContainer = $PanelEstado
-@onready var contadores: HBoxContainer = $PanelEstado/Contadores
-@onready var panel_ronda: PanelContainer = $PanelRonda
-@onready var acciones: HBoxContainer = $PanelRonda/Acciones
-@onready var panel_ola: PanelContainer = $PanelOla
-@onready var informe: VBoxContainer = $PanelOla/Contenido/Informe
-@onready var datos_ola: VBoxContainer = $PanelOla/Contenido/Datos
-@onready var detalles: VBoxContainer = $PanelOla/Contenido/Detalles
+@onready var muelle: VBoxContainer = $Muelle
+@onready var panel_estado: PanelContainer = $Muelle/Cabecera/PanelEstado
+@onready var contadores: HBoxContainer = $Muelle/Cabecera/PanelEstado/Contadores
+@onready var panel_ronda: PanelContainer = $Muelle/Cabecera/PanelRonda
+@onready var acciones: HFlowContainer = $Muelle/Cabecera/PanelRonda/Acciones
+@onready var panel_ola: PanelContainer = $Muelle/PanelOla
+@onready var lectura_ola: ScrollContainer = $Muelle/PanelOla/Lectura
+@onready var informe: VBoxContainer = $Muelle/PanelOla/Lectura/Contenido/Informe
+@onready var datos_ola: VBoxContainer = $Muelle/PanelOla/Lectura/Contenido/Datos
+@onready var detalles: VBoxContainer = $Muelle/PanelOla/Lectura/Contenido/Detalles
 var label_gotas: Label
 var label_ronda: Label
 var label_vida: Label
@@ -57,6 +61,7 @@ var label_estado_combate: Label
 var label_restantes: Label
 var label_entrantes: Label
 var hud_debug := false
+var aqua_sin_poza := false
 var leyenda_terreno := ""
 var ultimo_resumen: Dictionary = {}
 var label_produccion: Label
@@ -110,17 +115,20 @@ var panel_avisos_clima: PanelContainer
 var texto_avisos_clima: Label
 var boton_cerrar_seleccion: Button
 var boton_cerrar_ficha: Button
+var boton_pausa: Button
 var botones_laboratorio: Array[Button] = []
 var panel_mejora: PanelContainer
 var titulo_torre: Label
 var resumen_torre: Label
+var lectura_torre: ScrollContainer
+var cabecera_torre: HBoxContainer
+var acciones_torre: HBoxContainer
 var panel_aviso: PanelContainer
 var aviso_colocacion: Label
 var reloj_aviso: Timer
 var previa_ronda: PanelContainer
 var _fila_retratos: HBoxContainer
-var _entrada_previa := Vector2.ZERO
-var _cobertura_previa: Callable
+var _escala_ui := 1.0
 var _iconos_accion := {}
 var _pistas_mando: HBoxContainer
 var _mando := false
@@ -166,19 +174,23 @@ func _ready():
 	for i in SEMILLAS.size():
 		var b := _crear_boton(SEMILLAS[i].nombre, ICONOS.ELEMENTOS[i], RETRATOS.crear({}, 58))
 		var costo: Label = b.get_node("Valor")
-		costo.text = str(SEMILLAS[i].costo)
-		costo.offset_left = 22.0
+		if i == 2 and aqua_sin_poza:
+			costo.text = "Sin poza"
+			costo.add_theme_font_size_override("font_size", 18)
+		else:
+			costo.text = str(SEMILLAS[i].costo)
+			costo.offset_left = 22.0
 		costo.add_theme_color_override("font_color", Color("#86dcff"))
-		var gota := _glifo("gota", 1.05)
+		var gota := _glifo("gota", 0.9)
 		gota.name = "Gota"
-		gota.position = Vector2(27, 94)
-		gota.size = Vector2(20, 20)
+		gota.position = Vector2(16, 80)
+		gota.size = Vector2(18, 18)
 		b.add_child(gota)
 		b.button_down.connect(func(): semilla_pulsada.emit(i, Input.is_action_pressed("Clic Izquierdo")))
 		fila_semillas.add_child(b)
 		botones_semilla.append(b)
 
-	boton_pala = _crear_boton("Pala", "pala", _glifo("pala", 2.6))
+	boton_pala = _crear_boton("Pala", "pala", _glifo("pala", 3.5))
 	boton_pala.get_node("Valor").text = "Pala"
 	boton_pala.tooltip_text = "Retira un árbol sin devolver el agua invertida."
 	boton_pala.button_down.connect(func(): pala_pulsada.emit(Input.is_action_pressed("Clic Izquierdo")))
@@ -186,7 +198,7 @@ func _ready():
 
 	for i in ATAQUES.size():
 		var id: String = ICONOS.ELEMENTOS[i]
-		var b := _crear_boton(ATAQUES[i].nombre, id, _glifo(id, 2.65))
+		var b := _crear_boton(ATAQUES[i].nombre, id, _glifo(id, 3.5))
 		b.button_down.connect(func(): ataque_pulsado.emit(i, Input.is_action_pressed("Clic Izquierdo")))
 		fila_ataques.add_child(b)
 		botones_ataque.append(b)
@@ -225,9 +237,11 @@ func _ready():
 	boton_velocidad.tooltip_text = "Alternar velocidad: 1× / 2× / 4× / 8×"
 	boton_velocidad.pressed.connect(func(): velocidad_solicitada.emit())
 	acciones.add_child(boton_velocidad)
-	boton_cerrar_seleccion = _crear_opcion("× Cancelar selección")
-	boton_cerrar_seleccion.custom_minimum_size.y = 30
-	boton_cerrar_seleccion.add_theme_font_size_override("font_size", 22)
+	boton_pausa = _crear_opcion("Pausa")
+	boton_pausa.pressed.connect(func(): pausa_solicitada.emit())
+	acciones.add_child(boton_pausa)
+	boton_cerrar_seleccion = _crear_opcion("× Cerrar")
+	boton_cerrar_seleccion.tooltip_text = "Cerrar herramienta"
 	for estado in ["normal", "hover", "pressed", "disabled"]:
 		var estilo := INTERFAZ.get_stylebox(estado, "Button").duplicate() as StyleBoxFlat
 		estilo.content_margin_top = 2.0
@@ -238,16 +252,27 @@ func _ready():
 	$Barra/Fila/Plantar/Cabecera.add_child(boton_cerrar_seleccion)
 	_crear_paneles_del_tablero()
 	panel_avisos_clima = _panel_del_tablero(Color("#ffcf72"))
-	panel_avisos_clima.anchor_left = 0.5
-	panel_avisos_clima.anchor_right = 0.5
-	panel_avisos_clima.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	panel_avisos_clima.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_integrar_en_franja(panel_avisos_clima)
 	texto_avisos_clima = Label.new()
 	texto_avisos_clima.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	texto_avisos_clima.add_theme_color_override("font_color", Color("#ffda88"))
 	panel_avisos_clima.add_child(texto_avisos_clima)
 	_crear_indicaciones()
-	get_viewport().size_changed.connect(_ubicar_previa_ronda)
+	for boton: Button in botones_semilla + botones_ataque + [boton_pala]:
+		for hijo: Control in boton.get_children():
+			if hijo is not ProgressBar:
+				hijo.set_meta("posicion_ui_base", hijo.position)
+				hijo.set_meta("tamano_ui_base", hijo.size)
+	for cabecera in [$Barra/Fila/Plantar/Cabecera, $Barra/Fila/Poderes/Cabecera]:
+		cabecera.custom_minimum_size.y = ESCALA_UI.BASE_BOTON
+		var titulo: Label = cabecera.get_node("Titulo")
+		titulo.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		titulo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	Ajustes.escala_ui_cambiada.connect(_actualizar_escala)
+	_actualizar_escala(Ajustes.escala_ui())
+	muelle.minimum_size_changed.connect(_ajustar_alturas)
+	barra.minimum_size_changed.connect(_ajustar_alturas)
+	_ajustar_alturas.call_deferred()
 	ControlesManager.controles_cambiados.connect(actualizar_textos_controles)
 	actualizar_textos_controles()
 
@@ -255,15 +280,16 @@ func _crear_opcion(titulo: String) -> Button:
 	var boton := Button.new()
 	boton.text = titulo
 	boton.focus_mode = Control.FOCUS_NONE
-	boton.custom_minimum_size.y = 52
+	boton.custom_minimum_size.y = 66
 	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.pressed.connect(AudioUI.click_madera)
 	return boton
 
 func _crear_boton(nombre: String, id: String, arte: Control) -> Button:
 	var b := Button.new()
 	b.name = nombre
-	b.custom_minimum_size = Vector2(102, 118)
-	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(78, 101)
+	b.focus_mode = Control.FOCUS_CLICK
 	b.accessibility_name = nombre
 	_resaltar_boton(b, false)
 	var color: Color = ICONOS.ICONOS[id][0]
@@ -271,12 +297,13 @@ func _crear_boton(nombre: String, id: String, arte: Control) -> Button:
 	borde.name = "Acento"
 	borde.color = color
 	borde.position = Vector2(3, 9)
-	borde.size = Vector2(3, 100)
+	borde.size = Vector2(3, 83)
 	borde.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(borde)
 	arte.name = "Arte"
-	arte.position = Vector2(18, 21)
-	arte.size = Vector2(66, 66)
+	arte.position = Vector2(12, 20)
+	arte.custom_minimum_size = Vector2(54, 54)
+	arte.size = Vector2(54, 54)
 	b.add_child(arte)
 	if id != "pala":
 		var candado := _glifo("candado", 2.8)
@@ -286,13 +313,13 @@ func _crear_boton(nombre: String, id: String, arte: Control) -> Button:
 		candado.hide()
 		b.add_child(candado)
 	var atajo := _etiqueta_casilla("Atajo", 20, Color("#edf0d1"))
-	atajo.position = Vector2(9, 3)
-	atajo.size.x = 77
+	atajo.position = Vector2(9, 2)
+	atajo.size.x = 63
 	atajo.clip_text = true
 	b.add_child(atajo)
-	var valor := _etiqueta_casilla("Valor", 24, color)
-	valor.position = Vector2(8, 89)
-	valor.size.x = 86
+	var valor := _etiqueta_casilla("Valor", 21, color)
+	valor.position = Vector2(6, 75)
+	valor.size.x = 66
 	valor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.add_child(valor)
 	return b
@@ -300,6 +327,7 @@ func _crear_boton(nombre: String, id: String, arte: Control) -> Button:
 func _etiqueta_casilla(nombre: String, tamano: int, color: Color) -> Label:
 	var etiqueta := Label.new()
 	etiqueta.name = nombre
+	etiqueta.set_meta("texto_secundario", true)
 	etiqueta.add_theme_font_size_override("font_size", tamano)
 	etiqueta.add_theme_color_override("font_color", color)
 	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -308,7 +336,7 @@ func _etiqueta_casilla(nombre: String, tamano: int, color: Color) -> Label:
 func _glifo(id: String, escala: float) -> Control:
 	var glifo := Control.new()
 	glifo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	glifo.draw.connect(func(): ICONOS.dibujar(glifo, id, glifo.size / 2.0, escala, false, id == "gota"))
+	glifo.draw.connect(func(): ICONOS.dibujar(glifo, id, glifo.size / 2.0, escala * _escala_ui, false, id == "gota"))
 	return glifo
 
 func configurar_retratos_semillas(escenas: Array[PackedScene]):
@@ -369,13 +397,15 @@ func _panel_del_tablero(borde: Color) -> PanelContainer:
 func _crear_paneles_del_tablero():
 	previa_ronda = _panel_del_tablero(Color("#8aa777"))
 	previa_ronda.name = "PreviaRonda"
-	previa_ronda.mouse_filter = Control.MOUSE_FILTER_PASS
-	var previa := VBoxContainer.new()
+	_integrar_en_franja(previa_ronda)
+	var previa := HBoxContainer.new()
+	previa.alignment = BoxContainer.ALIGNMENT_CENTER
+	previa.add_theme_constant_override("separation", 24)
 	previa_ronda.add_child(previa)
 	var titulo := Label.new()
 	titulo.text = "PRÓXIMA RONDA"
 	titulo.theme_type_variation = &"TituloPixel"
-	titulo.add_theme_font_size_override("font_size", 18)
+	titulo.add_theme_font_size_override("font_size", 28)
 	titulo.add_theme_color_override("font_color", Color("#d7f5ad"))
 	previa.add_child(titulo)
 	_fila_retratos = HBoxContainer.new()
@@ -388,27 +418,35 @@ func _crear_paneles_del_tablero():
 	var contenido := VBoxContainer.new()
 	contenido.add_theme_constant_override("separation", 4)
 	panel_mejora.add_child(contenido)
-	var cabecera := HBoxContainer.new()
-	contenido.add_child(cabecera)
+	cabecera_torre = HBoxContainer.new()
+	contenido.add_child(cabecera_torre)
 	titulo_torre = Label.new()
 	titulo_torre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	titulo_torre.theme_type_variation = &"TituloPixel"
 	titulo_torre.add_theme_font_size_override("font_size", 30)
 	titulo_torre.add_theme_color_override("font_color", Color("#e2ffb5"))
-	cabecera.add_child(titulo_torre)
-	boton_cerrar_ficha = _crear_opcion("×")
+	cabecera_torre.add_child(titulo_torre)
+	boton_cerrar_ficha = _crear_opcion("× Cerrar")
 	boton_cerrar_ficha.size_flags_horizontal = Control.SIZE_FILL
 	boton_cerrar_ficha.custom_minimum_size.x = 48
 	boton_cerrar_ficha.tooltip_text = "Cerrar ficha"
 	boton_cerrar_ficha.pressed.connect(func(): cerrar_ficha_solicitada.emit())
-	cabecera.add_child(boton_cerrar_ficha)
-	resumen_torre = _crear_detalle(contenido, 26, 5)
+	cabecera_torre.add_child(boton_cerrar_ficha)
+	lectura_torre = ScrollContainer.new()
+	lectura_torre.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	contenido.add_child(lectura_torre)
+	var estadisticas := VBoxContainer.new()
+	estadisticas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lectura_torre.add_child(estadisticas)
+	resumen_torre = _crear_detalle(estadisticas, 28, -1)
+	acciones_torre = HBoxContainer.new()
+	contenido.add_child(acciones_torre)
 	boton_mejorar = _crear_opcion("Mejorar")
 	boton_mejorar.custom_minimum_size.y = 52
 	_destacar_accion(boton_mejorar)
-	contenido.add_child(boton_mejorar)
+	acciones_torre.add_child(boton_mejorar)
 	boton_prioridad = _crear_opcion("")
-	contenido.add_child(boton_prioridad)
+	acciones_torre.add_child(boton_prioridad)
 	boton_prioridad.hide()
 
 	panel_aviso = _panel_del_tablero(Color("#e7a175"))
@@ -423,52 +461,44 @@ func _crear_paneles_del_tablero():
 	reloj_aviso.timeout.connect(panel_aviso.hide)
 	add_child(reloj_aviso)
 
-func mostrar_previa_ronda(entrantes: Array[Dictionary], entrada: Vector2, cobertura: Callable):
+func _integrar_en_franja(panel: PanelContainer):
+	panel.reparent($Muelle/Franja, false)
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+func mostrar_previa_ronda(entrantes: Array[Dictionary]):
 	for hijo in _fila_retratos.get_children():
 		_fila_retratos.remove_child(hijo)
 		hijo.queue_free()
 	for grupo in entrantes:
 		var ficha := HBoxContainer.new()
 		ficha.tooltip_text = "%s ×%d" % [grupo.nombre, grupo.cantidad]
-		ficha.add_child(RETRATOS.crear(grupo.retrato, 40))
+		ficha.add_child(RETRATOS.crear(grupo.retrato, 45))
 		var cantidad := Label.new()
 		cantidad.text = "×%d" % grupo.cantidad
-		cantidad.add_theme_font_size_override("font_size", 24)
+		cantidad.add_theme_font_size_override("font_size", 28)
 		cantidad.add_theme_color_override("font_color", Color("#fff1ae"))
 		ficha.add_child(cantidad)
 		_fila_retratos.add_child(ficha)
-	_entrada_previa = entrada
-	_cobertura_previa = cobertura
+		ESCALA_UI.aplicar(ficha, Ajustes.escala_ui())
 	previa_ronda.visible = not entrantes.is_empty()
-	_ubicar_previa_ronda.call_deferred()
 
-func _ubicar_previa_ronda():
-	if not previa_ronda.visible:
+func _actualizar_escala(porcentaje: int):
+	_escala_ui = porcentaje / 100.0
+	ESCALA_UI.aplicar(self, porcentaje)
+	for boton: Button in botones_semilla + botones_ataque + [boton_pala]:
+		for hijo: Control in boton.get_children():
+			if not hijo.has_meta("posicion_ui_base"):
+				continue
+			hijo.position = hijo.get_meta("posicion_ui_base") * _escala_ui
+			hijo.size = hijo.get_meta("tamano_ui_base") * _escala_ui
+			hijo.queue_redraw()
+
+func _ajustar_alturas():
+	if not is_inside_tree():
 		return
-	var medida := previa_ronda.get_combined_minimum_size()
-	previa_ronda.size = medida
-	var espacio := _espacio_tablero()
-	var maximo := (espacio.end - medida).max(espacio.position)
-	var origen := _entrada_previa
-	var candidatos := [
-		origen - Vector2(medida.x / 2.0, medida.y + 37.0),
-		origen + Vector2(37.0, -medida.y / 2.0),
-		origen - Vector2(medida.x + 37.0, medida.y / 2.0),
-		origen + Vector2(-medida.x / 2.0, 37.0),
-	]
-	var casilla := Rect2(origen - Vector2.ONE * 30.0, Vector2.ONE * 60.0)
-	var menor := INF
-	for candidato: Vector2 in candidatos:
-		var posicion := candidato.clamp(espacio.position, maximo)
-		var area := Rect2(posicion, medida)
-		var costo: float = _cobertura_previa.call(area) + area.intersection(casilla).get_area() * 10.0
-		if costo < menor:
-			menor = costo
-			previa_ronda.position = posicion
-
-func posicionar_previa(entrada: Vector2):
-	_entrada_previa = entrada
-	_ubicar_previa_ronda()
+	muelle.offset_bottom = muelle.offset_top + muelle.get_combined_minimum_size().y
+	barra.offset_top = barra.offset_bottom - barra.get_combined_minimum_size().y
 
 func _crear_indicaciones():
 	var acciones_boton := {
@@ -483,7 +513,6 @@ func _crear_indicaciones():
 		boton.icon = _iconos_accion[accion]
 		boton.add_theme_constant_override("icon_max_width", 40)
 		boton.expand_icon = true
-	boton_cerrar_seleccion.add_theme_constant_override("icon_max_width", 24)
 	_pistas_mando = HBoxContainer.new()
 	_pistas_mando.add_theme_constant_override("separation", 5)
 	$Barra/Fila/Poderes/Cabecera.add_child(_pistas_mando)
@@ -497,7 +526,7 @@ func _crear_detalle(contenedor: Container, tamano: int, lineas: int) -> Label:
 	var etiqueta := Label.new()
 	etiqueta.add_theme_font_size_override("font_size", tamano)
 	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	etiqueta.max_lines_visible = lineas
+	etiqueta.max_lines_visible = -1 if contenedor in [informe, datos_ola, detalles] else lineas
 	etiqueta.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	etiqueta.mouse_filter = Control.MOUSE_FILTER_PASS
 	contenedor.add_child(etiqueta)
@@ -562,16 +591,19 @@ func indicar_dispositivo(event: InputEvent):
 		mando = false
 	if mando != _mando:
 		_mando = mando
-		_pistas_mando.visible = mando
+		_pistas_mando.visible = mando and boton_cerrar_seleccion.get_parent() != $Barra/Fila/Poderes/Cabecera
 		actualizar_textos_controles()
 
 func mostrar_ficha_torre(vida: int, maxima: int, stats: String, extras: String, punto: Vector2, area_pozo: Rect2, cobertura: Callable):
 	resumen_torre.text = "%d / %d HP\n%s" % [vida, maxima, stats]
 	resumen_torre.tooltip_text = (resumen_torre.text + "\n" + extras).strip_edges()
 	panel_mejora.show()
+	var limites := _espacio_tablero()
+	var alto_fijo := panel_mejora.get_theme_stylebox("panel").get_minimum_size().y + 8.0
+	alto_fijo += cabecera_torre.get_combined_minimum_size().y + acciones_torre.get_combined_minimum_size().y
+	lectura_torre.custom_minimum_size.y = clampf(limites.size.y - alto_fijo, 0.0, 145.0 * _escala_ui)
 	var medida := panel_mejora.get_combined_minimum_size()
 	panel_mejora.size = medida
-	var limites := _espacio_tablero()
 	var posicion_maxima := (limites.end - medida).max(limites.position)
 	var candidatos := [
 		punto + Vector2(40, -28), punto - Vector2(medida.x + 40, 28),
@@ -611,25 +643,17 @@ func ocultar_aviso_colocacion():
 
 func _espacio_tablero() -> Rect2:
 	var area := get_viewport().get_visible_rect().grow(-8.0)
-	area.position.y = maxf(panel_estado.get_global_rect().end.y, panel_ronda.get_global_rect().end.y) + 8.0
+	area.position.y = muelle.get_global_rect().end.y + 8.0
 	area.size.y = barra.get_global_rect().position.y - 8.0 - area.position.y
 	return area
 
 func espacio_camara() -> Rect2:
-	var area := _espacio_tablero()
-	area.position.y += 62.0
-	area.size.y -= 70.0
-	return area.grow(-4.0)
+	return _espacio_tablero().grow(-4.0)
 
 func mostrar_avisos_clima(texto: String):
 	if texto == texto_avisos_clima.text and panel_avisos_clima.visible == (not texto.is_empty()):
 		return
 	texto_avisos_clima.text = texto
-	panel_avisos_clima.offset_top = maxf(panel_estado.get_global_rect().end.y, panel_ronda.get_global_rect().end.y) + 4.0
-	panel_avisos_clima.reset_size()
-	var medida := panel_avisos_clima.get_combined_minimum_size()
-	panel_avisos_clima.offset_left = -medida.x / 2.0
-	panel_avisos_clima.offset_right = medida.x / 2.0
 	panel_avisos_clima.visible = not texto.is_empty()
 
 # --- API para nivel.gd ---
@@ -655,6 +679,9 @@ func _mostrar_bloqueo(boton: Button, desbloqueado: bool, nombre: String):
 	boton.accessibility_name = nombre if desbloqueado else "Bloqueado"
 	if not desbloqueado:
 		boton.tooltip_text = "Bloqueado · Avanza en la campaña para desbloquear"
+	elif aqua_sin_poza and boton == botones_semilla[2]:
+		boton.get_node("Gota").hide()
+		boton.tooltip_text = "Aqua · Requiere una poza"
 
 func actualizar_ronda(actual: int, total: int):
 	label_ronda.text = "%d/%d" % [actual, total]
@@ -686,7 +713,27 @@ func mostrar_boton_ronda(texto: String, habilitado: bool):
 	boton_ronda.disabled = not habilitado
 	_actualizar_atajo_ronda()
 
+func boton_herramienta(tipo: String, indice: int) -> Button:
+	match tipo:
+		"semilla": return botones_semilla[indice]
+		"ataque": return botones_ataque[indice]
+		"pala": return boton_pala
+	return null
+
 func resaltar(tipo: String, indice: int):
+	var plantar: HBoxContainer = $Barra/Fila/Plantar/Cabecera
+	var poderes: HBoxContainer = $Barra/Fila/Poderes/Cabecera
+	var origen := boton_herramienta(tipo, indice)
+	var cabecera := poderes if tipo == "ataque" else plantar
+	if boton_cerrar_seleccion.get_parent() != cabecera:
+		boton_cerrar_seleccion.reparent(cabecera, false)
+	_pistas_mando.visible = _mando and tipo != "ataque"
+	plantar.get_node("Titulo").text = "PLANTAR"
+	poderes.get_node("Titulo").text = "PODERES"
+	if origen != null:
+		cabecera.get_node("Titulo").text += " · " + str(origen.name)
+		if tipo == "semilla" and indice == 2 and aqua_sin_poza:
+			cabecera.get_node("Titulo").text += " · Requiere una poza"
 	boton_cerrar_seleccion.visible = not tipo.is_empty()
 	_actualizar_atajo_ronda()
 	if tipo in ["semilla", "ataque"]:
@@ -703,10 +750,14 @@ func _resaltar_boton(boton: Button, seleccionado: bool):
 		boton.add_theme_stylebox_override(estado, _estilo_seleccion if seleccionado else _estilos_casilla[estado])
 
 func punto_sobre_hud(p: Vector2) -> bool:
-	for panel in [barra, panel_estado, panel_ronda, panel_ola, panel_mejora]:
+	for panel in [barra, muelle, panel_mejora]:
 		if panel.visible and panel.get_global_rect().has_point(p):
 			return true
 	return false
+
+func punto_sobre_lectura(p: Vector2) -> bool:
+	return (panel_ola.visible and panel_ola.get_global_rect().has_point(p)) \
+		or (panel_mejora.visible and lectura_torre.get_global_rect().has_point(p))
 
 func actualizar_combate(resumen: Dictionary):
 	if resumen == ultimo_resumen:
@@ -786,6 +837,14 @@ func manejar_accion(event: InputEvent) -> bool:
 			var actual := lista.find(indice_seleccion)
 			_emitir_seleccion(grupo_seleccion, lista[posmod(actual + paso, lista.size())])
 		return true
+	if panel_mejora.visible or panel_ola.visible:
+		var desplazamiento := int(event.is_action_pressed("ui_page_down")) - int(event.is_action_pressed("ui_page_up"))
+		if event is InputEventJoypadMotion and event.axis == JOY_AXIS_RIGHT_Y and absf(event.axis_value) >= 0.5:
+			desplazamiento = signi(roundi(event.axis_value))
+		if desplazamiento != 0:
+			var lectura := lectura_torre if panel_mejora.visible else lectura_ola
+			lectura.scroll_vertical += desplazamiento * roundi(90.0 * _escala_ui)
+			return true
 	return false
 
 func _pulso_opcion(event: InputEvent, accion: String) -> bool:
@@ -847,6 +906,7 @@ func actualizar_textos_controles():
 	_actualizar_atajo_casilla(boton_pala, ControlesManager.etiqueta_accion("Pala"))
 	boton_ola.tooltip_text = "[%s] Detalles de la ronda, misión y clima." % ControlesManager.etiqueta_accion("Detalles de Ronda")
 	boton_guia.tooltip_text = "[%s] Abrir Códice. En mando, pulsa el stick derecho con la ficha de torre cerrada." % ControlesManager.etiqueta_accion("Abrir Codice")
+	boton_pausa.tooltip_text = "[%s] Pausa y ajustes" % ControlesManager.etiqueta_accion("Pausa")
 	var mando_codice := InputMap.action_get_events("Abrir Codice").any(func(evento): return ControlesManager.es_del_tipo(evento, ControlesManager.Tipo.MANDO))
 	boton_guia.icon = _iconos_accion.get("Cambiar Prioridad" if _mando and not mando_codice else "Abrir Codice")
 	mostrar_velocidad(_velocidad)
@@ -863,15 +923,10 @@ func mostrar_velocidad(velocidad: int):
 	boton_velocidad.text = "%d×  %s" % [velocidad, atajo]
 
 func _actualizar_atajo_ronda():
-	var enter := InputEventKey.new()
-	enter.physical_keycode = KEY_ENTER
-	var puede_usar_enter := InputMap.event_is_action(enter, "Confirmar", true)
 	boton_ronda.text = _texto_ronda
-	if not _mando and not boton_ronda.disabled and puede_usar_enter and not boton_cerrar_seleccion.visible:
-		boton_ronda.text += " [Enter]"
-	boton_ronda.tooltip_text = "Espacio · Iniciar ronda"
-	if puede_usar_enter:
-		boton_ronda.tooltip_text += "\nEnter también inicia si no hay una herramienta seleccionada."
+	if not _mando and not boton_ronda.disabled:
+		boton_ronda.text += " [Espacio]"
+	boton_ronda.tooltip_text = "Espacio / Enter · Iniciar ronda\n%s · Confirmar tablero" % ControlesManager.etiqueta_accion("Confirmar tablero")
 
 func activar_en_punto(punto: Vector2, arrastre: bool):
 	if boton_cerrar_seleccion.visible and boton_cerrar_seleccion.get_global_rect().has_point(punto):
@@ -911,3 +966,5 @@ func activar_en_punto(punto: Vector2, arrastre: bool):
 		guia_solicitada.emit()
 	elif boton_velocidad.get_global_rect().has_point(punto):
 		velocidad_solicitada.emit()
+	elif boton_pausa.get_global_rect().has_point(punto):
+		pausa_solicitada.emit()

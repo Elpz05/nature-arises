@@ -12,7 +12,7 @@ static func pista(fila: Container, accion: String, texto: String, tamano: int) -
 	if recurso != null:
 		var imagen := TextureRect.new()
 		imagen.texture = recurso
-		imagen.custom_minimum_size = Vector2(44, 40)
+		imagen.custom_minimum_size = Vector2(45, 45)
 		imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		imagen.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -20,6 +20,7 @@ static func pista(fila: Container, accion: String, texto: String, tamano: int) -
 		if texto.is_empty():
 			return recurso
 	var etiqueta := Label.new()
+	etiqueta.set_meta("texto_secundario", true)
 	etiqueta.add_theme_font_size_override("font_size", tamano)
 	etiqueta.text = texto if recurso != null else "[%s] %s" % [ControlesManager.etiqueta_accion(accion), texto]
 	fila.add_child(etiqueta)

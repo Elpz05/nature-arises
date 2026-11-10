@@ -11,13 +11,17 @@ var con_focus: bool = false
 
 func _ready() -> void:
 	escala_original = scale
-	pivot_offset = size / 2
+	_centrar_pivote()
+	resized.connect(_centrar_pivote)
 
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	focus_entered.connect(_on_focus_entered)
 	focus_exited.connect(_on_focus_exited)
 	pressed.connect(_on_pressed)
+
+func _centrar_pivote() -> void:
+	pivot_offset = size / 2.0
 
 func _on_mouse_entered() -> void:
 	con_hover = true

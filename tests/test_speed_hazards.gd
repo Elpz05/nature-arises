@@ -2,6 +2,8 @@ extends SceneTree
 
 const LAB := "res://demo/mecanicas_lluvia.tscn"
 const LEVEL := "res://escenas/escenas_niveles/nivel_0.tscn"
+const VOLCANO := "res://escenas/escenas_niveles/nivel_4.tscn"
+const WINTER := "res://escenas/escenas_niveles/nivel_5.tscn"
 const WEATHER := {
 	"geiser": "volcan", "erupcion": "volcan", "rayo": "tormenta",
 	"derrumbe": "derrumbe", "ventisca": "ventisca", "radiacion": "radiacion",
@@ -71,10 +73,10 @@ func _speed_checks():
 	_check(Engine.time_scale == 1.0 and Engine.physics_ticks_per_second == 60, "Level exit normalizes timing")
 
 func _weather_check(tipo: String, speed: float):
-	var level = load(LAB).instantiate()
+	var scene := VOLCANO if tipo in ["geiser", "erupcion"] else WINTER if tipo == "ventisca" else LAB
+	var cell := Vector2i(5, 5) if scene == VOLCANO else Vector2i(3, 4) if scene == WINTER else CELL
+	var level = load(scene).instantiate()
 	level.clima = WEATHER[tipo]
-	if level.clima == "volcan":
-		level.celdas_geiser.assign([Vector2i(6, 3)])
 	root.add_child(level)
 	level.gestor_clima.free()
 	var climate := ControlledWeather.new()
@@ -82,10 +84,11 @@ func _weather_check(tipo: String, speed: float):
 	level.gestor_clima = climate
 	level.add_child(climate)
 	level._aplicar_tiempo(speed)
-	_check(level._plantar(CELL, 0), "Hazard test must plant a valid tower")
-	var tower = level.arboles_plantados[CELL]
+	_check(level._plantar(cell, 0), "Hazard test must plant a valid tower")
+	var tower = level.arboles_plantados[cell]
 	var label := "%s at %sx" % [tipo, speed]
 	climate.actualizar(100.0)
+	climate._anunciar("aviso_rayo" if tipo == "rayo" else "aviso_derrumbe" if tipo == "derrumbe" else tipo)
 	_check(climate.tiempo == 0.0 and climate.avisos.is_empty() and tower.vida == 100, label + " is inert during setup")
 	level._iniciar_ronda()
 	var event := "aviso_" + tipo if tipo in ["rayo", "derrumbe"] else tipo
@@ -97,37 +100,42 @@ func _weather_check(tipo: String, speed: float):
 	climate.actualizar(minimum * speed)
 	_check(climate.conteos.get(tipo, 0) == 0, label + " cannot count time before its first presentation")
 	climate.presentar_avisos(minimum * 0.5)
-	climate.ocultar_avisos(false)
+	climate.ocultar_avisos()
 	paused = true
 	climate.presentar_avisos(minimum * 10)
 	climate.actualizar(minimum * speed * 10)
 	paused = false
 	_check(is_equal_approx(climate.avisos[tipo].visible, minimum * 0.5), label + " excludes paused time")
-	level.ronda_activa = false
-	climate.ocultar_avisos(true)
+	level.cola_bestias.clear()
+	level._terminar_ronda()
+	var proximo: float = climate.proximos[event]
+	var tiempo: float = climate.tiempo
 	climate.actualizar(100.0)
-	_check(climate.avisos[tipo].visible == 0.0 and tower.vida == 100, label + " is inert between waves")
-	level.ronda_activa = true
+	_check(not level.ronda_activa and climate.avisos.is_empty() and climate.tiempo == tiempo and tower.vida == 100, label + " cancels pending warnings and is inert between waves")
+	level._iniciar_ronda()
+	climate.actualizar(proximo - tiempo)
+	_check(climate.avisos.has(tipo) and climate.avisos[tipo].visible == 0.0, label + " rearms with a fresh warning")
 	climate.presentar_avisos(0.0)
 	climate.presentar_avisos(minimum - 0.01)
-	climate.actualizar(0.0)
+	climate.actualizar(climate.anticipaciones[tipo])
 	_check(climate.conteos.get(tipo, 0) == 0, label + " reissues its full warning")
 	climate.presentar_avisos(0.01)
 	climate.actualizar(0.0)
 	climate.actualizar(0.0)
-	_check(climate.conteos.get(tipo, 0) == 1 and not climate.avisos.has(tipo), label + " resolves once")
+	var impactos: int = level.celdas_geiser.size() if tipo == "geiser" else 1
+	_check(climate.conteos.get(tipo, 0) == impactos and not climate.avisos.has(tipo), label + " resolves once")
 	if tipo == "erupcion":
 		climate.actualizar(climate.proximos[event] - climate.tiempo)
-		_check(level._plantar(CELL, 0), "A struck cell can be replanted")
+		_check(level._plantar(cell, 0), "A struck cell can be replanted")
 		# Issue the next warning with a live target, then replace that exact tree.
 		climate.proximos[event] = climate.tiempo
 		climate.actualizar(0.0)
-		level._quitar_arbol(CELL)
-		_check(level._plantar(CELL, 0), "The pending target can be replaced")
+		level._quitar_arbol(cell)
+		_check(level._plantar(cell, 0), "The pending target can be replaced")
 		climate.presentar_avisos(0.0)
 		climate.presentar_avisos(minimum)
 		climate.actualizar(minimum * speed)
-		_check(climate.conteos.get(tipo, 0) == 1 and level.arboles_plantados[CELL].vida == 100, label + " cancels a replaced eruption target")
+		_check(climate.conteos.get(tipo, 0) == 1 and level.arboles_plantados[cell].vida == 100, label + " cancels a replaced eruption target")
 	level.free()
 
 func _run():

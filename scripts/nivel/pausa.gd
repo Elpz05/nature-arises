@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 signal guia_solicitada
+signal reanudar_solicitado
 
 const ESCENA_AJUSTES = preload("res://escenas/escenas_menu/settings_menu.tscn")
 
@@ -23,16 +24,18 @@ func _ready() -> void:
 	boton_guia.pressed.connect(func(): guia_solicitada.emit())
 	boton_ajustes.pressed.connect(_abrir_ajustes)
 	boton_salir.pressed.connect(_salir)
+	panel_principal.add_child(preload("res://scripts/HUD/escala_interfaz.gd").new())
 	hover_boton = AudioStreamPlayer.new()
 	hover_boton.stream = sonido_hover
-	hover_boton.bus = "SFX"
+	hover_boton.bus = "UI"
 	add_child(hover_boton)
 	for boton in [boton_continuar, boton_guia, boton_ajustes, boton_salir]:
 		boton.mouse_entered.connect(_on_hover)
+		boton.pressed.connect(AudioUI.click_madera)
 	if sonido_abrir != null:
 		var abrir := AudioStreamPlayer.new()
 		abrir.stream = sonido_abrir
-		abrir.bus = "SFX"
+		abrir.bus = "UI"
 		add_child(abrir)
 		abrir.play()
 	boton_continuar.grab_focus()
@@ -42,6 +45,7 @@ func _abrir_ajustes() -> void:
 		return
 	ajustes = ESCENA_AJUSTES.instantiate()
 	ajustes.en_partida = true
+	ajustes.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	panel_principal.hide()
 	add_child(ajustes)
 	ajustes.cerrada.connect(func():
@@ -51,7 +55,7 @@ func _abrir_ajustes() -> void:
 	)
 
 func _input(event: InputEvent) -> void:
-	if not visible or is_instance_valid(ajustes):
+	if not visible or is_instance_valid(ajustes) or event.is_echo():
 		return
 	if event.is_action_pressed("Abrir Codice", false, true):
 		get_viewport().set_input_as_handled()
@@ -62,8 +66,12 @@ func _input(event: InputEvent) -> void:
 		_continuar()
 
 func _continuar() -> void:
-	get_tree().paused = false
+	if not visible or is_instance_valid(ajustes) or is_queued_for_deletion():
+		return
+	hide()
+	set_process_input(false)
 	queue_free()
+	reanudar_solicitado.emit()
 
 func _salir() -> void:
 	if Guardado.slot_actual >= 0:

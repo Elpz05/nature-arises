@@ -98,6 +98,7 @@ func _run():
 	var shield = _plant(storm, Vector2i(4, 3), 4)
 	var exposed = _plant(storm, Vector2i(5, 3), 0)
 	var water: int = storm.gotas
+	storm.ronda_activa = true
 	weather.rayo_en(Vector2i(5, 3))
 	weather.rayo_en(Vector2i(4, 3))
 	_check(exposed.is_queued_for_deletion() and not storm.arboles_plantados.has(Vector2i(5, 3)) and storm.gotas == water, "Lightning destroys a tree without refund and frees its cell")
@@ -192,6 +193,7 @@ func _run():
 	var ahead = _enemy(collapse, "flamma", 2.0 * 64.0)
 	var armor_beast = _enemy(collapse, "terra", 1.0 * 64.0)
 	weather = collapse.gestor_clima
+	collapse.ronda_activa = true
 	weather.derrumbe_en(4)
 	_check(barrier.golpes_derrumbe == 1 and barrier.vida == 1000 and not behind.muerto and ahead.muerto and armor_beast.muerto, "Terra stops the rock; beasts above it are destroyed without armor or resurrection")
 	barrier._aplicar_tamano("mediano")
