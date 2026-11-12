@@ -77,7 +77,7 @@ func _check_challenge():
 		spawned.append(enemy.tipo + ":" + enemy.tamano)
 		if not level.cola_bestias.is_empty():
 			enemy.get_parent().free()
-	_check(spawned == PackedStringArray(["terra:mediano", "terra:mediano", "aqua:pequeno", "aqua:pequeno", "aqua:pequeno", "aqua:pequeno", "terra:mediano", "aqua:mediano"]), "Real spawns keep the authored Terra front, Aqua pack, and previewed reinforcements")
+	_check(spawned == PackedStringArray(["terra:mediano", "aqua:pequeno", "aqua:pequeno", "terra:mediano", "aqua:pequeno", "aqua:pequeno", "terra:mediano", "aqua:mediano"]), "Real spawns keep the interleaved Terra and Aqua packs and previewed reinforcements")
 	level._terminar_ronda()
 	_check(level.gotas == money, "The reward waits for the final live enemy")
 	level._bestias_vivas()[0].get_parent().free()
@@ -212,6 +212,18 @@ func _run():
 	volcano._iniciar_ronda()
 	_check(volcano.cola_bestias == ["terra:pequeno", "terra:pequeno", "terra:pequeno", "glacies:mediano", "glacies:mediano"], "The volcano sends the Terra front line before the Glacies aura group")
 	volcano.free()
+	var winter = _level(5)
+	for wave in range(3, 6):
+		winter.ronda = wave
+		_check(winter._intervalo_spawn() >= 1.4 and winter._intervalo_spawn() <= 1.5, "Winter late waves spawn at 1.4–1.5 s intervals")
+	winter.ronda = 3
+	winter._actualizar_ronda_hud()
+	_check(winter.hud.label_preparacion.text.contains("+1 gotas al superar"), "The late reward is visible in preparation")
+	var winter_water: int = winter.gotas
+	winter.ronda_activa = true
+	winter._terminar_ronda()
+	_check(winter.ronda == 4 and winter.gotas == winter_water + 1, "The late reward matches the preview")
+	winter.free()
 	for action in old_bindings:
 		InputMap.action_erase_events(action)
 		for event in old_bindings[action]:

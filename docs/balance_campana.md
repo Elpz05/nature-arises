@@ -73,3 +73,44 @@ Esta prueba detecta partidas atascadas, falta de recursos para una estrategia co
 La siguiente prueba manual debe observar si el jugador entiende el peligro antes de perder una defensa, si puede reponerla con sus ingresos y si dispone de tiempo para reaccionar sin recoger el pozo ni lanzar ataques con precisión automática. Conviene registrar nivel/ronda, estrategia, vida restante y qué decisión causó la derrota antes de ajustar recetas o intervalos.
 
 Se conservan las estadísticas de la especificación y la vida provisional de 20 HP del Árbol Madre. El entorno restringido sigue emitiendo el error conocido del almacén de certificados al iniciar Godot; el criterio de la prueba son los resultados por nivel y el mensaje final, revisando también cualquier error de script.
+
+## Fase P3
+
+Desde la tercera ronda del nivel 3 se ajustan la vida y la velocidad de las bestias. Los grupos de Terra/Aqua, Electricitas/Flamma y Venenum/Flamma se intercalan para que sus amenazas lleguen juntas. Las tres últimas rondas del nivel 6 tienen intervalos de aparición efectivos de 1.49, 1.45 y 1.40 s. El nivel 8 alterna amenazas del camino principal y de los atajos en las dos últimas rondas.
+
+En los niveles 6–8, las rondas 3 y 4 pagan una gota normal. La preparación y el pago usan la misma función. El desafío sigue añadiendo tres gotas cuando se supera y la última ronda termina con la victoria.
+
+Para repetir los controles con un perfil aislado:
+
+```powershell
+$env:APPDATA = Join-Path $PWD '.godot/p3/roaming'
+$env:LOCALAPPDATA = Join-Path $PWD '.godot/p3/local'
+$godot = 'C:\Users\Admin\Desktop\godot\Godot_v4.7.2_console.exe'
+& $godot --headless --path . --script res://tests/simulate_campaign.gd -- --speed=8 --seed=20261108
+& $godot --headless --path . --script res://tests/simulate_campaign.gd -- --speed=8 --seed=20261109
+& $godot --headless --path . --script res://tests/simulate_campaign.gd -- --speed=8 --seed=20261108 --from=5 --winter-build=basin --finale-build=split
+& $godot --headless --path . --script res://tests/simulate_campaign.gd -- --speed=8 --seed=20261108 --without-defense
+```
+
+El bosque helado admite un despliegue temprano junto a la primera columna y otro centrado en la cuenca y el tramo de salida. En el final, la variante dividida comienza con Aqua en la poza oriental y Terra en la ruta de salida. Compra los atacantes orientales antes de reforzar el centro y el oeste. Los informes distinguen las variantes con los sufijos `_basin` y `_split`.
+
+Cada informe JSON contiene una entrada por nivel y otra por ronda completada o interrumpida por derrota. Incluye la vida inicial y final del Árbol Madre, impactos de bestias que llegan a la meta, gotas disponibles, reserva del pozo, bajas totales de árboles y bajas atribuidas a los avisos de clima. Cada combinación de nivel y semilla ejecuta un intento; se registra con cero reintentos. Los controles sin defensa deben perder y los controles mixtos deben ganar.
+
+### Resultados de P3
+
+Las dos semillas base, 20261108 y 20261109, ganaron los ocho niveles con 20/20 HP y cero fugas. El control sin defensa perdió los ocho, con 8–12 fugas por intento. Los informes detallados están en `.godot/campaign_combat_*.json`. Para el ajuste final de la quinta ronda del nivel 8 se hicieron ejecuciones específicas adicionales.
+
+| Nivel | Gotas finales, dos semillas | Bajas de árboles, dos semillas |
+| --- | --- | --- |
+| 1 | 0 / 1 | 0 / 0 |
+| 2 | 2 / 2 | 0 / 0 |
+| 3 | 2 / 1 | 2 / 3 |
+| 4 | 1 / 3 | 0 / 0 |
+| 5 | 3 / 2 | 0 / 2 |
+| 6 | 0 / 0 | 6 / 5 |
+| 7 | 2 / 0 | 5 / 5 |
+| 8 | 3 / 3 | 0 / 0 |
+
+En el nivel 6, la ventisca causó dos bajas en una semilla y una en la otra. La variante de la cuenca ganó con 20 HP, una gota y dos bajas por ventisca en 700.6 s simulados. La formación de la primera columna completó el nivel en 388.0 s con la misma semilla. En el nivel 8, las dos configuraciones mixtas superaron la quinta ronda revisada. La variante dividida terminó con dos gotas. Solo torres también ganó con 20 HP, con compras y mejoras durante la partida. Los resultados no establecen que la adaptación activa sea indispensable en el final. El control sin defensa acumuló agua durante recorridos largos y terminó en derrota, por lo que sigue pendiente medir el acopio si un jugador demora una ronda deliberadamente.
+
+Las pruebas de progresión de campaña, mapa de controles, escalas de interfaz de 100/125/150 %, tácticas de oleadas, economía del pozo y avisos de peligros pasaron. La batería amplia detectó pruebas que consultan miembros de interfaz ausentes, comprobaciones fallidas de las cargas de Venenum y los desbloqueos de Terra, y una ejecución de seguridad que se cerró con error después de imprimir PASS. Las partidas manuales con teclado y mando y la aprobación final de dificultad siguen pendientes.

@@ -790,10 +790,10 @@ func _ajuste_ronda(numero: int) -> Vector3:
 	if numero_nivel == 0:
 		return Vector3(1.10, 1.0, 1.0) if numero >= 3 else Vector3.ONE
 	if numero_nivel <= 2:
-		return Vector3(1.20, 1.0, 0.88)
+		return Vector3(1.25, 1.03, 0.88) if numero_nivel == 2 and numero >= 3 else Vector3(1.20, 1.0, 0.88)
 	if numero_nivel <= 5:
-		return Vector3(1.30, 1.08, 0.82)
-	return Vector3(1.40, 1.10, 0.80)
+		return Vector3(1.45, 1.10, 0.82) if numero >= 3 else Vector3(1.30, 1.08, 0.82)
+	return Vector3(1.55, 1.12, 0.80) if numero >= 3 else Vector3(1.40, 1.10, 0.80)
 
 func _intervalo_spawn() -> float:
 	return intervalos_spawn[ronda - 1] * _ajuste_ronda(ronda).z
@@ -821,6 +821,13 @@ func _alternar_desafio():
 	desafio_elegido = not desafio_elegido
 	_actualizar_preparacion()
 	_actualizar_combate_hud()
+
+func _recompensa_ronda() -> int:
+	if ronda >= rondas.size():
+		return 0
+	if ajustes_campana_activos and _es_escena_campana() and numero_nivel >= 5 and ronda >= 3:
+		return 1
+	return RECOMPENSA_RONDA
 
 func _actualizar_preparacion():
 	if ronda_activa or terminado:
@@ -872,7 +879,7 @@ func _actualizar_preparacion():
 			var partes := String(clave).split(":")
 			var variante := " divisor" if partes.size() == 3 else ""
 			refuerzos.append("%s %s%s ×%d" % [partes[0].capitalize(), partes[1].replace("pequeno", "pequeño"), variante, extras[clave]])
-	var recompensa := RECOMPENSA_RONDA if ronda < rondas.size() else 0
+	var recompensa := _recompensa_ronda()
 	hud.mostrar_preparacion(ronda, plan.size(), avisos, refuerzos, desafio_elegido, RECOMPENSA_DESAFIO, recompensa)
 
 func _iniciar_ronda():
@@ -899,8 +906,9 @@ func _terminar_ronda():
 		return
 	var extra := RECOMPENSA_DESAFIO if desafio_elegido else 0
 	desafio_elegido = false
-	_recoger_gotas(RECOMPENSA_RONDA + extra)
-	hud.anunciar_recompensa(RECOMPENSA_RONDA, extra)
+	var recompensa := _recompensa_ronda()
+	_recoger_gotas(recompensa + extra)
+	hud.anunciar_recompensa(recompensa, extra)
 	ronda += 1
 	_actualizar_ronda_hud()
 	hud.mostrar_boton_ronda("Iniciar ronda", true)

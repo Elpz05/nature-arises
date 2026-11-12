@@ -24,7 +24,7 @@ func _run():
 	for index in 2:
 		var level = load("res://escenas/escenas_niveles/nivel_%d.tscn" % index).instantiate()
 		root.add_child(level)
-		level.set_process(false)
+		level.set_physics_process(false)
 		await process_frame
 		var well = level.pozo
 		var point: Vector2 = well.get_global_transform_with_canvas().origin
@@ -38,7 +38,7 @@ func _run():
 		level._actualizar_recursos(0.1)
 		level._actualizar_recursos(per_drop * 8.0)
 		_check(well.reserva == 5 and level.gotas == 3, "Generation caps at five and never credits the wallet directly")
-		_check(level.hud.label_pozo.text.begins_with("Pozo 5/5"), "HUD shows the current well reserve")
+		_check(level.hud.label_pozo.text.ends_with("5/5"), "HUD shows the current well reserve")
 		level._on_semilla_pulsada(0, false)
 		_check(is_equal_approx(level.datos_rango_colocacion.radio, 128.0), "Plant selection must prepare its initial range")
 		_mouse(point + Vector2(40, 0), true)
@@ -50,7 +50,7 @@ func _run():
 		_mouse(point, true)
 		_mouse(point, false)
 		_check(level.gotas == before + 5 and well.reserva == 0 and level.arboles_plantados.size() == planted, "Clicking the well collects all five without planting")
-		_check(not well.recoger() and level.hud.label_gotas.text == "Gotas: %d" % (before + 5), "Collection updates the HUD and cannot be repeated")
+		_check(not well.recoger() and level.hud.label_gotas.text == str(before + 5), "Collection updates the HUD and cannot be repeated")
 		level._actualizar_recursos(per_drop * 0.5)
 		_check(well.reserva == 0, "Time spent full does not bank overflow")
 		level._actualizar_recursos(per_drop * 2.5)

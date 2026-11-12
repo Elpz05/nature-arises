@@ -30,6 +30,21 @@ const STATS := {
 }
 const ESCALA := {"pequeno": 1.0, "mediano": 1.3, "grande": 1.6}
 
+const SPRITES_PEQUENOS := {
+	"natura": preload("res://sprites/beasts/natura/little/idle/beast_natura_little_idle.png"),
+	"aqua": preload("res://sprites/beasts/aqua/little/idle/beast_aqua_little_idle.png"),
+	"electricitas": preload("res://sprites/beasts/electricitas/little/idle/beast_electricitas_little_idle.png"),
+	"flamma": preload("res://sprites/beasts/flamma/little/idle/beast_flamma_little_idle.png"),
+	"glacies": preload("res://sprites/beasts/glacies/little/idle/beast_glacies_little_idle.png"),
+	"terra": preload("res://sprites/beasts/terra/little/idle/beast_terra_little_idle.png"),
+	"venenum": preload("res://sprites/beasts/venenum/little/idle/beast_venenum_little_idle.png"),
+}
+const SPRITE_FLAMMA_GRANDE = preload("res://sprites/beasts/flamma/big/idle/beast_flamma_big_idle.png")
+const DURACION_FOTOGRAMA := 0.25
+const ESCALA_SPRITE_ANIMADO := 2.0
+
+var tiempo_animacion := 0.0
+
 @export var textura_pequeno: Texture2D
 @export var textura_mediano: Texture2D
 @export var textura_grande: Texture2D
@@ -234,7 +249,17 @@ func _aplicar_sprite():
 		sprite.texture = tex
 		sprite.scale = escala_sprite_base
 	else:
-		sprite.scale = escala_sprite_base * escala
+		var tira: Texture2D = SPRITES_PEQUENOS.get(tipo)
+		if tipo == "flamma" and tamano == "grande":
+			tira = SPRITE_FLAMMA_GRANDE
+		if tira != null:
+			sprite.texture = tira
+			sprite.hframes = tira.get_width() / 32
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			sprite.modulate = Color.WHITE
+			sprite.scale = escala * ESCALA_SPRITE_ANIMADO
+		else:
+			sprite.scale = escala_sprite_base * escala
 
 func _physics_process(delta: float):
 	if muerto or is_queued_for_deletion() or get_parent().is_queued_for_deletion():
@@ -244,6 +269,9 @@ func _physics_process(delta: float):
 	# El nivel controla pausa, derrota y victoria también para el movimiento.
 	if puede_avanzar.is_valid() and not puede_avanzar.call():
 		return
+	if sprite.hframes > 1:
+		tiempo_animacion = fposmod(tiempo_animacion + delta, DURACION_FOTOGRAMA * sprite.hframes)
+		sprite.frame = int(tiempo_animacion / DURACION_FOTOGRAMA)
 	recarga_contacto = maxf(0.0, recarga_contacto - delta)
 	var estado_anterior := obtener_iconos_combate()
 	var avance := _calcular_avance(delta)

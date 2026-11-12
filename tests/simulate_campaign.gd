@@ -16,6 +16,7 @@ var baseline := false
 var speed := 1.0
 var report_tag := ""
 var winter_basin := false
+var finale_split := false
 var sin_presentacion := false
 
 func _initialize():
@@ -41,8 +42,8 @@ func _plan(index: int) -> Array:
 				[Vector2i(9, 3), 4], [Vector2i(12, 5), 4], [Vector2i(11, 7), 3], [Vector2i(5, 5), 0]]
 		5:
 			if winter_basin:
-				return [[Vector2i(12, 9), 3], [Vector2i(11, 5), 5], [Vector2i(13, 11), 1],
-					[Vector2i(15, 14), 4], [Vector2i(15, 8), 0], [Vector2i(24, 9), 3],
+				return [[Vector2i(13, 11), 1], [Vector2i(15, 14), 4], [Vector2i(11, 5), 5],
+					[Vector2i(12, 9), 3], [Vector2i(15, 8), 0], [Vector2i(24, 9), 3],
 					[Vector2i(23, 9), 1], [Vector2i(25, 5), 5]]
 			return [[Vector2i(4, 9), 3], [Vector2i(5, 7), 1], [Vector2i(3, 4), 5],
 				[Vector2i(7, 13), 0], [Vector2i(13, 11), 1], [Vector2i(15, 8), 5], [Vector2i(23, 9), 4]]
@@ -51,6 +52,11 @@ func _plan(index: int) -> Array:
 				[Vector2i(3, 4), 1], [Vector2i(5, 4), 4], [Vector2i(3, 7), 0],
 				[Vector2i(5, 9), 4], [Vector2i(7, 12), 5]]
 		_:
+			if finale_split:
+				return [[Vector2i(19, 9), 2], [Vector2i(26, 11), 3], [Vector2i(25, 11), 1],
+					[Vector2i(25, 9), 4], [Vector2i(23, 11), 0], [Vector2i(15, 6), 5],
+					[Vector2i(16, 5), 6], [Vector2i(18, 9), 3], [Vector2i(14, 5), 4],
+					[Vector2i(13, 5), 1], [Vector2i(8, 5), 2]]
 			return [[Vector2i(8, 5), 2], [Vector2i(18, 9), 3], [Vector2i(15, 6), 5],
 				[Vector2i(14, 5), 4], [Vector2i(13, 5), 1], [Vector2i(8, 6), 0],
 				[Vector2i(16, 5), 6], [Vector2i(26, 11), 3], [Vector2i(25, 11), 1],
@@ -133,6 +139,7 @@ func _run():
 		if argument == "--fast-recharge": fast_recharge = true
 		if argument == "--baseline": baseline = true
 		if argument == "--winter-build=basin": winter_basin = true
+		if argument == "--finale-build=split": finale_split = true
 		if argument == "--no-presentation": sin_presentacion = true
 		if argument.begins_with("--report-tag="): report_tag = argument.trim_prefix("--report-tag=").validate_filename()
 		if argument.begins_with("--speed="):
@@ -172,7 +179,11 @@ func _run():
 			return
 		var metrics := {"level": index + 1, "seed": run_seed + index, "purchases": 0, "upgrades": 0, "spent": 0, "casts": 0,
 			"without_defense": without_defense, "spells_only": spells_only, "towers_only": towers_only, "fast_recharge": fast_recharge,
-			"challenges": 0, "roster": {}, "shots": {}, "casts_by_type": {}}
+			"challenges": 0, "roster": {}, "shots": {}, "casts_by_type": {}, "waves": [], "routing_leaks": 0}
+		level.arbol_meta.dano_recibido.connect(func(_damage, _periodic):
+			metrics.routing_leaks += 1
+		)
+		var wave_start := {"hp": level.arbol_meta.vida, "leaks": 0, "losses": 0, "hazards": {}}
 		level.arboles.child_entered_tree.connect(func(node):
 			if "objetivo" in node and "elemento" in node:
 				var element: String = node.elemento
@@ -204,6 +215,26 @@ func _run():
 			level.gestor_clima.presentar_avisos(STEP / speed)
 			elapsed += STEP
 			decision -= STEP
+			var cleared: bool = level.ronda > metrics.waves.size() + 1
+			if cleared or level.terminado:
+				var losses: int = metrics.purchases - level.arboles_plantados.size()
+				var hazard_losses := {}
+				for hazard in level.gestor_clima.bajas_arboles:
+					var lost: int = level.gestor_clima.bajas_arboles[hazard] - wave_start.hazards.get(hazard, 0)
+					if lost > 0:
+						hazard_losses[hazard] = lost
+				metrics.waves.append({
+					"wave": metrics.waves.size() + 1,
+					"hp_start": wave_start.hp, "hp_end": level.arbol_meta.vida,
+					"leaks": metrics.routing_leaks - wave_start.leaks,
+					"water": level.gotas, "well_reserve": level.pozo.reserva,
+					"tree_losses": losses - wave_start.losses, "hazard_losses": hazard_losses,
+				})
+				wave_start = {"hp": level.arbol_meta.vida, "leaks": metrics.routing_leaks, "losses": losses, "hazards": level.gestor_clima.bajas_arboles.duplicate()}
+		metrics.water = level.gotas
+		metrics.hazard_losses = level.gestor_clima.bajas_arboles.duplicate()
+		metrics.tree_losses = metrics.purchases - level.arboles_plantados.size()
+		metrics.retries = 0
 		metrics.won = level.terminado and level.arbol_meta.vida > 0
 		metrics.seconds = snappedf(elapsed, 0.1)
 		metrics.mother_hp = level.arbol_meta.vida
@@ -213,7 +244,9 @@ func _run():
 		var solo_control := spells_only or towers_only
 		var expected_result: bool = level.terminado and (not metrics.won if without_defense else (solo_control or metrics.won))
 		if index == 7 and not solo_control and not without_defense:
-			expected_result = expected_result and metrics.roster.size() == 7 and metrics.shots.size() == 5
+			var required_attack_types := 3 if finale_split else 5
+			expected_result = expected_result and metrics.roster.has("Aqua") and metrics.roster.has("Terra")
+			expected_result = expected_result and metrics.shots.size() >= required_attack_types
 		if not expected_result: failures += 1
 		results.append(metrics)
 		print("Campaign combat: " + JSON.stringify(metrics))
@@ -238,6 +271,10 @@ func _run():
 		suffix += "_challenge"
 	if baseline:
 		suffix += "_baseline"
+	if winter_basin:
+		suffix += "_basin"
+	if finale_split:
+		suffix += "_split"
 	if sin_presentacion:
 		suffix += "_without_presentation"
 	suffix += "_%d-%d_%dx" % [first, last, int(speed)]

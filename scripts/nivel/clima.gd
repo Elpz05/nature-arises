@@ -19,6 +19,7 @@ var _ultimo_reloj := -1.0
 var calor_activo := false
 var ultimo_evento := ""
 var conteos: Dictionary = {}
+var bajas_arboles: Dictionary = {}
 var visuales: Array = []
 
 static func modificadores_arbol(clima: String, elemento: String) -> Dictionary:
@@ -150,6 +151,7 @@ func _resolver_aviso(tipo: String, aviso: Dictionary):
 		return
 	avisos.erase(tipo)
 	proximos[aviso.evento] = tiempo + intervalos[aviso.evento] - anticipaciones[tipo]
+	var arboles_antes: int = nivel.arboles_plantados.size()
 	match tipo:
 		"rayo": rayo_en(aviso.celda)
 		"derrumbe": derrumbe_en(aviso.celda.x)
@@ -161,6 +163,9 @@ func _resolver_aviso(tipo: String, aviso: Dictionary):
 				_emitir_particulas(tipo, aviso.celda)
 		"ventisca": barrer_ventisca()
 		"radiacion": radiacion()
+	var bajas: int = arboles_antes - nivel.arboles_plantados.size()
+	if bajas > 0:
+		bajas_arboles[tipo] = bajas_arboles.get(tipo, 0) + bajas
 	if tipo != "erupcion":
 		_emitir_particulas(tipo, aviso.celda)
 

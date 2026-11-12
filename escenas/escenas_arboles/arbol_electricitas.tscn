@@ -4,6 +4,29 @@
 [ext_resource type="PackedScene" path="res://escenas/escenas_balas/descarga.tscn" id="2_bala"]
 [ext_resource type="Texture2D" path="res://sprites/trees/electricitas/little/idle/tree_electricitas_little_idle.png" id="3_idle"]
 
+[ext_resource type="Texture2D" path="res://sprites/trees/electricitas/medium/idle/tree_electricitas_medium_idle.png" id="4_medium"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_medium_0"]
+atlas = ExtResource("4_medium")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_medium_1"]
+atlas = ExtResource("4_medium")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_medium_2"]
+atlas = ExtResource("4_medium")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_medium_3"]
+atlas = ExtResource("4_medium")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_medium_4"]
+atlas = ExtResource("4_medium")
+region = Rect2(128, 0, 32, 32)
+
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
 atlas = ExtResource("3_idle")
 region = Rect2(0, 0, 32, 32)
@@ -44,6 +67,26 @@ animations = [{
 }],
 "loop": 1,
 "name": &"idle_pequeno",
+"speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_medium_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_medium_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_medium_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_medium_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_medium_4")
+}],
+"loop": 1,
+"name": &"idle_mediano",
 "speed": 4.0
 }]
 
